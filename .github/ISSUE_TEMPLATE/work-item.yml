@@ -1,0 +1,62 @@
+name: InOrdo work item
+description: Define a scoped feature, fix, test, or documentation change.
+title: "[Area]: "
+labels: []
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Product and UX
+        - Data and RLS
+        - OpenAI and validation
+        - Dependency impact
+        - Approval and operations
+        - Testing and release
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User-visible outcome
+      description: Describe the problem and the observable result without prescribing unnecessary implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include success, error, empty, authorization, and accessibility states that matter.
+      placeholder: |
+        - [ ] Given ..., when ..., then ...
+        - [ ] No model output directly mutates data.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and dependency paths
+      description: Identify source evidence, affected records, contracts, or fixtures relevant to this work.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety review
+      options:
+        - label: This issue contains no credentials or private data.
+          required: true
+        - label: Any mutation will require authorization and explicit human approval.
+        - label: The UI will label synthetic or unfinished behavior honestly.
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: List unit, integration, browser, security, and manual checks needed for completion.
+    validations:
+      required: true
