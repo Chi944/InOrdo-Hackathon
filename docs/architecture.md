@@ -56,3 +56,51 @@ Undo creates a compensating operation; it does not erase history. Demo reset is 
 - `supabase/migrations/`: schema, constraints, functions, and RLS policies.
 
 These module paths describe intended boundaries, not completed features.
+
+## P0 database model
+
+The database is workspace-scoped and uses UUID primary keys throughout. `profiles` are durable attribution identities; a profile ID normally matches an Auth user ID, but there is intentionally no destructive foreign key from `profiles` to `auth.users`. The Auth trigger provisions a profile for a new real user, while the synthetic fixture can exist without creating login credentials.
+
+The core hierarchy is `workspaces` → `projects` → canonical `project_items`. `workspace_members` assigns owner, admin, member, or viewer access. One `project_items` table represents tasks, milestones, decisions, events, risks, and artifacts. Each item has a database-maintained positive `version`; every update increments it, so mutation services must compare their expected version before writing.
+
+Evidence and planning use `source_documents`, `change_events`, `impact_runs`, `impact_items`, `action_proposals`, and `proposal_actions`. Raw source documents are append-only. Impact records store deterministic paths and depth; proposals and actions remain inert until reviewed.
+
+Operations use append-only `operation_logs` and `operation_items`. An operation header is inserted only in a final succeeded or failed state inside the same transaction as its effects. Each item can record expected/resulting versions, before/after snapshots, and an explicit reverse payload. Undo is a new compensating operation referencing the original; it never updates or deletes history. `activity_events` is append-only supplemental dashboard context.
+
+Composite foreign keys carry `workspace_id` and `project_id` through every project-owned domain relationship. This prevents project records and dependency edges from crossing tenant or project boundaries. Profile references such as creator, owner, reviewer, and actor remain durable global attribution identities; they do not grant membership. RLS and guarded review transitions establish authorization, while identity triggers prevent rewriting tenant scope or historical attribution. Core and audit parents use restrictive deletion rather than cascades that erase evidence or operation history.
+
+### Dependency direction
+
+`item_dependencies.from_item_id` is always the dependent item. `to_item_id` is always its upstream prerequisite or context item. Downstream traversal therefore starts at a changed item and follows rows whose `to_item_id` is the current node to each `from_item_id`. Relationship labels (`depends_on`, `requires`, `informs`, and `scheduled_by`) are phrased consistently with that direction. Self-edges and duplicate typed edges are database constraints.
+
+### RLS strategy
+
+RLS is enabled on every public user-facing table and no anonymous table privileges are granted. Authenticated privileges are explicitly revoked and then granted per table because current Supabase projects do not auto-expose new public tables. Policies deny by default:
+
+- members of any role can read their workspace;
+- viewers cannot mutate records;
+- members can manage ordinary project records, while project deletion is owner/admin only;
+- owner/admin access is required for reviewed changes, impacts, proposals, operations, activity, and membership administration;
+- admins can manage only member/viewer membership rows; owners manage privileged roles, and a trigger prevents removing or demoting the final owner;
+- derived change, impact, proposal, operation, and activity rows are inserted only by server-side orchestration; authenticated reviewers can only confirm/reject pending changes and approve/reject pending proposal actions;
+- no policy encodes an anonymous or service-role client bypass.
+
+The private membership predicates are stable `SECURITY DEFINER` functions used to avoid recursive membership-policy evaluation. They have an empty `search_path`, fully qualified relations, explicit `auth.uid()` checks, revoked anonymous execution, and only the minimum authenticated execution grants. Trigger functions have no API-role execution grants. Explicit `service_role` object grants support the server-only client, but the service-role key remains forbidden from browser code and server orchestration must still recheck user authorization.
+
+### Demo seed and verification
+
+`supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx supabase db reset` reconstructs the fixture; a production-safe reset RPC is intentionally deferred to the operation-service task.
+
+The transaction-wrapped `supabase/tests/verify_p0.sql` checks seed counts and the expected path, cross-workspace invisibility, viewer mutation denial, reviewer attribution, immutable record identity, server-only audit writes, the self-dependency constraint, and operation idempotency uniqueness, then rolls back its test rows. It is plain assertion SQL, not pgTAP, and was executed successfully against the linked hosted project with:
+
+```bash
+npx supabase db query --linked --file supabase/tests/verify_p0.sql
+```
+
+Local `db reset` and CLI pgTAP execution still require Docker Desktop.
+
+Database types are generated from the linked hosted schema with:
+
+```bash
+npx supabase gen types typescript --linked --schema public > src/types/database.ts
+```

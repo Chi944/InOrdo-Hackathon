@@ -4,7 +4,7 @@
 
 - [x] Establish the Node 22, npm, TypeScript, Next.js, Tailwind, Vitest, and Supabase CLI foundation.
 - [x] Publish an honest, accessible landing shell.
-- [ ] Define the Supabase schema, constraints, seed fixture, and RLS policies.
+- [x] Define, apply, and verify the Supabase schema, constraints, seed fixture, RLS policies, and generated TypeScript types.
 - [ ] Add typed Supabase browser/server clients and authentication boundary.
 - [ ] Implement evidence intake and immutable provenance.
 - [ ] Implement server-only GPT-5.6 extraction with Zod validation.
