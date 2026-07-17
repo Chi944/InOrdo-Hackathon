@@ -4,7 +4,7 @@ InOrdo is a Work and Productivity application for small teams. It turns an unstr
 
 ## Current status
 
-This repository contains the P0 application foundation and an accessible landing shell. The page clearly reports **“Demo workspace coming online.”** Authentication, persistence, model extraction, dependency traversal, approvals, mutation history, undo, and demo reset are planned but are not represented as working features yet.
+This repository contains the P0 application foundation, the workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, and a protected read-only project overview. The Prompt 3 automated checks pass on `deston/03-auth-data`; a live login still requires an operator-created Auth account and local environment configuration. Model extraction, dependency traversal services, approvals, mutations, undo, and demo reset are not represented as working features yet.
 
 ## Local setup
 
@@ -17,6 +17,17 @@ npm run dev
 ```
 
 Fill local values in `.env.local`; never commit that file. The application runs at `http://localhost:3000` by default.
+
+The authentication and data-access boundary expects these variable names. Obtain project values from the Supabase Dashboard and keep every value in `.env.local` or the deployment environment:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `DEMO_PROJECT_SLUG`
+
+Normal signed-in requests use the public Supabase configuration plus the user's session. The service-role key is reserved for narrowly reviewed, server-only administration such as a future controlled demo reset; it is not required for ordinary login or project reads and must never enter a browser bundle.
+
+Create the email/password demo account manually and map its generated Auth UUID to the seeded workspace by following [docs/demo-user-setup.md](docs/demo-user-setup.md). No demo password belongs in source control.
 
 ## Scripts
 
@@ -47,12 +58,26 @@ The Build Week demo targets native project records, explicit dependencies, paste
 
 ## Supabase
 
-Local Supabase configuration is initialized under `supabase/`. When the CLI and its container runtime are available:
+Supabase CLI configuration is initialized under `supabase/`. To point a fresh checkout at the existing hosted project, authenticate locally and link with a project reference obtained from the Supabase Dashboard:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <PROJECT_REF>
+```
+
+Do not commit the CLI login token, database password, project keys, or generated `.env.local`. Apply pending migrations only after reviewing the linked target:
+
+```bash
+npx supabase db push --dry-run
+npx supabase db push
+```
+
+For a local Supabase stack, when the CLI and its container runtime are available:
 
 ```bash
 npx supabase start
 ```
 
-No production credentials or database are included in this repository.
+No production credential or demo-account password is included in this repository.
 
 > TODO before submission: verify the MIT License copyright holder and legal attribution with every InOrdo team member.

@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 
 const workflow = [
   {
@@ -83,20 +84,19 @@ export default function Home() {
               Demo workspace coming online
             </p>
             <p className="mt-1 text-sm leading-6 text-muted" id="demo-status-note">
-              The product foundation is being assembled. No live workspace,
-              model workflow, or mutation path is available yet.
+              Protected access and seeded project records are available. The
+              AI workflow and mutation path are still being built.
             </p>
           </div>
 
-          <button
-            className="mt-6 inline-flex min-h-12 items-center gap-2 bg-ink px-5 text-sm font-semibold text-white opacity-45"
-            type="button"
-            disabled
+          <Link
+            className="mt-6 inline-flex min-h-12 items-center gap-2 bg-ink px-5 text-sm font-semibold text-white transition hover:bg-signal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+            href="/app"
             aria-describedby="demo-status-note"
           >
             <LockKeyhole className="size-4" aria-hidden="true" />
             Open demo workspace
-          </button>
+          </Link>
         </div>
 
         <div className="ledger-grid relative border border-rule bg-white p-4 shadow-[0_30px_80px_rgba(23,35,31,0.1)] sm:p-7">

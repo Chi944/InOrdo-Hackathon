@@ -22,6 +22,20 @@ Supabase Postgres + Auth + RLS
 
 Use React Server Components by default. Client Components may hold browser interaction state but must not import server secrets, call OpenAI, or make authorization decisions.
 
+### Authentication and request refresh
+
+The installed Next.js 16 line uses `src/proxy.ts` for request interception. The proxy refreshes the Supabase session with a request-scoped server client and carries every cookie update to both the current request and outgoing response. It does not make domain authorization decisions and it does not use a service-role client.
+
+Server Components, route handlers, and server actions create a fresh Supabase server client per request. Protected entry points establish identity with `auth.getClaims()` and then apply explicit workspace and project authorization; they do not treat an unverified `getSession()` payload as authorization. Redirect destinations are accepted only when they are local application paths.
+
+The browser client can read only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server environment validation is isolated from the public schema. The privileged client imports a server-only marker, reads `SUPABASE_SERVICE_ROLE_KEY` only on the server, disables session persistence, and is reserved for narrowly reviewed operations such as a future controlled demo reset. Normal authenticated reads and writes always use the user's session so RLS remains in force.
+
+### Authorization and data access
+
+Reusable server-only guards establish the user, workspace membership, allowed roles, and the project's workspace before a repository query proceeds. Typed authorization failures distinguish unauthenticated, forbidden, and not-found outcomes for route mapping, while tenant-sensitive lookups return a non-disclosing not-found result when revealing existence would cross a workspace boundary.
+
+Repositories are server-only, typed from the generated database schema, and bounded. They select explicit columns and cap collection sizes for the demo workspace/project lookup, project overview, items, item dependencies, source updates, impact runs and proposals, and operations. UI modules receive repository results rather than a privileged client, unrestricted query builder, or `select('*')` response.
+
 ### Evidence and model output
 
 Persist raw source text and provenance before interpretation. A server-only OpenAI adapter requests structured output from `OPENAI_MODEL`; Zod validates the response into a candidate change or recovery draft. Validation failure produces a reviewable error and no mutation.
@@ -49,13 +63,15 @@ Undo creates a compensating operation; it does not erase history. Demo reset is 
 ## Planned modules
 
 - `src/lib/supabase/`: typed browser and server clients.
+- `src/lib/auth/`: identity, redirect validation, authorization guards, and typed errors.
+- `src/lib/repositories/`: bounded, explicit-column server-side reads.
 - `src/features/evidence/`: intake, validation, and provenance.
 - `src/features/impact/`: dependency graph traversal and path explanations.
 - `src/features/proposals/`: recovery drafts and per-action approval state.
 - `src/features/operations/`: authorized application, history, undo, and reset.
 - `supabase/migrations/`: schema, constraints, functions, and RLS policies.
 
-These module paths describe intended boundaries, not completed features.
+The Supabase, authentication, and repository paths are implemented for the read-only Prompt 3 foundation. The feature paths remain planned boundaries for later prompts. Lint, type checking, unit/static tests, and the production build pass on the branch; live login and project-load verification still require an operator-created Auth account and local environment values.
 
 ## P0 database model
 
