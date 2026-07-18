@@ -18,6 +18,7 @@ import {
 } from "@/features/operations/request-schemas";
 import type { ProjectOperationsExecutor } from "@/features/operations/supabase-persistence";
 import { AuthorizationError } from "@/lib/auth/errors";
+import { readBoundedRequestBody } from "@/lib/http/read-bounded-request-body";
 
 const uuidSchema = z.uuid();
 const maximumOperationRequestBytes = 32_000;
@@ -90,28 +91,20 @@ async function parseJsonBody<T>(
     throw new OperationError("validation");
   }
 
-  const declaredLength = request.headers.get("content-length");
-  if (
-    declaredLength !== null &&
-    Number.isFinite(Number(declaredLength)) &&
-    Number(declaredLength) > maximumOperationRequestBytes
-  ) {
+  const bodyResult = await readBoundedRequestBody(
+    request,
+    maximumOperationRequestBytes,
+  );
+  if (!bodyResult.ok && bodyResult.reason === "payload_too_large") {
     throw new OperationError("payload_too_large");
   }
-
-  let rawBody: string;
-  try {
-    rawBody = await request.text();
-  } catch {
+  if (!bodyResult.ok) {
     throw new OperationError("validation");
-  }
-  if (new TextEncoder().encode(rawBody).byteLength > maximumOperationRequestBytes) {
-    throw new OperationError("payload_too_large");
   }
 
   let json: unknown;
   try {
-    json = JSON.parse(rawBody) as unknown;
+    json = JSON.parse(bodyResult.text) as unknown;
   } catch {
     throw new OperationError("validation");
   }
