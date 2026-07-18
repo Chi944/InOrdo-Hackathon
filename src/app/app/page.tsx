@@ -13,6 +13,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { buildGuidedDemoTargets } from "@/app/app/demo-targets";
 import { GuidedDemoCallout } from "@/app/app/guided-demo-callout";
+import { ImpactWorkflow } from "@/app/app/impact-workflow";
 import { createProjectRecordOperations } from "@/features/project-records/operations";
 import { AuthorizationError } from "@/lib/auth/errors";
 import { requireProjectToWorkspace, requireUser } from "@/lib/auth/guards";
@@ -24,9 +25,17 @@ import {
   listProjectItems,
   listSourceUpdates,
 } from "@/lib/repositories/project-data";
+import { getImpactWorkflowData } from "@/lib/repositories/impact-review";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+type DemoWorkspacePageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function formatDate(value: string | null) {
   return value ? format(parseISO(value), "MMM d, yyyy") : "Not scheduled";
@@ -36,7 +45,15 @@ function words(value: string) {
   return value.replaceAll("_", " ");
 }
 
-export default async function DemoWorkspacePage() {
+export default async function DemoWorkspacePage({
+  searchParams,
+}: DemoWorkspacePageProps) {
+  const query = await searchParams;
+  const requestedAnalysisId =
+    typeof query.analysisRequestId === "string" &&
+    uuidPattern.test(query.analysisRequestId)
+      ? query.analysisRequestId
+      : undefined;
   let loadError: unknown;
   let result:
     | {
@@ -45,6 +62,7 @@ export default async function DemoWorkspacePage() {
         sources: Awaited<ReturnType<typeof listSourceUpdates>>;
         planning: Awaited<ReturnType<typeof listImpactRunsAndProposals>>;
         operations: Awaited<ReturnType<typeof listOperations>>;
+        workflow: Awaited<ReturnType<typeof getImpactWorkflowData>>;
         dependencies: Awaited<
           ReturnType<
             ReturnType<typeof createProjectRecordOperations>["listDependencies"]
@@ -65,13 +83,24 @@ export default async function DemoWorkspacePage() {
       demoProject.id,
     );
     const projectRecords = createProjectRecordOperations({ client });
-    const [overview, items, sources, planning, operations, dependencies] =
+    const [
+      overview,
+      items,
+      sources,
+      planning,
+      operations,
+      workflow,
+      dependencies,
+    ] =
       await Promise.all([
         getProjectOverview(client, scope),
         listProjectItems(client, scope),
         listSourceUpdates(client, scope),
         listImpactRunsAndProposals(client, scope),
         listOperations(client, scope),
+        getImpactWorkflowData(client, scope, {
+          analysisRequestId: requestedAnalysisId,
+        }),
         projectRecords.listDependencies(scope.projectId),
       ]);
 
@@ -81,6 +110,7 @@ export default async function DemoWorkspacePage() {
       sources,
       planning,
       operations,
+      workflow,
       dependencies,
       role: scope.membership.role,
     };
@@ -95,8 +125,16 @@ export default async function DemoWorkspacePage() {
   if (loadError) throw loadError;
   if (!result) throw new Error("The project overview could not be loaded.");
 
-  const { dependencies, items, operations, overview, planning, role, sources } =
-    result;
+  const {
+    dependencies,
+    items,
+    operations,
+    overview,
+    planning,
+    role,
+    sources,
+    workflow,
+  } = result;
   const workspace = overview.project.workspace;
   const eventItem = items.data.find((item) => item.item_type === "event");
   const upcomingMilestones = items.data
@@ -168,7 +206,10 @@ export default async function DemoWorkspacePage() {
       <header className="grid gap-6 border-b border-rule pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
           <p className="font-mono text-[0.68rem] uppercase tracking-[0.15em] text-signal">
-            {workspace?.name ?? "Demo workspace"} · Synthetic project
+            {workspace?.name ?? "Demo workspace"} ·{" "}
+            {overview.project.is_demo
+              ? "Synthetic project"
+              : "Authenticated project"}
           </p>
           <h1 className="mt-3 max-w-4xl text-4xl font-semibold tracking-[-0.055em] text-ink sm:text-5xl">
             {overview.project.name}
@@ -215,7 +256,23 @@ export default async function DemoWorkspacePage() {
         />
       </div>
 
-      <section aria-labelledby="quick-links-heading" className="mt-8">
+      <section className="mt-6 border-l-2 border-signal bg-[#eef1ff] px-4 py-3 text-sm leading-6 text-ink" aria-label="Workspace data notice">
+        <p className="font-semibold">Synthetic demonstration workspace</p>
+        <p className="mt-1 text-muted">
+          All names, records, dates, and seeded source text are fictional. Only results returned by the real analysis and operation contracts appear in the review below.
+        </p>
+      </section>
+
+      <div className="mt-6">
+        <ImpactWorkflow
+          data={workflow}
+          projectId={overview.project.id}
+          role={role}
+          syntheticWorkspace={overview.project.is_demo}
+        />
+      </div>
+
+      <section aria-labelledby="quick-links-heading" className="mt-10">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[0.63rem] uppercase tracking-[0.13em] text-signal">

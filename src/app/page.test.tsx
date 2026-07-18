@@ -14,13 +14,13 @@ describe("InOrdo landing shell", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Demo workspace coming online",
+      "Protected review workspace connected",
     );
     expect(
       screen.getByRole("link", { name: "Open demo workspace" }),
     ).toHaveAttribute("href", "/app");
     expect(screen.getByRole("status")).toHaveTextContent(
-      /AI workflow and mutation path are still being built/i,
+      /live results remain environment- and backend-state dependent/i,
     );
     expect(screen.getByText("Evidence", { selector: "h3" })).toBeVisible();
     expect(screen.getByText("Human approval", { selector: "h3" })).toBeVisible();

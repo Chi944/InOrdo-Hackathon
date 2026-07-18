@@ -142,6 +142,56 @@ Use an operator-created Auth account in the isolated synthetic **Regional Climat
 - [ ] Traverse every route and interactive control using Tab, Shift+Tab, Enter/Space, and Escape. Confirm focus is always visible, control names are announced, filter/result changes use status announcements, errors use alerts, and no keyboard trap occurs outside an open modal.
 - [ ] After mutation review, use the approved synthetic demo reset procedure if configured and confirm the 24-item/26-edge baseline is restored. If reset is unavailable, record the temporary QA item as deliberate synthetic test state for the owner to reconcile.
 
+## Impact review UI verification gate
+
+The judge-facing workflow is implemented on `andres/04-impact-ui`. These checks apply to the complete branch diff; the authenticated live-data procedure remains separate because this worktree has no public Supabase configuration, authenticated demo session, service-role key, or OpenAI key.
+
+- [x] `npm run lint` under Node 22
+- [x] `npm run typecheck` under Node 22
+- [x] `npm run test:run` under Node 22 (231 tests across 39 files)
+- [x] `npm run build` under Node 22
+- [x] `git diff --check`
+- [ ] `npm run test:e2e` when an authenticated Playwright environment is available
+- [x] Static contract review confirms the UI calls only the existing analyze, apply, history, and undo routes.
+- [x] Component coverage locks source validation/double-submit behavior and safe action selection/human-input exclusion.
+
+The final command gate used the checksum-verified official Node 22.23.1/npm 10.9.8 distribution because the desktop runtime supplied only Node 24 without npm. The production build required network access solely for the existing `next/font` Geist downloads.
+
+### Full-screen functional QA procedure
+
+Use only the configured synthetic demo project and an operator-created owner/admin account. Do not paste or record credentials. Capture network metadata only; never capture authorization headers, cookies, raw provider metadata, or environment values.
+
+1. Open `/app` and confirm the workspace is visibly labeled synthetic, the optional four-step demo guide does not block navigation, and no test fixture is presented as an analysis result.
+2. Tab from the skip link through the source form. Confirm every control has a visible focus state and an accessible name: title, source type, author label, occurred-at date/time, source text, seeded-update insertion, and `Analyze change`.
+3. Submit an empty form. Confirm useful inline messages appear, focus moves to the first invalid field, and no analyze request is sent.
+4. Select `Insert seeded demo update`. Confirm it inserts only the exact canonical source sentence from `docs/demo-scenario.md`; it must not insert or display expected candidate, impact, or action results. The occurred-at field stays blank because the canonical source gives a date but no precise time.
+5. Confirm the live character count, 12,000-character guidance, privacy warning, and synthetic-data instruction. Verify the counter itself is not an `aria-live` region.
+6. Submit once and immediately try mouse and keyboard submission again. Confirm exactly one `POST /api/projects/[projectId]/analyze`, a disabled `Analyzing change…` control, and one general pipeline state. The four backend steps may be listed as context but must not advance independently because the API emits no stage events.
+7. On completed analysis, confirm focus moves to `Change review`. Compare immutable source text against the GPT-5.6 inference: changed item, canonical old value, inferred new value, exact evidence excerpt, percentage plus confidence text, ambiguity/warning text, and explicit confirmation requirement.
+8. Confirm direct impacts are depth 1 and indirect impacts are depth greater than 1. Every card must show item status/type/owner/date, severity text, a readable deterministic dependency path, and a separately labeled GPT-generated explanation. Verify valid empty and safe failure states.
+9. In Recovery actions, confirm all pending actions without `requires_human_input` are preselected. No human-input or non-pending action may be preselected. Toggle each checkbox with Space, use `Select all safe actions`, then use `Leave all pending`; confirm no reject request is sent.
+10. Select a human-input action. Confirm an associated response field appears and blank input prevents confirmation. Open `Approve selected`; confirm the dialog names/counts only selected actions, Cancel/Escape returns focus, and confirmation sends exactly the existing `{ selectedActionIds, humanInputs, idempotencyKey }` contract.
+11. If the proposal state is `draft`, confirm approval is disabled with the backend-readiness explanation. Do not bypass this by changing SQL or client state. When Deston supplies a `ready` or `partially_approved` proposal, confirm a partial apply leaves unselected actions pending and focus moves to Applied result.
+12. Confirm Applied result shows operation type/state/actor/time, changed items with before/after values, an audit-history anchor, and safe error/conflict details. Show Undo only for a backend-history `reversible` successful apply with no successful reversal; on a stale-state 409, confirm no partial-success claim appears.
+
+### Responsive and accessibility review
+
+At each viewport, confirm `document.documentElement.scrollWidth <= window.innerWidth`, no card/dialog/control is clipped, paths wrap readably, native checkbox selection works, and meaningful completion/errors are announced without character-count or selection-chatter spam.
+
+- [x] Mobile: 375 × 812
+- [x] Tablet: 768 × 1024
+- [x] Desktop: 1440 × 900
+- [x] Approval dialog initial focus, Cancel, and trigger focus return
+- [ ] Focus moves to Change review after analysis and Applied result after apply/undo refresh
+- [x] Confidence, severity, operation, and proposal states all include text; none rely on color alone
+- [x] Reduced-motion rules remove spinner animation and smooth scrolling
+
+Local browser evidence on 2026-07-18 used a temporary route with an unavoidable on-screen label stating that its records were synthetic fixtures and that no AI or backend call was made. The route was removed before the final diff. All three widths matched their requested viewport, reported no horizontal document overflow or out-of-viewport controls, and produced no console error after the deterministic date-format correction. Seed insertion, blank human-input prevention, dialog contents, initial Cancel focus, and trigger-focus return passed. Confirm/apply and undo were intentionally not clicked.
+
+### Known backend-state gate for Deston
+
+Fresh completed analyses currently persist `action_proposals.state = 'draft'`, while the existing apply RPC accepts only `ready` or `partially_approved`, and no current application route promotes a proposal. The UI truthfully gates `Approve selected` on those backend states. This branch does not modify SQL, RLS, analysis prompts/model code, graph traversal, or mutation logic.
+
 ## Product behavior
 
 - [ ] Original evidence remains visible and unchanged.

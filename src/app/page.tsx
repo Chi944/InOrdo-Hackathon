@@ -54,7 +54,7 @@ export default function Home() {
           <span className="text-lg">InOrdo</span>
         </a>
         <span className="border border-rule bg-white/60 px-3 py-1.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted">
-          Foundation build
+          Evidence review build
         </span>
       </header>
 
@@ -81,11 +81,12 @@ export default function Home() {
               Current state
             </p>
             <p className="mt-1 font-semibold text-ink">
-              Demo workspace coming online
+              Protected review workspace connected
             </p>
             <p className="mt-1 text-sm leading-6 text-muted" id="demo-status-note">
-              Protected access and seeded project records are available. The
-              AI workflow and mutation path are still being built.
+              The authenticated UI uses the existing analysis, impact, apply,
+              history, and undo contracts. Live results remain environment- and
+              backend-state dependent; synthetic previews stay labeled.
             </p>
           </div>
 
