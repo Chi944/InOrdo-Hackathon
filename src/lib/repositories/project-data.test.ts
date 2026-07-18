@@ -35,4 +35,10 @@ describe("project data repository boundaries", () => {
     expect(repositorySource).toContain(".limit(2)");
     expect(repositorySource).toContain(".limit(limit)");
   });
+
+  it("defaults canonical views to active demo records and the current workflow generation", () => {
+    expect(repositorySource).toContain("async function getCurrentWorkflowGeneration(");
+    expect(repositorySource).toContain('.eq("is_demo_retired", false)');
+    expect(repositorySource).toContain('.eq("workflow_generation", generation)');
+  });
 });

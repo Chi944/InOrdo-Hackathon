@@ -48,6 +48,7 @@ export type ProjectAnalysisContext = {
 };
 
 export interface ProjectAnalysisContextSource {
+  getProjectGeneration(scope: AuthorizedProjectScope): Promise<number>;
   listActiveItems(scope: AuthorizedProjectScope): Promise<AnalysisContextItem[]>;
   listDependencies(scope: AuthorizedProjectScope): Promise<DependencyEdge[]>;
 }
@@ -116,6 +117,7 @@ function normalizeDependencies(
 export function computeImpactGraphRevision(
   items: readonly AnalysisContextItem[],
   dependencies: readonly DependencyEdge[],
+  generation: number,
 ) {
   const activeItemIds = new Set(items.map(({ id }) => id));
   const itemVersions = items
@@ -146,7 +148,7 @@ export function computeImpactGraphRevision(
   // can reproduce it with ordered string_agg calls without relying on JSON
   // serialization details. Project item IDs are UUIDs, so `:` is unambiguous.
   const canonicalGraph =
-    `impact-graph-v1\nitems\n${itemVersions
+    `impact-graph-v2\ngeneration\n${generation}\nitems\n${itemVersions
       .map(([id, version]) => `${id}:${version}`)
       .join("\n")}\nedges\n${edges
       .map(([fromItemId, toItemId]) => `${fromItemId}:${toItemId}`)
@@ -159,12 +161,25 @@ function createSupabaseProjectAnalysisContextSource(
   client: ServerSupabaseClient,
 ): ProjectAnalysisContextSource {
   return {
+    async getProjectGeneration(scope) {
+      const { data, error } = await client
+        .from("projects")
+        .select("workflow_generation")
+        .eq("workspace_id", scope.workspaceId)
+        .eq("id", scope.projectId)
+        .single();
+
+      if (error || !data) throw new ProjectAnalysisContextError();
+      return data.workflow_generation;
+    },
+
     async listActiveItems(scope) {
       const { data, error } = await client
         .from("project_items")
         .select(analysisContextItemSelector)
         .eq("workspace_id", scope.workspaceId)
         .eq("project_id", scope.projectId)
+        .eq("is_demo_retired", false)
         .in("status", analysisContextActiveItemStatuses)
         .order("id")
         .limit(maxAnalysisContextItems + 1);
@@ -236,9 +251,11 @@ export async function loadProjectAnalysisContext(
 ): Promise<ProjectAnalysisContext> {
   let items: AnalysisContextItem[];
   let dependencies: DependencyEdge[];
+  let generation: number;
 
   try {
-    [items, dependencies] = await Promise.all([
+    [generation, items, dependencies] = await Promise.all([
+      source.getProjectGeneration(scope),
       source.listActiveItems(scope),
       source.listDependencies(scope),
     ]);
@@ -265,7 +282,11 @@ export async function loadProjectAnalysisContext(
   );
 
   return {
-    revision: computeImpactGraphRevision(stableItems, stableDependencies),
+    revision: computeImpactGraphRevision(
+      stableItems,
+      stableDependencies,
+      generation,
+    ),
     items: stableItems,
     graph: {
       items: graphItems,

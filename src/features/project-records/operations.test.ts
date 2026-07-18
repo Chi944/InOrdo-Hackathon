@@ -38,6 +38,7 @@ const itemRow: Tables<"project_items"> = {
   event_date: null,
   metadata: {},
   version: 2,
+  is_demo_retired: false,
   created_by: userId,
   created_at: "2026-07-18T00:00:00.000Z",
   updated_at: "2026-07-18T00:00:00.000Z",

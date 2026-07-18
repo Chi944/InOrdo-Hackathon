@@ -17,6 +17,7 @@ function operationSource(start: string, end: string) {
 describe("Supabase project record store scoping", () => {
   it("uses explicit selectors and never selects all columns", () => {
     expect(source).not.toMatch(/\.select\(\s*["'`]\s*\*/);
+    expect(source).toContain('.eq("is_demo_retired", false)');
     expect(source).toContain("projectRecordItemSelector");
     expect(source).toContain("dependencyRecordSelector");
   });

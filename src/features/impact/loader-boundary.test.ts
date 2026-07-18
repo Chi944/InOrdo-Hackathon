@@ -14,6 +14,7 @@ describe("graph database loader boundary", () => {
     expect(source).not.toMatch(/\.select\(\s*["'`]\s*\*/);
     expect(source.match(/\.eq\("workspace_id", scope\.workspaceId\)/g)).toHaveLength(2);
     expect(source.match(/\.eq\("project_id", scope\.projectId\)/g)).toHaveLength(2);
+    expect(source).toContain('.eq("is_demo_retired", false)');
     expect(source).toContain('.in("status", activeItemStatuses)');
     expect(source).toContain("maxProjectGraphItems + 1");
     expect(source).toContain("maxProjectGraphDependencies + 1");

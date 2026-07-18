@@ -13,8 +13,8 @@
 - [x] Implement deterministic dependency traversal with cycle protection, stable shortest paths, and path explanations.
 - [x] Implement recovery proposal drafting and atomic persistence of pending per-action review state.
 - [ ] Wire the analysis route and pending-review records into the project UI without weakening the server contract.
-- [ ] Implement authorized, idempotent, reversible internal operations.
-- [ ] Implement operation history, undo, and isolated demo reset.
+- [x] Implement and linked-verify authorized, idempotent, reversible internal operation contracts.
+- [x] Implement and linked-verify operation history, undo, and isolated demo reset contracts.
 - [ ] Build and verify the end-to-end demo workspace.
 
 ## P1

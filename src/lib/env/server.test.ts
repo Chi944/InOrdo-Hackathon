@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EnvironmentConfigurationError } from "@/lib/env/public";
-import { parseOpenAIEnv } from "@/lib/env/server";
+import { parseDemoResetEnv, parseOpenAIEnv } from "@/lib/env/server";
 
 describe("OpenAI environment validation", () => {
   it("uses the Prompt 7 model default without requiring unrelated secrets", () => {
@@ -30,5 +30,25 @@ describe("OpenAI environment validation", () => {
     expect(() => parseOpenAIEnv({ OPENAI_API_KEY: "" })).toThrow(
       "OPENAI_API_KEY",
     );
+  });
+});
+
+describe("demo reset environment validation", () => {
+  it("requires the named demo project and a non-empty server-only secret", () => {
+    expect(
+      parseDemoResetEnv({
+        DEMO_PROJECT_SLUG: "inordo-build-week-demo",
+        DEMO_RESET_SECRET: "test-only-reset-value",
+      }),
+    ).toEqual({
+      DEMO_PROJECT_SLUG: "inordo-build-week-demo",
+      DEMO_RESET_SECRET: "test-only-reset-value",
+    });
+    expect(() =>
+      parseDemoResetEnv({
+        DEMO_PROJECT_SLUG: "inordo-build-week-demo",
+        DEMO_RESET_SECRET: "",
+      }),
+    ).toThrow("DEMO_RESET_SECRET");
   });
 });

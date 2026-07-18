@@ -42,6 +42,27 @@ describe("createProjectItemSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("enforces the 64-character item-key boundary", () => {
+    const base = {
+      projectId,
+      itemType: "task" as const,
+      title: "Boundary verifier",
+    };
+
+    expect(
+      createProjectItemSchema.safeParse({
+        ...base,
+        itemKey: `A-${"1".repeat(62)}`,
+      }).success,
+    ).toBe(true);
+    expect(
+      createProjectItemSchema.safeParse({
+        ...base,
+        itemKey: `A-${"1".repeat(63)}`,
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects an inverted start and due date", () => {
     const result = createProjectItemSchema.safeParse({
       projectId,

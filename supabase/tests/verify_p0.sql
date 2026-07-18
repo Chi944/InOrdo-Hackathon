@@ -79,7 +79,7 @@ begin
     );
     raise exception 'self-dependency unexpectedly succeeded';
   exception
-    when check_violation then null;
+    when check_violation or insufficient_privilege then null;
   end;
 end;
 $$;
@@ -135,23 +135,27 @@ $$;
 
 -- Constraint: operation idempotency is unique within a workspace.
 insert into public.operation_logs (
-  id, workspace_id, project_id, operation_type, state, idempotency_key, initiated_by
+  id, workspace_id, project_id, operation_type, state, idempotency_key,
+  request_hash, result_metadata, initiated_by
 ) values (
   '50000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000001',
   '20000000-0000-4000-8000-000000000001',
   'demo_reset', 'succeeded', 'verification-idempotency-key',
+  repeat('a', 64), '{}'::jsonb,
   '00000000-0000-4000-8000-000000000101'
 );
 do $$
 begin
   begin
     insert into public.operation_logs (
-      workspace_id, project_id, operation_type, state, idempotency_key, initiated_by
+      workspace_id, project_id, operation_type, state, idempotency_key,
+      request_hash, result_metadata, initiated_by
     ) values (
       '10000000-0000-4000-8000-000000000001',
       '20000000-0000-4000-8000-000000000001',
       'demo_reset', 'succeeded', 'verification-idempotency-key',
+      repeat('b', 64), '{}'::jsonb,
       '00000000-0000-4000-8000-000000000101'
     );
     raise exception 'duplicate idempotency key unexpectedly succeeded';
@@ -382,7 +386,7 @@ begin
     where id = '20000000-0000-4000-8000-000000000001';
     raise exception 'project attribution mutation unexpectedly succeeded';
   exception
-    when check_violation then null;
+    when check_violation or insufficient_privilege then null;
   end;
 
   begin

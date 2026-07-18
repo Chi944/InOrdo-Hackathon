@@ -10,7 +10,7 @@
 
 ## Before release
 
-Record the deployed application commit, remote migration ledger, affected project/workspace IDs, and the current backup/PITR status. Do not record credentials or raw private evidence. The known-good application commit before Prompt 5 is `1aa95f2` (`feat: add Supabase authentication and data access`). The known-good application commit before Prompt 7 is `2c9c11b` (`feat: add project records and dependency engine`).
+Record the deployed application commit, remote migration ledger, affected project/workspace IDs, and the current backup/PITR status. Do not record credentials or raw private evidence. The known-good application commit before Prompt 5 is `1aa95f2` (`feat: add Supabase authentication and data access`). The known-good application commit before Prompt 7 is `2c9c11b` (`feat: add project records and dependency engine`). The known-good application commit before Prompt 9 is `7e7405a` (`feat: add secure evidence-backed project analysis`).
 
 ## Application rollback
 
@@ -95,3 +95,74 @@ Before restoring analysis traffic, require all of the following:
 - browser/UI verification is completed if the analysis form or pending-review surface is part of the deployment.
 
 If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.
+
+## Prompt 9 operation rollback
+
+Prompt 9 introduces privileged apply, undo, history, and reset routes plus forward schema for canonical request fingerprints, ordered audit items, workflow generations, generation-scoped evidence, active-key retirement, and a private deterministic demo baseline. Its rollback objective is to stop new mutations, use audited compensation only when safe, and preserve every evidence/audit generation. It is never a request to erase an operation, decrement a version/generation, or rewrite shared Git/database history.
+
+### Contain first
+
+1. Block `POST /api/projects/[projectId]/proposals/[proposalId]/apply`, `POST /api/projects/[projectId]/operations/[operationId]/undo`, and `POST /api/projects/[projectId]/demo/reset` at the deployment layer. Keep the bounded history GET available for investigation unless the incident is a history-disclosure defect; in that case block `GET /api/projects/[projectId]/operations` too.
+2. Prefer route containment or a current generation-aware artifact with operation POSTs disabled. Commit `7e7405a` is the pre-Prompt 9 application reference and removes the operation routes, but it predates workflow-generation revision v2 and current-generation repository filters. If it is redeployed after the Prompt 9 migrations, also contain the analysis route and do not treat its workflow reads as archive-aware until a reviewed compatibility artifact or forward migration is deployed.
+3. Record only safe incident coordinates: deployed commit, local/remote migration versions, workspace/project/proposal/action/operation IDs, operation type/state/error code, workflow generation, item versions, and timestamps. Do not copy source text, human responses, before/after values, reverse payloads, credentials, or private audit data into Git or a public ticket.
+4. Preserve database and deployment logs under normal retention. If the service-role key may be exposed, rotate it in the provider/deployment secret stores and keep every privileged route closed until the replacement and grant inventory are verified. Never print or commit the key.
+5. If application containment is insufficient, ship a new numbered forward migration that revokes `service_role` execution from the three public operation wrappers and their private implementations. Do not edit or remove an already applied migration. Regrant only after a reviewed replacement is verified.
+
+### Apply-operation recovery
+
+1. Stop new apply requests and read the operation header plus its ordered operation items through the authorized history boundary. Verify project, proposal, actor, idempotency fingerprint, state, reversibility, item IDs, expected/resulting versions, and current workflow generation.
+2. A terminal failed apply is expected to have no project mutation and no partial operation items. Keep the failed row and its consumed idempotency key. Do not change its state/hash or retry a different request under that key.
+3. An unexpected route/RPC error may roll back before a failed operation header persists. Keep apply closed, look up the idempotency key through the authorized history boundary, and verify that proposal/action/item state is unchanged. If no terminal operation exists, preserve safe request coordinates for reconciliation; never fabricate or backfill runtime audit rows to make the attempt appear terminal.
+4. For a successful operation marked entirely reversible, request the normal compensating undo only if every target still has the recorded final version and latest after-state for each affected field. Let the undo preflight handle multiple updates to one item and reverse the complete plan in descending ordinal order. Stop on any bounded conflict; never force a field value or version.
+5. Do not use undo for an operation containing task/risk creation or confirmation activity. Those operations are intentionally nonreversible. A product owner must approve a new forward action: for example, cancel a created task/risk using its current version or add a corrective confirmation/activity. Preserve the created record and original audit; never delete either to simulate rollback.
+6. If the apply audit itself is suspected to be incomplete or incorrect, do not trust its reverse payload. Keep the route closed, compare the current state with trusted backup/PITR and product-owner evidence, and ship a separately reviewed compensating operation or forward repair. Never hand-edit `operation_logs`, `operation_items`, proposal states, or item versions.
+
+### Undo-operation recovery
+
+- A failed undo with `undo_conflict` changes no target. Retain its safe conflict details, reload the named item versions/current state, and require human reconciliation. A new reviewed action may compensate the original intent; do not bypass the conflict with direct SQL.
+- A successful undo is final append-only history and cannot itself be undone. If it was requested by mistake, create a new reviewed proposal/action against current versions and apply it as a separate operation. The original apply and undo remain visible.
+- Same-key/same-request replay must return the same terminal undo. Same-key/different-request conflict is containment evidence, not permission to edit the key or request hash. Use a new key only for a genuinely new, human-reviewed operation.
+- Do not remove or relax the unique successful-reversal index. If a concurrency defect is suspected, close undo, inventory every reversal ID, and repair through a forward migration without deleting either operation.
+
+### Demo-reset recovery
+
+1. Disable the reset POST immediately. Keep `DEMO_PROJECT_SLUG` and `DEMO_RESET_SECRET` only in the server secret store; removing/invalidating reset configuration is an additional operator kill switch, not a replacement for route containment.
+2. Record the reset operation ID, actor, configured project slug, closing/current generation, and the active baseline counts. Confirm whether the private baseline matches canonical checksum `f5fdef78150fe8eb6a87962e50e635e60927909fbf70019a2f53cee970624f8a`, computed from the versioned canonical serialization of ordered item/dependency fields excluding `created_at`. Do not log the serialized private rows.
+3. If checksum or 24-item/26-dependency validation fails, reset must remain closed and no project state should have changed. Rebuild the private snapshot only through a reviewed forward migration from the version-controlled synthetic seed, then recompute the existing pinned digest. Never change the expected digest merely to bless unexplained snapshot drift.
+4. A successful reset has no built-in undo. Do not decrement `projects.workflow_generation`, relabel old rows as current, delete the reset operation, or erase archived evidence. The reset's canonical baseline is the safe current state while recovery is assessed.
+5. Nonbaseline items survive as cancelled, retired records; do not hard-delete them. If a product-approved recovery needs one, restore its material fields through a reviewed forward operation in the current generation and resolve any active item-key collision explicitly. Nonbaseline dependency edges are not retained by baseline reset, so reconstruct them only from a trusted pre-reset backup/PITR or independently verified product record—never by inference from stale graph output.
+6. To return intentionally to the canonical demo baseline after a corrected reset implementation, wait for the rate window and use a new idempotency key. Replaying the original key must remain a no-op duplicate. Do not edit operation timestamps or failed rows to bypass the 60-second rate limit.
+7. Wrong-slug, non-demo, cross-project, or cross-workspace behavior is a security incident. Keep all operation routes contained, preserve safe IDs, audit owner/admin sessions and RPC grants, and use backup/PITR comparison plus a separately reviewed forward repair. Do not run reset against another project as a diagnostic.
+
+### Workflow-generation and archive policy
+
+- Workflow generation is monotonic. Never decrement it, reuse a prior number, or bulk-update archived evidence, analysis, proposal, operation, or activity rows into the current generation.
+- A reset operation belongs to the closing generation. Current planning/history defaults to the active generation; `includeArchived=true` is a bounded read for investigation, not a mutation mechanism.
+- The same normalized source may legitimately appear again in a later generation. Keep source-document lookup/reuse and analysis duplicate/rate queries scoped to the current generation, and preserve both generations' source documents and claims. Do not alter hashes/revisions or broaden reuse across reset boundaries to deduplicate archived evidence.
+- Retired items remain historical identities but do not reserve the active key namespace. Keep active-key uniqueness partial and deterministic. Before unretiring an item, check for an active key collision and resolve it through an explicit reviewed rename or leave the old item retired; never disable the index to force two active keys.
+- If pre-reset business state must be reintroduced, create reviewed current-generation records or operations from trusted evidence. Preserve the archived originals and link the recovery in operator notes/activity rather than retagging history.
+
+### Forward-only database correction
+
+Never delete `20260718190000_add_approval_undo_demo_reset.sql`, its hardening migration, an applied ledger row, workflow-generation columns, audit hashes, baseline tables, or stored operations. Do not run a destructive down migration. For a defect:
+
+1. contain the affected routes and identify the exact migration/function/index/trigger plus affected IDs and generations;
+2. create a new numbered forward migration that revokes or replaces the smallest unsafe capability while leaving history readable;
+3. preserve the service-role-only `SECURITY INVOKER` wrapper, private empty-`search_path` implementation, fully qualified object references, actor/role recheck, and explicit execution grants;
+4. preserve `operation_logs_immutable` and `operation_items_immutable`; if a migration-owned backfill is unavoidable, disable a trigger only inside one reviewed transaction, update only the necessary legacy rows, and re-enable it before exposing any function;
+5. preserve canonical fingerprint semantics, one-successful-undo uniqueness, current-generation source lookup/reuse and rate-limit scoping, deterministic active-key uniqueness, and the pinned baseline checksum unless the forward migration includes a reviewed compatibility/data plan;
+6. regenerate database types and run rollback-wrapped SQL against the confirmed target before regranting RPC execution; and
+7. document the repair and exact non-secret verification without rewriting earlier audit evidence.
+
+### Reopen criteria
+
+Keep operation writes closed until all applicable criteria are recorded:
+
+- Node 22 lint, typecheck, complete unit suite, production build, and `git diff --check` on the exact artifact;
+- linked migration ledger, generated types, public/private schema lint, security advisor, RLS/grant inventory, immutable triggers, and no unvalidated constraints;
+- rollback-wrapped tests for role/tenant denial, the four-action allowlist, required human input, partial selection, transaction rollback, canonical request permutations/collisions, ordered audit, same-item multi-update undo, bounded undo conflicts, and no undo-of-undo;
+- deterministic reset tests for the pinned baseline checksum, 24 active items, 26 dependencies, retired-history preservation, current-generation source reuse, active-key reuse, one-step generation advance, duplicate replay, rate limit, and wrong/non-demo denial;
+- one synthetic owner/admin apply → history → undo → reset flow on the confirmed linked project, with archived history checked and no private values recorded; and
+- viewer denial and complete browser feedback/accessibility checks if those controls are exposed in the deployed UI.
+
+This runbook defines recovery procedure; it is not execution evidence. Exact Prompt 9 migration, linked SQL/RPC, Node, and remaining authenticated browser results belong in `docs/qa-checklist.md` and `docs/codex-log.md`. If any applicable gate is unavailable, leave it visibly pending and keep the affected write route contained.

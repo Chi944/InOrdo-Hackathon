@@ -27,6 +27,7 @@ export type Database = {
           state: Database["public"]["Enums"]["proposal_state"]
           title: string
           updated_at: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -41,6 +42,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["proposal_state"]
           title: string
           updated_at?: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -55,6 +57,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["proposal_state"]
           title?: string
           updated_at?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -99,6 +102,7 @@ export type Database = {
           id: string
           project_id: string
           summary: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -111,6 +115,7 @@ export type Database = {
           id?: string
           project_id: string
           summary: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -123,6 +128,7 @@ export type Database = {
           id?: string
           project_id?: string
           summary?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -161,6 +167,7 @@ export type Database = {
           result_metadata: Json | null
           source_document_id: string
           state: Database["public"]["Enums"]["analysis_request_state"]
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -181,6 +188,7 @@ export type Database = {
           result_metadata?: Json | null
           source_document_id: string
           state?: Database["public"]["Enums"]["analysis_request_state"]
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -201,6 +209,7 @@ export type Database = {
           result_metadata?: Json | null
           source_document_id?: string
           state?: Database["public"]["Enums"]["analysis_request_state"]
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -269,6 +278,7 @@ export type Database = {
           state: Database["public"]["Enums"]["change_event_state"]
           subject_item_id: string
           updated_at: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -291,6 +301,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["change_event_state"]
           subject_item_id: string
           updated_at?: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -313,6 +324,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["change_event_state"]
           subject_item_id?: string
           updated_at?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -364,6 +376,7 @@ export type Database = {
           path_item_ids: string[]
           project_id: string
           severity: Database["public"]["Enums"]["impact_severity"]
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -376,6 +389,7 @@ export type Database = {
           path_item_ids: string[]
           project_id: string
           severity: Database["public"]["Enums"]["impact_severity"]
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -388,6 +402,7 @@ export type Database = {
           path_item_ids?: string[]
           project_id?: string
           severity?: Database["public"]["Enums"]["impact_severity"]
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -425,6 +440,7 @@ export type Database = {
           started_at: string
           started_by: string
           state: Database["public"]["Enums"]["impact_run_state"]
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -437,6 +453,7 @@ export type Database = {
           started_at?: string
           started_by: string
           state?: Database["public"]["Enums"]["impact_run_state"]
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -449,6 +466,7 @@ export type Database = {
           started_at?: string
           started_by?: string
           state?: Database["public"]["Enums"]["impact_run_state"]
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -545,6 +563,7 @@ export type Database = {
           after_state: Json | null
           before_state: Json | null
           created_at: string
+          error_code: string | null
           error_message: string | null
           expected_item_version: number | null
           id: string
@@ -557,12 +576,14 @@ export type Database = {
           reverse_payload: Json | null
           reversible: boolean
           state: Database["public"]["Enums"]["operation_item_state"]
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
           after_state?: Json | null
           before_state?: Json | null
           created_at?: string
+          error_code?: string | null
           error_message?: string | null
           expected_item_version?: number | null
           id?: string
@@ -575,12 +596,14 @@ export type Database = {
           reverse_payload?: Json | null
           reversible?: boolean
           state: Database["public"]["Enums"]["operation_item_state"]
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
           after_state?: Json | null
           before_state?: Json | null
           created_at?: string
+          error_code?: string | null
           error_message?: string | null
           expected_item_version?: number | null
           id?: string
@@ -593,6 +616,7 @@ export type Database = {
           reverse_payload?: Json | null
           reversible?: boolean
           state?: Database["public"]["Enums"]["operation_item_state"]
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -630,6 +654,7 @@ export type Database = {
         Row: {
           completed_at: string
           created_at: string
+          error_code: string | null
           error_message: string | null
           id: string
           idempotency_key: string
@@ -637,13 +662,18 @@ export type Database = {
           operation_type: Database["public"]["Enums"]["operation_type"]
           project_id: string
           proposal_id: string | null
+          request_hash: string
+          result_metadata: Json
           reverses_operation_id: string | null
+          reversible: boolean
           state: Database["public"]["Enums"]["operation_state"]
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
           completed_at?: string
           created_at?: string
+          error_code?: string | null
           error_message?: string | null
           id?: string
           idempotency_key: string
@@ -651,13 +681,18 @@ export type Database = {
           operation_type: Database["public"]["Enums"]["operation_type"]
           project_id: string
           proposal_id?: string | null
+          request_hash: string
+          result_metadata: Json
           reverses_operation_id?: string | null
+          reversible?: boolean
           state: Database["public"]["Enums"]["operation_state"]
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
           completed_at?: string
           created_at?: string
+          error_code?: string | null
           error_message?: string | null
           id?: string
           idempotency_key?: string
@@ -665,8 +700,12 @@ export type Database = {
           operation_type?: Database["public"]["Enums"]["operation_type"]
           project_id?: string
           proposal_id?: string | null
+          request_hash?: string
+          result_metadata?: Json
           reverses_operation_id?: string | null
+          reversible?: boolean
           state?: Database["public"]["Enums"]["operation_state"]
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -732,6 +771,7 @@ export type Database = {
           due_date: string | null
           event_date: string | null
           id: string
+          is_demo_retired: boolean
           item_key: string
           item_type: Database["public"]["Enums"]["project_item_type"]
           metadata: Json
@@ -752,6 +792,7 @@ export type Database = {
           due_date?: string | null
           event_date?: string | null
           id?: string
+          is_demo_retired?: boolean
           item_key: string
           item_type: Database["public"]["Enums"]["project_item_type"]
           metadata?: Json
@@ -772,6 +813,7 @@ export type Database = {
           due_date?: string | null
           event_date?: string | null
           id?: string
+          is_demo_retired?: boolean
           item_key?: string
           item_type?: Database["public"]["Enums"]["project_item_type"]
           metadata?: Json
@@ -827,6 +869,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["project_status"]
           updated_at: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -839,6 +882,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -851,6 +895,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -886,6 +931,7 @@ export type Database = {
           state: Database["public"]["Enums"]["proposal_action_state"]
           target_item_id: string | null
           updated_at: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -903,6 +949,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["proposal_action_state"]
           target_item_id?: string | null
           updated_at?: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -920,6 +967,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["proposal_action_state"]
           target_item_id?: string | null
           updated_at?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -967,6 +1015,7 @@ export type Database = {
           source_kind: string
           source_url: string | null
           title: string
+          workflow_generation: number
           workspace_id: string
         }
         Insert: {
@@ -982,6 +1031,7 @@ export type Database = {
           source_kind: string
           source_url?: string | null
           title: string
+          workflow_generation?: number
           workspace_id: string
         }
         Update: {
@@ -997,6 +1047,7 @@ export type Database = {
           source_kind?: string
           source_url?: string | null
           title?: string
+          workflow_generation?: number
           workspace_id?: string
         }
         Relationships: [
@@ -1105,6 +1156,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_project_proposal: {
+        Args: {
+          p_actor_id: string
+          p_human_inputs: Json
+          p_idempotency_key: string
+          p_project_id: string
+          p_proposal_id: string
+          p_selected_action_ids: string[]
+        }
+        Returns: Json
+      }
       begin_project_analysis: {
         Args: {
           p_actor_id: string
@@ -1137,6 +1199,24 @@ export type Database = {
           p_failure_code: string
           p_failure_provider_request_id: string
           p_failure_stage: string
+        }
+        Returns: Json
+      }
+      reset_demo_project: {
+        Args: {
+          p_actor_id: string
+          p_idempotency_key: string
+          p_project_id: string
+          p_project_slug: string
+        }
+        Returns: Json
+      }
+      undo_project_operation: {
+        Args: {
+          p_actor_id: string
+          p_idempotency_key: string
+          p_operation_id: string
+          p_project_id: string
         }
         Returns: Json
       }

@@ -118,4 +118,35 @@ values
   ('40000000-0000-4000-8000-000000000026','10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000024','30000000-0000-4000-8000-000000000001','scheduled_by','Day-of contacts are tied to the event date.','00000000-0000-4000-8000-000000000101')
 on conflict (id) do nothing;
 
+-- Prompt 9 reset baseline. Migrations run before seed on a fresh database, so
+-- the canonical snapshot is populated here as well as captured during a linked
+-- upgrade. These private rows are never exposed through the API.
+insert into private.demo_baseline_project_items (
+  project_id, item_id, workspace_id, item_key, item_type, title, description,
+  status, priority, owner_id, start_date, due_date, event_date, metadata,
+  created_by, created_at
+)
+select
+  item.project_id, item.id, item.workspace_id, item.item_key, item.item_type,
+  item.title, item.description, item.status, item.priority, item.owner_id,
+  item.start_date, item.due_date, item.event_date, item.metadata,
+  item.created_by, item.created_at
+from public.project_items as item
+where item.workspace_id = '10000000-0000-4000-8000-000000000001'::uuid
+  and item.project_id = '20000000-0000-4000-8000-000000000001'::uuid
+on conflict (project_id, item_id) do nothing;
+
+insert into private.demo_baseline_dependencies (
+  project_id, dependency_id, workspace_id, from_item_id, to_item_id,
+  relationship, rationale, created_by, created_at
+)
+select
+  dependency.project_id, dependency.id, dependency.workspace_id,
+  dependency.from_item_id, dependency.to_item_id, dependency.relationship,
+  dependency.rationale, dependency.created_by, dependency.created_at
+from public.item_dependencies as dependency
+where dependency.workspace_id = '10000000-0000-4000-8000-000000000001'::uuid
+  and dependency.project_id = '20000000-0000-4000-8000-000000000001'::uuid
+on conflict (project_id, dependency_id) do nothing;
+
 commit;

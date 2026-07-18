@@ -24,6 +24,10 @@ const demoEnvSchema = z.object({
   DEMO_PROJECT_SLUG: z.string().min(1),
 });
 
+const demoResetEnvSchema = demoEnvSchema.extend({
+  DEMO_RESET_SECRET: z.string().min(1),
+});
+
 export const openAIEnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_MODEL: z.string().trim().min(1).default("gpt-5.6-luna"),
@@ -67,6 +71,17 @@ export function getDemoProjectSlug(): string {
   return parseEnvironment("Demo project", demoEnvSchema, {
     DEMO_PROJECT_SLUG: process.env.DEMO_PROJECT_SLUG,
   }).DEMO_PROJECT_SLUG;
+}
+
+export function parseDemoResetEnv(values: unknown) {
+  return parseEnvironment("Demo reset", demoResetEnvSchema, values);
+}
+
+export function getDemoResetEnv(): z.infer<typeof demoResetEnvSchema> {
+  return parseDemoResetEnv({
+    DEMO_PROJECT_SLUG: process.env.DEMO_PROJECT_SLUG,
+    DEMO_RESET_SECRET: process.env.DEMO_RESET_SECRET,
+  });
 }
 
 export function parseOpenAIEnv(values: unknown) {

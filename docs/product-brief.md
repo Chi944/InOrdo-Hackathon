@@ -34,4 +34,4 @@ External connectors, embeddings, autonomous mutations, enterprise administration
 
 ## Current status
 
-The repository, workspace database, RLS, authentication boundary, native project-item/dependency operations, and deterministic dependency traversal are implemented. The protected interface has minimal real-data controls pending Andres's full project-view work. Evidence intake, GPT analysis, recovery proposals, approvals, reversible operation application, undo, and demo reset remain unfinished and must not be presented as working.
+The repository, workspace database, RLS, authentication boundary, native project-item/dependency operations, deterministic traversal, evidence/analysis API, inert recovery proposals, approved operation application, audit history, compensating undo, and named demo-reset backend contracts are implemented and automatically/linked verified. The protected interface still has minimal real-data controls pending Andres's project, impact, and approval views. A live OpenAI request and the authenticated end-to-end browser journey remain unfinished and must not be presented as working.

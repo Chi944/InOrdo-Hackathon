@@ -43,6 +43,7 @@ function createSupabaseProjectGraphSource(
         .select("id")
         .eq("workspace_id", scope.workspaceId)
         .eq("project_id", scope.projectId)
+        .eq("is_demo_retired", false)
         .in("status", activeItemStatuses)
         .order("id")
         .limit(maxProjectGraphItems + 1);

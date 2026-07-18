@@ -107,6 +107,11 @@ describe("client bundle boundaries", () => {
       "src/features/analysis/runtime.ts",
       "src/features/analysis/service.ts",
       "src/features/analysis/supabase-persistence.ts",
+      "src/features/operations/history.ts",
+      "src/features/operations/route-handler.ts",
+      "src/features/operations/runtime.ts",
+      "src/features/operations/service.ts",
+      "src/features/operations/supabase-persistence.ts",
     ]) {
       expect(readFileSync(resolve(process.cwd(), path), "utf8"), path).toMatch(
         /^import "server-only";/,
@@ -158,6 +163,8 @@ describe("client bundle boundaries", () => {
     const allowedModules = new Set([
       "features/analysis/runtime.ts",
       "features/analysis/supabase-persistence.ts",
+      "features/operations/runtime.ts",
+      "features/operations/supabase-persistence.ts",
     ]);
     const requestModules = [
       ...listSourceFiles(resolve(sourceRoot, "app")),
@@ -176,6 +183,12 @@ describe("client bundle boundaries", () => {
     expect(
       readFileSync(
         resolve(sourceRoot, "features/analysis/runtime.ts"),
+        "utf8",
+      ),
+    ).toContain("createPrivilegedSupabaseClient");
+    expect(
+      readFileSync(
+        resolve(sourceRoot, "features/operations/runtime.ts"),
         "utf8",
       ),
     ).toContain("createPrivilegedSupabaseClient");

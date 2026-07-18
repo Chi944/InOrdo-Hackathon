@@ -30,7 +30,7 @@ Server Components, route handlers, and server actions create a fresh Supabase se
 
 The request-scoped and privileged clients have distinct nominal TypeScript capabilities, so a privileged client cannot accidentally satisfy an API that requires a user-scoped client. The session proxy copies refreshed cookies and cache-safety headers to normal and redirect responses. Route handlers can pass a response `Headers` sink to the server-client factory and must apply that same object to the returned response.
 
-The browser client can read only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server environment validation is isolated from the public schema. The privileged client imports a server-only marker, reads `SUPABASE_SERVICE_ROLE_KEY` only on the server, disables session persistence, and is reserved for narrowly reviewed operations such as a future controlled demo reset. Normal authenticated reads and writes always use the user's session so RLS remains in force.
+The browser client can read only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server environment validation is isolated from the public schema. The privileged client imports a server-only marker, reads `SUPABASE_SERVICE_ROLE_KEY` only on the server, disables session persistence, and is reserved for narrowly reviewed analysis persistence and approved operations. Normal authenticated reads and writes always use the user's session so RLS remains in force.
 
 ### Authorization and data access
 
@@ -132,7 +132,7 @@ Traversal builds adjacency from each upstream `to_item_id` to dependent `from_it
 
 ### Analysis idempotency and persistence
 
-Analysis uses two related hashes without changing the original evidence. The normalized source hash is SHA-256 over NFC-normalized text with normalized line endings, trimmed line edges, collapsed horizontal whitespace, and trimmed outer whitespace. Raw text is stored unchanged. The project revision is SHA-256 over a stable representation of active item IDs and versions plus normalized dependency endpoint pairs. Relationship labels do not affect reachability revision because traversal deduplicates the same endpoint pair. The application and database must compute the same revision contract.
+Analysis uses two related hashes without changing the original evidence. The normalized source hash is SHA-256 over NFC-normalized text with normalized line endings, trimmed line edges, collapsed horizontal whitespace, and trimmed outer whitespace. Raw text is stored unchanged. The project revision is SHA-256 over the current workflow generation, a stable representation of active item IDs and versions, and normalized dependency endpoint pairs. Relationship labels do not affect reachability revision because traversal deduplicates the same endpoint pair. Including the generation prevents a restored post-reset fixture from reusing an archived analysis claim with otherwise identical graph state. The application and database must compute the same revision contract.
 
 `(workspace_id, project_id, project_revision, normalized_content_sha256)` is the unique analysis key. The request-scoped client first verifies a non-anonymous contributor and loads one bounded project context. Only then is the privileged persistence capability initialized. A service-role-only `begin_project_analysis` wrapper passes that verified actor to a private implementation, which independently rechecks contributor membership, project scope, hashes, bounds, and the current revision before storing immutable evidence and a `processing` claim. Transaction-scoped advisory locks serialize the shared source key and actor rate check. At most five new claims per actor and project are accepted in a rolling ten-minute window; duplicate keys return the existing state and IDs without another model call.
 
@@ -156,19 +156,43 @@ After both model calls and all application checks succeed, `complete_project_ana
 - **Replay, duplicate spend, and request floods:** the database owns the unique project-revision/source-hash claim, transaction advisory locks serialize duplicate and actor-rate decisions, and a five-new-claims/10-minute actor/project limit runs before provider work. This is a P0 abuse control, not a substitute for deployment-level traffic and account controls.
 - **Stale state and partial persistence:** finalization locks the claim, recomputes project revision and deterministic paths, rechecks item version/current value, and atomically writes all derived records or none. Evidence and the claim intentionally survive provider or finalization failure for auditability.
 - **Secret or sensitive-data leakage:** OpenAI and service-role credentials are server-only and excluded from prompts and metadata. The model receives only one bounded project snapshot needed for the analysis. Safe failure records contain an allowlisted stage/code and optional provider request ID, never raw provider output.
-- **Model-caused mutation:** the model adapter has no tools, proposal actions persist only as `pending`, the analysis route has no project-item write operation, and a future approval service must reauthorize and revalidate before any mutation.
+- **Model-caused mutation:** the model adapter has no tools, proposal actions persist only as `pending`, the analysis route has no project-item write operation, and the Prompt 9 operation service reauthorizes and revalidates each selected action before any mutation.
 
-Residual operational risks are tracked rather than hidden: a request without a trustworthy `Content-Length` is size-checked after `Request.text()` has read it, so the deployment must also enforce an upstream request-body limit; a failure while recording a terminal failure can leave a visible `processing` claim for operator reconciliation; and per-actor limits do not replace workspace-wide abuse monitoring. The linked migration, RLS/grant behavior, and one funded live request remain explicit verification gates until recorded in the QA checklist.
+Residual operational risks are tracked rather than hidden: a request without a trustworthy `Content-Length` is size-checked after `Request.text()` has read it, so the deployment must also enforce an upstream request-body limit; a failure while recording a terminal failure can leave a visible `processing` claim for operator reconciliation; and per-actor limits do not replace workspace-wide abuse monitoring. Linked migrations and RLS/grant behavior are verified. One funded live request and the authenticated browser flow remain explicit release gates in the QA checklist.
 
 ### Approval and mutation
 
 A recovery action is immutable proposal data until a person selects it. Prompt 7 stores model `update_item_field` as database `update_item`; `create_task` and `create_risk` as `create_item` with an explicit `item_type`; and `request_confirmation` as its dedicated inert action. Unsupported action types are rejected, never coerced. All new proposal actions are `pending` and have no mutation privilege.
 
-Before a future application operation, server code must recheck identity, project membership, permission, current record version, action validation, and idempotency. A successful mutation and its reversible before-state must be recorded in one transaction. Prompt 7 does not implement or claim that application path.
+The Prompt 9 operation routes are:
+
+- `POST /api/projects/[projectId]/proposals/[proposalId]/apply`
+- `GET /api/projects/[projectId]/operations?limit=25&includeArchived=false`
+- `POST /api/projects/[projectId]/operations/[operationId]/undo`
+- `POST /api/projects/[projectId]/demo/reset`
+
+All return private, no-store JSON. POST bodies are strict and bounded. Apply accepts only selected action UUIDs, zero or more matching explicit human responses, and an idempotency key. Undo accepts only an idempotency key. Reset accepts only an explicit `confirmed: true` and an idempotency key. Path identifiers cannot be overridden in a body, and unknown keys are rejected.
+
+Owner/admin authorization runs with the request-scoped client before the privileged executor is initialized. A public `SECURITY INVOKER` wrapper is executable only by `service_role` and delegates to a private, empty-`search_path`, fully qualified implementation. The implementation independently rechecks the verified actor, workspace/project/proposal ownership, action state, payload allowlist, required human input, current item version, and idempotency fingerprint. The service-role boundary is therefore a constrained transaction capability, not an authorization substitute.
+
+Exactly four proposal action forms can execute:
+
+1. update one allowlisted project-item field with its expected version;
+2. create one constrained task;
+3. create one constrained risk;
+4. append a confirmation activity with explicit human input when required.
+
+No operation action can delete data, edit membership, add or remove dependency edges, run arbitrary patches or SQL, or call an external system. Selected actions execute in immutable proposal ordinal order. Their approval and application transitions, project mutations, operation header, and ordered item-level audit records commit in one database transaction or none do. The apply route accepts only `pending` actions and moves each selected action `pending -> approved -> applied`; an unselected action remains `pending`, and a `rejected`, `applied`, or `stale` action can never be revived through apply. The proposal becomes `partially_approved` while pending actions remain and `applied` when none remain. Expected validation/business failures produce append-only terminal safe `failed` records with allowlisted codes. An unexpected database exception rolls back atomically and returns a generic error, but may leave no failed audit row; there is still no externally visible half-applied state.
+
+Idempotency is scoped to the project operation and stores a deterministic request fingerprint. Repeating the same key and request returns the original operation ID without reapplying effects. Reusing that key for a different payload conflicts. Per-target locks, expected versions, and current-value checks prevent a stale reviewer action from overwriting newer work.
 
 ### Undo and reset
 
-Undo creates a compensating operation; it does not erase history. Demo reset is a server-only, secret-protected operation limited to the configured synthetic project slug. It must be deterministic and unable to target a non-demo project.
+Undo creates a compensating operation; it does not erase history. P0 marks an apply operation reversible only when every selected mutating action is a reversible field update. Task/risk creation and confirmation activity are deliberately nonreversible, so any operation containing them cannot be undone. A reversible undo groups records by item, locks every target, checks the item's final resulting version plus the latest recorded after-state for each affected field, and only then applies reverse payloads in descending original ordinal order. This sequence-safe policy supports multiple updates to one item. A mismatch returns a bounded undo conflict without partial reversal. The new operation points to the original through `reverses_operation_id`; repeat requests are idempotent, only one successful reversal can exist, and `undo` or `demo_reset` operations can never be undo targets.
+
+Demo reset is restricted to an owner/admin, the configured `DEMO_PROJECT_SLUG`, and a project explicitly marked as the demo. `DEMO_RESET_SECRET` is validated only as server-held configuration after authorization and before privileged initialization. No caller supplies it through a browser, URL, header, JSON body, RPC argument, audit record, or log. The RPC independently rechecks the actor, named slug, demo marker, baseline availability, and reset rate limit.
+
+Reset preserves history with a monotonically increasing `projects.workflow_generation`. Workflow records and operations are tagged with the generation in which they were created. Reset writes its own operation in the closing generation, restores the exact seeded items and 26 dependency edges, retires rather than deletes nonbaseline demo items, and then advances the project generation. Normal history and planning reads select the current generation; an explicit bounded `includeArchived=true` history read can include earlier generations. Replaying the same idempotency key is stable, while a distinct immediate reset is rate-limited. No evidence or operation row is erased.
 
 ## Security invariants
 
@@ -178,7 +202,7 @@ Undo creates a compensating operation; it does not erase history. Demo reset is 
 - Public demo data is synthetic.
 - Authorization and approval checks fail closed.
 
-## Planned modules
+## Implemented backend modules
 
 - `src/lib/supabase/`: typed browser and server clients.
 - `src/lib/auth/`: identity, redirect validation, authorization guards, and typed errors.
@@ -190,7 +214,7 @@ Undo creates a compensating operation; it does not erase history. Demo reset is 
 - `src/features/operations/`: authorized application, history, undo, and reset.
 - `supabase/migrations/`: schema, constraints, functions, and RLS policies.
 
-The Supabase, authentication, repository, project-record, and deterministic-impact paths were implemented through Prompt 5. Prompt 7 adds the server-only evidence/analysis pipeline and pending proposal persistence. A browser analysis form, explicit approval UI/operations, applying mutations, operation history, undo, and reset remain planned boundaries. Live browser verification still requires an operator-created Auth account and untracked local environment values. No live OpenAI call or browser manual verification has occurred on the Prompt 7 branch because the required environment variable names were absent.
+The Supabase, authentication, repository, project-record, and deterministic-impact paths were implemented through Prompt 5. Prompt 7 adds the server-only evidence/analysis pipeline and pending proposal persistence. Prompt 9 adds the approval/application, ordered operation history, compensating undo, and history-preserving demo-reset backend contracts. Linked migrations, schema/security checks, and rollback-wrapped RPC/audit verification are complete. Complete browser wiring and authenticated HTTP verification remain integration tasks.
 
 ## P0 database model
 
@@ -200,7 +224,7 @@ The core hierarchy is `workspaces` → `projects` → canonical `project_items`.
 
 Evidence and planning use `source_documents`, `analysis_requests`, `change_events`, `impact_runs`, `impact_items`, `action_proposals`, and `proposal_actions`. Raw source documents are append-only. `analysis_requests` stores the project-revision/source-hash claim and its one-way processing-to-succeeded/failed lifecycle without storing raw model output. Impact records store deterministic paths and depth; proposals and actions remain inert until reviewed.
 
-Operations use append-only `operation_logs` and `operation_items`. An operation header is inserted only in a final succeeded or failed state inside the same transaction as its effects. Each item can record expected/resulting versions, before/after snapshots, and an explicit reverse payload. Undo is a new compensating operation referencing the original; it never updates or deletes history. `activity_events` is append-only supplemental dashboard context.
+Operations use append-only `operation_logs` and `operation_items`. Successful and expected-rejection operation headers are inserted only in a terminal state inside the same transaction as their effects or rejection decision. Unexpected database exceptions may roll back before a failed header can persist. A request hash binds an idempotency key to one normalized request. Each selected action receives a stable ordinal and can record expected/resulting versions, before/after snapshots, an explicit reverse payload, reversibility, and a safe error code. Undo is a new compensating operation referencing the original; it never updates or deletes history. `activity_events` is append-only supplemental dashboard context.
 
 Composite foreign keys carry `workspace_id` and `project_id` through every project-owned domain relationship. This prevents project records and dependency edges from crossing tenant or project boundaries. An item's optional owner additionally has a composite foreign key to `workspace_members`, so direct database clients cannot assign a profile from another workspace. Other profile references remain durable attribution identities and do not grant membership. RLS and guarded review transitions establish authorization, while identity triggers prevent rewriting tenant scope or historical attribution. Core and audit parents use restrictive deletion rather than cascades that erase evidence or operation history.
 
@@ -227,7 +251,7 @@ The private membership predicates are stable `SECURITY DEFINER` functions used t
 
 ### Demo seed and verification
 
-`supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx supabase db reset` reconstructs the fixture; a production-safe reset RPC is intentionally deferred to the operation-service task.
+`supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx supabase db reset` reconstructs the fixture for local development. The Prompt 9 production-safe reset uses a reviewed named-project RPC, baseline snapshots, workflow generations, non-destructive retirement, idempotency, and rate limiting instead of deleting history.
 
 The transaction-wrapped `supabase/tests/verify_p0.sql` checks seed counts and the expected path, anonymous and cross-workspace invisibility, viewer mutation denial, cross-workspace owner rejection, reviewer attribution, immutable record identity, server-only audit writes, the self-dependency constraint, and operation idempotency uniqueness, then rolls back its test rows. It is plain assertion SQL, not pgTAP.
 

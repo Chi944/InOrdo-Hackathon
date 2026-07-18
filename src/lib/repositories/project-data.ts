@@ -56,6 +56,21 @@ function pagination(limit: number, offset: number, maximum: number) {
   };
 }
 
+async function getCurrentWorkflowGeneration(
+  client: ServerSupabaseClient,
+  scope: AuthorizedProjectScope,
+) {
+  const { data, error } = await client
+    .from("projects")
+    .select("workflow_generation")
+    .eq("workspace_id", scope.workspaceId)
+    .eq("id", scope.projectId)
+    .single();
+
+  if (error || !data) throw new RepositoryError();
+  return data.workflow_generation;
+}
+
 export async function getDemoWorkspaceProject(
   client: ServerSupabaseClient,
   slug = getDemoProjectSlug(),
@@ -88,6 +103,7 @@ export async function getProjectOverview(
   client: ServerSupabaseClient,
   scope: AuthorizedProjectScope,
 ) {
+  const generation = await getCurrentWorkflowGeneration(client, scope);
   const projectRequest = client
     .from("projects")
     .select(projectSelector)
@@ -99,25 +115,29 @@ export async function getProjectOverview(
     .from("project_items")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", scope.workspaceId)
-    .eq("project_id", scope.projectId);
+    .eq("project_id", scope.projectId)
+    .eq("is_demo_retired", false);
 
   const sourceCountRequest = client
     .from("source_documents")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", scope.workspaceId)
-    .eq("project_id", scope.projectId);
+    .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation);
 
   const proposalCountRequest = client
     .from("action_proposals")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", scope.workspaceId)
-    .eq("project_id", scope.projectId);
+    .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation);
 
   const operationCountRequest = client
     .from("operation_logs")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", scope.workspaceId)
-    .eq("project_id", scope.projectId);
+    .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation);
 
   const [project, items, sources, proposals, operations] = await Promise.all([
     projectRequest,
@@ -163,6 +183,7 @@ export async function listProjectItems(
     .select(projectItemSelector, { count: "exact" })
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
+    .eq("is_demo_retired", false)
     .order("item_key")
     .order("id")
     .range(page.offset, page.end);
@@ -185,6 +206,7 @@ export async function getItemAndDependencies(
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
     .eq("id", itemId)
+    .eq("is_demo_retired", false)
     .maybeSingle();
 
   const prerequisiteRequest = client
@@ -234,11 +256,13 @@ export async function listSourceUpdates(
   requestedLimit = 25,
 ) {
   const limit = clampInteger(requestedLimit, 1, 25);
+  const generation = await getCurrentWorkflowGeneration(client, scope);
   const { data, error } = await client
     .from("source_documents")
     .select(sourceUpdateSelector)
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -256,11 +280,13 @@ export async function listImpactRunsAndProposals(
   requestedLimit = 25,
 ) {
   const limit = clampInteger(requestedLimit, 1, 25);
+  const generation = await getCurrentWorkflowGeneration(client, scope);
   const impactRequest = client
     .from("impact_runs")
     .select(impactRunSelector)
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation)
     .order("started_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -270,6 +296,7 @@ export async function listImpactRunsAndProposals(
     .select(proposalSelector)
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -291,6 +318,7 @@ export async function listImpactRunsAndProposals(
       .select(proposalActionSelector)
       .eq("workspace_id", scope.workspaceId)
       .eq("project_id", scope.projectId)
+      .eq("workflow_generation", generation)
       .in("proposal_id", proposalIds)
       .order("proposal_id")
       .order("ordinal")
@@ -321,11 +349,13 @@ export async function listOperations(
   requestedLimit = 50,
 ) {
   const limit = clampInteger(requestedLimit, 1, 50);
+  const generation = await getCurrentWorkflowGeneration(client, scope);
   const { data, error } = await client
     .from("operation_logs")
     .select(operationSelector)
     .eq("workspace_id", scope.workspaceId)
     .eq("project_id", scope.projectId)
+    .eq("workflow_generation", generation)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);

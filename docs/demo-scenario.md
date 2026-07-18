@@ -28,9 +28,10 @@ A fictional eight-person team is planning the Regional Climate Action Summit 202
 4. Show a multi-hop path from event date to speaker confirmation to programme lock to briefing pack.
 5. Review recovery actions individually.
 6. Leave travel rebooking unapproved because it has cost and participant consequences.
-7. Apply only approved internal fixture actions, inspect operation history, and demonstrate undo only when verified.
-8. Reset the isolated fixture to the exact baseline.
+7. Apply only selected allowlisted internal fixture actions and inspect the actor-attributed, ordered before/after history.
+8. Undo an entirely reversible field-update operation and show the linked compensating operation without erasing the original.
+9. Reset the isolated named fixture to the exact baseline through the owner/admin, server-held reset boundary.
 
 ## Reset baseline
 
-Reset restores the original event date, seeded records and edges, no source update, no candidate change, no proposals, no approvals, and no operation history.
+Reset restores the original event date, 24 active seeded records, and 26 seeded dependency edges. Nonbaseline demo items are retired rather than deleted. A new workflow generation makes current planning and history views start clean, while the prior evidence, proposals, approvals, apply/undo trail, and reset operation remain available as archived history. These invariants passed rollback-wrapped linked SQL/RPC verification without retaining test data. The end-to-end authenticated browser demonstration remains pending in `docs/qa-checklist.md`.

@@ -11,7 +11,7 @@ import type { ServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert, TablesUpdate } from "@/types/database";
 
 export const projectRecordItemSelector =
-  "id,workspace_id,project_id,item_key,item_type,title,description,status,priority,owner_id,start_date,due_date,event_date,metadata,version,created_by,created_at,updated_at" as const;
+  "id,workspace_id,project_id,item_key,item_type,title,description,status,priority,owner_id,start_date,due_date,event_date,metadata,version,is_demo_retired,created_by,created_at,updated_at" as const;
 
 export const dependencyRecordSelector =
   "id,workspace_id,project_id,from_item_id,to_item_id,relationship,rationale,created_by,created_at" as const;
@@ -81,6 +81,7 @@ export function createSupabaseProjectRecordStore(
         .eq("workspace_id", scope.workspaceId)
         .eq("project_id", scope.projectId)
         .eq("id", itemId)
+        .eq("is_demo_retired", false)
         .maybeSingle();
 
       if (error) throw mapProjectRecordDatabaseError(error);
@@ -95,6 +96,7 @@ export function createSupabaseProjectRecordStore(
         .eq("project_id", scope.projectId)
         .eq("id", itemId)
         .eq("version", expectedVersion)
+        .eq("is_demo_retired", false)
         .select(projectRecordItemSelector)
         .maybeSingle();
 
@@ -107,7 +109,8 @@ export function createSupabaseProjectRecordStore(
         .from("project_items")
         .select(projectRecordItemSelector, { count: "exact" })
         .eq("workspace_id", scope.workspaceId)
-        .eq("project_id", scope.projectId);
+        .eq("project_id", scope.projectId)
+        .eq("is_demo_retired", false);
 
       if (filters.status) query = query.eq("status", filters.status);
       if (filters.itemType) query = query.eq("item_type", filters.itemType);
@@ -155,6 +158,7 @@ export function createSupabaseProjectRecordStore(
         .select("id")
         .eq("workspace_id", scope.workspaceId)
         .eq("project_id", scope.projectId)
+        .eq("is_demo_retired", false)
         .in("id", uniqueIds)
         .order("id");
 

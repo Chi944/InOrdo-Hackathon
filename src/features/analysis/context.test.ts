@@ -58,17 +58,21 @@ function edge(
 function source(
   items: AnalysisContextItem[],
   dependencies: DependencyEdge[],
+  generation = 1,
 ): ProjectAnalysisContextSource {
   return {
+    getProjectGeneration: vi.fn(async () => generation),
     listActiveItems: vi.fn(async () => items),
     listDependencies: vi.fn(async () => dependencies),
   };
 }
 
 describe("impact graph project revision", () => {
-  it("hashes the SQL-parity impact-graph-v1 canonical text", () => {
+  it("hashes the SQL-parity impact-graph-v2 canonical text", () => {
     const canonical = [
-      "impact-graph-v1",
+      "impact-graph-v2",
+      "generation",
+      "3",
       "items",
       "A:2",
       "B:4",
@@ -83,6 +87,7 @@ describe("impact graph project revision", () => {
       computeImpactGraphRevision(
         [item("B", 4), item("A", 2)],
         [edge("B", "A", "informs")],
+        3,
       ),
     ).toBe(expected);
   });
@@ -91,10 +96,11 @@ describe("impact graph project revision", () => {
     const items = [item("A", 2), item("B", 4), item("C", 1)];
     const dependencies = [edge("B", "A"), edge("C", "B")];
 
-    const forward = computeImpactGraphRevision(items, dependencies);
+    const forward = computeImpactGraphRevision(items, dependencies, 1);
     const reversed = computeImpactGraphRevision(
       [...items].reverse(),
       [...dependencies].reverse(),
+      1,
     );
 
     expect(forward).toMatch(/^[a-f0-9]{64}$/);
@@ -105,30 +111,51 @@ describe("impact graph project revision", () => {
     const dependencies = [edge("B", "A")];
 
     expect(
-      computeImpactGraphRevision([item("A", 1), item("B", 1)], dependencies),
+      computeImpactGraphRevision(
+        [item("A", 1), item("B", 1)],
+        dependencies,
+        1,
+      ),
     ).not.toBe(
-      computeImpactGraphRevision([item("A", 2), item("B", 1)], dependencies),
+      computeImpactGraphRevision(
+        [item("A", 2), item("B", 1)],
+        dependencies,
+        1,
+      ),
+    );
+  });
+
+  it("changes when the project workflow generation changes", () => {
+    const items = [item("A", 1), item("B", 1)];
+    const dependencies = [edge("B", "A")];
+
+    expect(computeImpactGraphRevision(items, dependencies, 1)).not.toBe(
+      computeImpactGraphRevision(items, dependencies, 2),
     );
   });
 
   it("changes when an endpoint pair changes", () => {
     const items = [item("A", 1), item("B", 1), item("C", 1)];
 
-    expect(computeImpactGraphRevision(items, [edge("B", "A")])).not.toBe(
-      computeImpactGraphRevision(items, [edge("B", "A"), edge("C", "A")]),
+    expect(computeImpactGraphRevision(items, [edge("B", "A")], 1)).not.toBe(
+      computeImpactGraphRevision(
+        items,
+        [edge("B", "A"), edge("C", "A")],
+        1,
+      ),
     );
   });
 
   it("ignores relationship labels and duplicate endpoint pairs", () => {
     const items = [item("A", 1), item("B", 1)];
-    const baseline = computeImpactGraphRevision(items, [edge("B", "A")]);
+    const baseline = computeImpactGraphRevision(items, [edge("B", "A")], 1);
 
     expect(
       computeImpactGraphRevision(items, [
         edge("B", "A", "informs"),
         edge("B", "A", "depends_on"),
         edge("B", "A", "informs"),
-      ]),
+      ], 1),
     ).toBe(baseline);
   });
 });
@@ -164,7 +191,7 @@ describe("loadProjectAnalysisContext", () => {
       edge("C", "B", "informs"),
     ]);
     expect(result.revision).toBe(
-      computeImpactGraphRevision(result.items, result.graph.dependencies),
+      computeImpactGraphRevision(result.items, result.graph.dependencies, 1),
     );
   });
 
@@ -239,9 +266,25 @@ describe("loadProjectAnalysisContext", () => {
     dependencyBuilder.order.mockReturnValue(dependencyBuilder);
     dependencyBuilder.range.mockResolvedValue({ data: [], error: null });
 
+    const projectBuilder = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    projectBuilder.select.mockReturnValue(projectBuilder);
+    projectBuilder.eq.mockReturnValue(projectBuilder);
+    projectBuilder.single.mockResolvedValue({
+      data: { workflow_generation: 7 },
+      error: null,
+    });
+
     const client = {
       from: vi.fn((table: string) =>
-        table === "project_items" ? itemBuilder : dependencyBuilder,
+        table === "project_items"
+          ? itemBuilder
+          : table === "projects"
+            ? projectBuilder
+            : dependencyBuilder,
       ),
     } as unknown as ServerSupabaseClient;
 
@@ -258,6 +301,7 @@ describe("loadProjectAnalysisContext", () => {
       "blocked",
       "at_risk",
     ]);
+    expect(itemBuilder.eq).toHaveBeenCalledWith("is_demo_retired", false);
     expect(dependencyBuilder.select).toHaveBeenCalledWith(
       "from_item_id,to_item_id,relationship",
     );
@@ -266,6 +310,12 @@ describe("loadProjectAnalysisContext", () => {
       workspaceId,
     );
     expect(dependencyBuilder.eq).toHaveBeenCalledWith("project_id", projectId);
+    expect(projectBuilder.select).toHaveBeenCalledWith("workflow_generation");
+    expect(projectBuilder.eq).toHaveBeenCalledWith("workspace_id", workspaceId);
+    expect(projectBuilder.eq).toHaveBeenCalledWith("id", projectId);
+    expect(result.revision).toBe(
+      computeImpactGraphRevision(result.items, result.graph.dependencies, 7),
+    );
     expect(result.items[0]).toMatchObject({
       id: "A",
       itemKey: "EVT-01",
