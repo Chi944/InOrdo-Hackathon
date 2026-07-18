@@ -1,10 +1,57 @@
 import { z } from "zod";
 
+export const exactNonBlankEnvironmentValueSchema = z
+  .string()
+  .superRefine((value, context) => {
+    if (value.trim().length === 0 || value !== value.trim()) {
+      context.addIssue({
+        code: "custom",
+        message: "Environment values must be nonblank and unpadded.",
+      });
+    }
+  });
+
+const supabaseUrlSchema = z.string().superRefine((value, context) => {
+  if (value.trim().length === 0 || value !== value.trim()) {
+    context.addIssue({
+      code: "custom",
+      message: "NEXT_PUBLIC_SUPABASE_URL must be an unpadded HTTP(S) URL.",
+    });
+    return;
+  }
+
+  try {
+    const url = new URL(value);
+    const loopbackHostnames = new Set(["localhost", "127.0.0.1", "[::1]"]);
+    const isSecure = url.protocol === "https:";
+    const isLocalPlaintext =
+      url.protocol === "http:" && loopbackHostnames.has(url.hostname);
+
+    if (!isSecure && !isLocalPlaintext) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "NEXT_PUBLIC_SUPABASE_URL must use HTTPS, except for loopback development URLs.",
+      });
+    }
+
+    if (url.username.length > 0 || url.password.length > 0) {
+      context.addIssue({
+        code: "custom",
+        message: "NEXT_PUBLIC_SUPABASE_URL must not include credentials.",
+      });
+    }
+  } catch {
+    context.addIssue({
+      code: "custom",
+      message: "NEXT_PUBLIC_SUPABASE_URL must be a valid URL.",
+    });
+  }
+});
+
 export const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL."),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
-    .string()
-    .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required."),
+  NEXT_PUBLIC_SUPABASE_URL: supabaseUrlSchema,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: exactNonBlankEnvironmentValueSchema,
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

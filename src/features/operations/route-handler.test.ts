@@ -22,6 +22,36 @@ function jsonRequest(path: string, body: unknown) {
   });
 }
 
+function streamingJsonRequest(
+  path: string,
+  chunks: readonly Uint8Array[],
+  headers: Record<string, string>,
+  onCancel: () => void,
+) {
+  let index = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      const chunk = chunks[index];
+      index += 1;
+      if (chunk === undefined) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(chunk);
+    },
+    cancel() {
+      onCancel();
+    },
+  });
+  const init: RequestInit & { duplex: "half" } = {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body,
+    duplex: "half",
+  };
+  return new Request(`https://inordo.test${path}`, init);
+}
+
 describe("project operation route handlers", () => {
   it("applies a strict selected-action request and returns a no-store result", async () => {
     const execute = vi.fn(async () => ({
@@ -145,6 +175,34 @@ describe("project operation route handlers", () => {
     });
     expect(execute).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["missing", {}],
+    ["dishonest", { "content-length": "2" }],
+  ])(
+    "cancels a %s-length oversized operation stream before buffering it",
+    async (_description, headers) => {
+      const execute = vi.fn();
+      let cancelled = false;
+      const response = await handleApplyProposalPost({
+        request: streamingJsonRequest(
+          "/apply",
+          [new Uint8Array(16_000), new Uint8Array(16_001), new Uint8Array(8)],
+          headers,
+          () => {
+            cancelled = true;
+          },
+        ),
+        projectId,
+        proposalId,
+        execute,
+      });
+
+      expect(response.status).toBe(413);
+      expect(cancelled).toBe(true);
+      expect(execute).not.toHaveBeenCalled();
+    },
+  );
 
   it("routes undo and reset without accepting identifiers or secrets in bodies", async () => {
     const undo = vi.fn(async () => ({

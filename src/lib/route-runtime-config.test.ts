@@ -78,6 +78,10 @@ describe("production route runtime configuration", () => {
       resolve(process.cwd(), "docs/deployment-runbook.md"),
       "utf8",
     );
+    const revertPlanner = readFileSync(
+      resolve(process.cwd(), "scripts/revert-plan.mjs"),
+      "utf8",
+    );
 
     expect(runbook.match(/set -euo pipefail/g)?.length).toBeGreaterThanOrEqual(5);
     expect(runbook).toContain(
@@ -90,6 +94,36 @@ describe("production route runtime configuration", () => {
     );
     expect(runbook).not.toContain("migration list --linked --output json");
     expect(runbook).toContain("node scripts/applied-migration-paths.mjs");
+    expect(runbook).toContain('REVERT_MAINLINE=""');
+    expect(runbook).toContain(
+      'node scripts/revert-plan.mjs "$FAULTY_COMMIT_SHA" "$REVERT_MAINLINE"',
+    );
+    expect(runbook).toContain(
+      "IFS=$'\\t' read -r \\",
+    );
+    expect(runbook).toContain(
+      'FAULTY_COMMIT_SHA FAULTY_DIFF_BASE RESOLVED_MAINLINE <<< "$REVERT_PLAN"',
+    );
+    expect(revertPlanner).toContain(
+      '["merge-base", "--is-ancestor", commit, "HEAD"]',
+    );
+    expect(runbook).not.toContain("REVERT_OPTIONS");
+    expect(runbook).toContain(
+      'git diff --name-only "$FAULTY_DIFF_BASE" "$FAULTY_COMMIT_SHA"',
+    );
+    expect(runbook).not.toContain("git diff-tree -m");
+    expect(runbook).toContain(
+      'git revert --no-edit "$FAULTY_COMMIT_SHA"',
+    );
+    expect(runbook).toContain(
+      'git revert --no-edit -m "$RESOLVED_MAINLINE" "$FAULTY_COMMIT_SHA"',
+    );
+    expect(runbook).toContain(
+      'git revert --no-commit "$FAULTY_COMMIT_SHA"',
+    );
+    expect(runbook).toContain(
+      'git revert --no-commit -m "$RESOLVED_MAINLINE" "$FAULTY_COMMIT_SHA"',
+    );
     expect(runbook).toContain("git diff --cached --check");
     expect(runbook).toContain(
       "git restore --source=HEAD --staged --worktree -- supabase/migrations",

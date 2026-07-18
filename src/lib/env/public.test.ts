@@ -42,4 +42,49 @@ describe("public environment validation", () => {
       expect((error as Error).message).not.toContain(invalidUrl);
     }
   });
+
+  it.each([
+    "ftp://example.supabase.co",
+    "javascript:alert(1)",
+    "http://example.supabase.co",
+    "https://username@example.supabase.co",
+    "https://username:password@example.supabase.co",
+    " https://example.supabase.co",
+    "https://example.supabase.co ",
+  ])("rejects an unsafe or padded Supabase URL: %s", (url) => {
+    expect(() =>
+      parsePublicEnv({
+        NEXT_PUBLIC_SUPABASE_URL: url,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "public-test-key",
+      }),
+    ).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+  });
+
+  it.each([
+    "http://localhost:54321",
+    "http://127.0.0.1:54321",
+    "http://[::1]:54321",
+  ])("allows plaintext HTTP only for a loopback Supabase URL: %s", (url) => {
+    expect(
+      parsePublicEnv({
+        NEXT_PUBLIC_SUPABASE_URL: url,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "public-test-key",
+      }),
+    ).toEqual({
+      NEXT_PUBLIC_SUPABASE_URL: url,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "public-test-key",
+    });
+  });
+
+  it.each(["   ", "\t", " public-test-key", "public-test-key "])(
+    "rejects a blank or padded public key",
+    (key) => {
+      expect(() =>
+        parsePublicEnv({
+          NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: key,
+        }),
+      ).toThrow("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    },
+  );
 });
