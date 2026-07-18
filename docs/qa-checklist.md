@@ -15,6 +15,9 @@
 - [x] Refreshed the ignored, untracked local `.env.local` from the verified six-name Vercel Production configuration without reading or printing values; an obsolete local OpenAI entry was deliberately excluded.
 - [x] Node 22 local smoke returned `/` and `/login` `200`, signed-out `/app` `307` to the bounded login path, and generic no-store health `503`; the server identified only the intentionally absent `OPENAI_API_KEY` name.
 - [x] The local-parity handoff completed clean install, lint, typecheck, 305 Vitest tests across 54 files, one Chromium journey, production build, zero dependency vulnerabilities, and whitespace checks. After the cross-platform runbook update, lint, typecheck, the complete unit suite, build, and diff checks were run again.
+- [x] An unauthenticated GitHub API/raw-file audit confirmed the repository is public, `main` points to the deployed application SHA, and README plus MIT license return `200` without a team session.
+- [x] A filename/count-only scan across the current tree and all 27 reachable commits found zero credential-format matches and zero tracked environment paths other than `.env.example`; no candidate value was printed.
+- [x] The official Devpost schedule confirms the July 21, 2026 at 5:00 PM PDT submission deadline (July 22, 2026 at 8:00 AM SGT).
 
 The deployed artifact is safe to release with its documented configuration state; this is not evidence that live analysis is operational. The OpenAI key, operator Auth account, funded model request, authenticated production workflow, and final responsive/accessibility pass remain human-owned.
 
@@ -87,7 +90,7 @@ Exact integration evidence on 2026-07-19 used Node 22.23.1 and npm 10.9.8. ESLin
 
 ## Prompt 10 integrated P0 gate (`deston/07-integration-deploy`)
 
-This is the current release evidence section. Earlier prompt/branch sections below remain historical records and must not be read as proof for the integrated artifact.
+This is the historical Prompt 10 integration checkpoint. The current release evidence is at the top of this file; earlier prompt/branch sections below must not be read as proof for the final artifact.
 
 - [x] `npm ci` under the pinned Node 22 toolchain without a lockfile change
 - [x] `npm run lint`
@@ -357,7 +360,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 
 - [x] The request and source schemas are strict and bounded; unsupported keys, source types, depths, and oversized request bodies fail closed.
 - [x] Contributor authorization and one-project context loading happen before the model boundary.
-- [x] The server-only Responses adapter sets `store: false`, low reasoning, no tools, bounded output, a 30-second timeout per logical call, and at most one SDK retry per call.
+- [x] At the Prompt 7 checkpoint, the server-only Responses adapter set `store: false`, low reasoning, no tools, bounded output, a 30-second timeout per logical call, and at most one SDK retry per call. Prompt 12 later disabled SDK/request retries for the current release budget.
 - [x] Prompts treat source/input as untrusted data and cannot grant tools, IDs, fields, or action types.
 - [x] Strict parsing is followed by ID, field, enum, date, owner, evidence-span, current-value, version, confidence, and impact-coverage validation.
 - [x] Pure deterministic traversal, not GPT, produces the downstream paths supplied to proposal drafting.
@@ -402,7 +405,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 | --- | --- | --- | --- |
 | High | No funded live GPT-5.6 request has been recorded in the available environment. | Deston / Shared | Run one safe synthetic analysis after deployment configuration, recording only non-secret metadata. If unavailable, keep all public copy explicit that the live provider call remains unverified. |
 | High | No authenticated production/incognito browser pass has been recorded. | Shared | Provision the operator-managed synthetic account out of band and complete the live smoke matrix on the recorded production URL. There is no documentation-only substitute. |
-| High | Final demo-access, Devpost, and video URLs, team roles, official deadline, and primary `/feedback` Session ID are not supplied. | Shared | Replace each remaining submission placeholder from its authoritative human/external source and verify every public link before submission. |
+| High | Final demo-access, Devpost, and video URLs, team roles, and primary `/feedback` Session ID are not supplied. | Shared | Replace each remaining submission placeholder from its authoritative human/external source and verify every public link before submission. The official deadline is already recorded above. |
 | Medium | The exact Vercel artifact, six non-OpenAI production names, hosted Auth redirects, and public signed-out routes are verified, but the OpenAI key, Auth account, funded analysis, and credentialed workflow remain pending. | Deston / Shared | Supply credentials only through the provider/deployment stores, redeploy, require health `200 ready`, and complete the authenticated production smoke without recording values. |
 | Medium | Authenticated Playwright does not cover live Supabase/Auth/OpenAI. | Andres / Shared | Use the guarded journey only as UI/contract evidence; complete the real production browser matrix before making live-service claims. |
 

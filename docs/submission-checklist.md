@@ -14,9 +14,9 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 ## Required public assets and access
 
-- [ ] Confirm `https://github.com/Chi944/InOrdo-Hackathon` opens without a team-authenticated GitHub session and exposes the intended final commit.
-- [ ] Confirm the public repository includes the MIT license and no secret, credential, environment value, private data, or private transcript.
-- [ ] Confirm `https://inordo-hackathon.vercel.app` opens in a private/incognito window and points to the final submitted commit.
+- [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public, defaults to `main`, and exposes application SHA `d581b0a9d736bd12046a4314e15b359ec8fd8205`.
+- [x] The public MIT license and README return `200`; the full-repository release review plus a current/all-history credential-format scan found no secret, unexpected tracked environment file, private data, or private transcript.
+- [x] An unauthenticated production check confirmed `https://inordo-hackathon.vercel.app` returns `200`, while Vercel metadata reports the recorded application release SHA and Node `22.x` deployment as `READY`.
 - [ ] Confirm the README renders correctly on the public repository, including Mermaid, screenshots/GIFs, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [ ] Capture a final protected-workspace screenshot or short GIF only after authenticated production QA; label synthetic data and do not present a fixture as live GPT-5.6 output.
@@ -64,14 +64,14 @@ Use this as the final human handoff. Check an item only after testing the exact 
 ## Team, deadline, and final lock
 
 - [ ] Replace `<TEAM_MEMBER_NAMES_AND_ROLES>` with the exact public team-member names and roles approved by the team.
-- [ ] Replace `<FINAL_SUBMISSION_DEADLINE_WITH_TIMEZONE>` with the official deadline and timezone from the event source of truth.
-- [ ] After the final commit exists, record its SHA in the external submission notes and confirm the deployment and Devpost reference that artifact; do not create a circular self-referential commit just to embed its own SHA.
+- [x] Confirmed from the [official Devpost schedule](https://openai.devpost.com/details/dates): submissions close July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
+- [ ] After the final repository commit exists, record its SHA in the external submission notes and make Devpost reference it. Separately confirm production still identifies the recorded application release SHA; do not create a circular self-referential commit merely to embed either SHA.
 - [ ] Submit before the official deadline.
 - [ ] After the deadline, make **no edits** to the submitted repository branch/commit, production artifact, Devpost entry, or public video unless the event rules explicitly permit them.
 
 ## Placeholder inventory
 
-Replace every remaining submission token below before publishing. Search with `rg -n '<(DEVPOST_URL|PUBLIC_YOUTUBE_VIDEO_URL|DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH|PRIMARY_FEEDBACK_SESSION_ID|TEAM_MEMBER_NAMES_AND_ROLES|FINAL_SUBMISSION_DEADLINE_WITH_TIMEZONE)>' README.md docs` and resolve every result intentionally.
+Replace every remaining submission token below before publishing. Search with `rg -n '<(DEVPOST_URL|PUBLIC_YOUTUBE_VIDEO_URL|DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH|PRIMARY_FEEDBACK_SESSION_ID|TEAM_MEMBER_NAMES_AND_ROLES)>' README.md docs` and resolve every result intentionally.
 
 | Placeholder | Human-supplied value | Verification |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Replace every remaining submission token below before publishing. Search with `r
 | `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` | Judge-safe test path or separately delivered account instructions; never a committed password. | Follow from a private browser with the approved access method. |
 | `<PRIMARY_FEEDBACK_SESSION_ID>` | Identifier returned by the primary `/feedback` command. | Confirm the exact ID; do not attach a private transcript. |
 | `<TEAM_MEMBER_NAMES_AND_ROLES>` | Exact public team-member names and roles. | Cross-check the team’s event registration. |
-| `<FINAL_SUBMISSION_DEADLINE_WITH_TIMEZONE>` | Official deadline with timezone. | Cross-check the event source of truth. |
+| Submission deadline | July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT). | Confirmed against the official Devpost schedule. |
 
 Two setup examples are deliberately not submission fields: `<SUPABASE_PROJECT_REF>` in README and `<AUTH_USER_UUID>` in `docs/demo-user-setup.md`. Replace them only in a local command or reviewed dashboard query when configuring an environment. Do not commit a real Auth UUID, credential, or environment value merely to remove an instructional placeholder.
 

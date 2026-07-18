@@ -156,6 +156,8 @@
 - Verified the documentation branch under Node 22.23.1/npm 10.9.8: lint, typecheck, 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build passed. The final whitespace check is recorded immediately before commit.
 - Added a shared Windows/macOS runbook for provider-approved environment pull, hosted Supabase verification, automated checks, demo-account provisioning, live workflow QA, and Deston/Andres review responsibilities.
 - Refreshed the ignored local environment from the six non-OpenAI Vercel Production names, excluded the pre-existing local OpenAI entry without reading it, and proved through the local health boundary that only `OPENAI_API_KEY` remains intentionally missing. The complete clean-install, unit, Chromium, build, audit, and diff gates passed again without exposing a value.
+- Replaced the submission-deadline placeholder with the official Devpost deadline, July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT), while leaving all genuinely human-supplied submission fields unresolved.
+- Verified the public repository, default branch, README, MIT license, and deployed SHA through unauthenticated endpoints. A filename/count-only scan of the current tree and all 27 reachable commits found no credential-format match or unexpected tracked environment path, without printing candidate content.
 
 ## Codex work-package commit index
 

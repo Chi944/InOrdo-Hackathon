@@ -14,7 +14,7 @@ This document records the factual release state produced by the final merged app
 | Vercel release metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the application SHA above |
 | Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; migrations aligned through `20260719113000` |
 
-The Prompt 14 documentation commit is deliberately not used as the application release SHA: this branch is documentation-only, remains unmerged by instruction, and cannot truthfully embed its own future commit ID.
+The Prompt 14 documentation commit is deliberately not used as the application release SHA: it changes documentation only and cannot truthfully embed its own future merge commit ID. Record the final repository SHA externally after the documentation PR merges; keep the deployed application SHA separate and explicit.
 
 ## Implemented feature evidence
 
@@ -109,7 +109,8 @@ The six non-OpenAI production variable names are configured and hosted Supabase 
 - Production responsive, keyboard, focus, announcement, and no-overflow checks at approximately 375, 768, and 1440 pixels are pending.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
 - Vercel Hobby eligibility still requires the operator's current terms review; this repository is not legal advice.
-- The final video, Devpost page, judge access path, team list, official deadline, and primary Codex `/feedback` Session ID remain human-owned.
+- The final video, Devpost page, judge access path, team list, and primary Codex `/feedback` Session ID remain human-owned.
+- The [official Devpost schedule](https://openai.devpost.com/details/dates) sets the submission deadline at July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
 
 ## Devpost placeholder audit
 
@@ -120,6 +121,5 @@ The confirmed repository, production host, platform/project, and deployed applic
 - `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>`
 - `<PRIMARY_FEEDBACK_SESSION_ID>`
 - `<TEAM_MEMBER_NAMES_AND_ROLES>`
-- `<FINAL_SUBMISSION_DEADLINE_WITH_TIMEZONE>`
 
 `<SUPABASE_PROJECT_REF>`, `<AUTH_USER_UUID>`, and deployment/rollback command placeholders are instructional examples, not Devpost fields. Never replace an instructional token by committing a credential, private user identifier, or environment value.

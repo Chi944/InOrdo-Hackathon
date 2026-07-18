@@ -308,7 +308,7 @@ InOrdo is available under the [MIT License](LICENSE). Copyright is held by the I
 - Public video (maximum three minutes): **`<PUBLIC_YOUTUBE_VIDEO_URL>`**
 - Devpost entry: **`<DEVPOST_URL>`**
 - Team members and roles: **`<TEAM_MEMBER_NAMES_AND_ROLES>`**
-- Final deadline with timezone: **`<FINAL_SUBMISSION_DEADLINE_WITH_TIMEZONE>`**
+- Final submission deadline: **July 21, 2026 at 5:00 PM PDT** (**July 22, 2026 at 8:00 AM SGT**), per the [official Devpost schedule](https://openai.devpost.com/details/dates).
 - Product and technical decisions: [`docs/product-brief.md`](docs/product-brief.md), [`docs/architecture.md`](docs/architecture.md)
 - Synthetic demo evidence: [`docs/demo-scenario.md`](docs/demo-scenario.md), [`supabase/seed.sql`](supabase/seed.sql)
 - Verification and unresolved gates: [`docs/qa-checklist.md`](docs/qa-checklist.md)
