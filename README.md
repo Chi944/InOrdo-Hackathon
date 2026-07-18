@@ -4,7 +4,9 @@ InOrdo is a Work and Productivity application for small teams. It turns an unstr
 
 ## Current status
 
-This repository contains the P0 application foundation, the workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, and a protected project overview. The Prompt 5 branch adds validated project-item and dependency operations, optimistic concurrency, a pure deterministic impact engine, a project-scoped graph loader, and minimal server-refreshed controls. Evidence intake, model extraction, approvals, application operations, undo, and demo reset are not represented as working features yet. A live browser login still requires an operator-created Auth account and local environment configuration.
+This repository contains the P0 application foundation, workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, protected project records, and deterministic dependency traversal. The Prompt 7 branch adds a server-only analysis API that stores pasted evidence, extracts one candidate change with GPT-5.6 Luna, postvalidates it against canonical project state, computes impacts in TypeScript, drafts inert recovery actions in a second bounded model call, and persists the derived review records without changing a project item.
+
+This is backend foundation, not an end-to-end product claim. The analysis route is not wired into the project UI, every generated change and action still requires human review, and applying approved actions, operation history, undo, and demo reset remain unfinished. No live OpenAI analysis or browser workflow has been verified on this branch because the required environment variable names were absent from the process environment.
 
 ## Local setup
 
@@ -23,9 +25,11 @@ The authentication and data-access boundary expects these variable names. Obtain
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (defaults to `gpt-5.6-luna` for analysis)
 - `DEMO_PROJECT_SLUG`
 
-Normal signed-in requests use the public Supabase configuration plus the user's session. The service-role key is reserved for narrowly reviewed, server-only administration such as a future controlled demo reset; it is not required for ordinary login or project reads and must never enter a browser bundle.
+Normal login, authorization, project reads, and project-record writes use the public Supabase configuration plus the user's session. The Prompt 7 route lazily uses the service-role key only after request-scoped contributor authorization and bounded context loading, through three server-only persistence RPCs that independently recheck the verified actor. The key must never enter a browser bundle.
 
 Create the email/password demo account manually and map its generated Auth UUID to the seeded workspace by following [docs/demo-user-setup.md](docs/demo-user-setup.md). No demo password belongs in source control.
 
@@ -46,19 +50,29 @@ Create the email/password demo account manually and map its generated Auth UUID 
 
 - Next.js App Router and React Server Components provide the web boundary.
 - Supabase will provide Postgres persistence, authentication, RLS, and durable operation history.
-- GPT-5.6 will run server-side only to structure evidence and draft recovery actions.
+- GPT-5.6 Luna runs server-side only to structure one evidence-backed candidate change and draft inert recovery actions; it never traverses the graph or applies an action.
 - Application code—not the model—traverses explicit dependency edges.
 - Validated model output remains a proposal until a person approves a specific action; only authorized server code can mutate data and record an undoable operation.
 
 See [docs/architecture.md](docs/architecture.md) and [AGENTS.md](AGENTS.md) before implementing P0 contracts.
 
-Security evidence and recovery procedures are recorded in [docs/security-review.md](docs/security-review.md) and [docs/rollback-plan.md](docs/rollback-plan.md). The integration decisions required before the GPT-5.6 backend are listed in [docs/prompt-7-readiness.md](docs/prompt-7-readiness.md).
+Security evidence and recovery procedures are recorded in [docs/security-review.md](docs/security-review.md) and [docs/rollback-plan.md](docs/rollback-plan.md). Prompt 7's resolved integration decisions and remaining verification gates are recorded in [docs/prompt-7-readiness.md](docs/prompt-7-readiness.md).
+
+## Analysis backend
+
+`POST /api/projects/[projectId]/analyze` accepts one bounded JSON source record. Contributor authorization, strict allowlists, a normalized source hash, a deterministic project revision, duplicate claiming, and a five-new-requests-per-actor/per-project/10-minute limit run before either model call.
+
+The OpenAI Responses adapter uses `OPENAI_MODEL` with a `gpt-5.6-luna` default, strict structured output, `store: false`, low reasoning effort, no tools, a 30-second timeout per logical call, at most one SDK retry per call for transient failures, and bounded input/output. Source text is explicitly marked untrusted. Returned IDs, fields, values, dates, enums, evidence excerpts/offsets, confidence, and canonical previous values are checked again by application code.
+
+The first database phase stores immutable evidence and an idempotency claim. After both model results pass validation, a server-only service-role wrapper passes the already verified actor to a private implementation that rechecks contributor membership, project revision, claim ownership, and current item state. It then atomically writes only a pending change, deterministic impact paths, and pending proposal actions. Authenticated browser roles cannot execute these RPCs, and no item mutation occurs. Model actions map narrowly as follows: `update_item_field` to `update_item`; `create_task` and `create_risk` to `create_item` with an explicit item type; and `request_confirmation` to its dedicated inert action type.
+
+The analysis modules include injected-adapter test cases for successful orchestration, refusal, malformed output, unknown IDs, evidence mismatch, timeout, duplicate handling, and transient provider errors. On the settled Prompt 7 diff, Node 22 lint, typecheck, 177 tests across 32 files, and the production build passed. Linked migration, schema-lint, rollback-wrapped SQL, generated-type, and security-advisor evidence is recorded in [docs/qa-checklist.md](docs/qa-checklist.md). Live OpenAI and browser verification remain explicitly pending.
 
 ## Project records and graph tests
 
 The unit suite covers strict request allowlists, stale item versions, authorization fail-closed behavior, cross-project dependency rejection, and safe database-error mapping. The impact suite covers chains, fan-out, fan-in, cycles, self-loops, duplicate edges, disconnected nodes, inactive items, maximum depth, stable ordering, and deterministic shortest paths.
 
-The graph loader treats `not_started`, `in_progress`, `blocked`, and `at_risk` items as active. It loads only the authorized project, then passes normalized TypeScript records into a pure traversal with no network or model call. It rejects projects beyond the documented 500-active-item or 2,000-edge demo bounds instead of returning a truncated graph.
+The general project graph loader treats `not_started`, `in_progress`, `blocked`, and `at_risk` items as active. It loads only the authorized project, then passes normalized TypeScript records into a pure traversal with no network or model call. It rejects projects beyond the documented 500-active-item or 2,000-edge demo bounds instead of returning a truncated graph. The model-analysis context uses stricter 200-active-item and 1,000-edge limits before either model call.
 
 ## P0 scope
 

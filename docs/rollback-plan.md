@@ -1,4 +1,4 @@
-# Prompt 5 rollback plan
+# InOrdo rollback plan
 
 ## Principles
 
@@ -10,7 +10,7 @@
 
 ## Before release
 
-Record the deployed application commit, remote migration ledger, affected project/workspace IDs, and the current backup/PITR status. Do not record credentials or raw private evidence. The known-good application commit before Prompt 5 is `1aa95f2` (`feat: add Supabase authentication and data access`).
+Record the deployed application commit, remote migration ledger, affected project/workspace IDs, and the current backup/PITR status. Do not record credentials or raw private evidence. The known-good application commit before Prompt 5 is `1aa95f2` (`feat: add Supabase authentication and data access`). The known-good application commit before Prompt 7 is `2c9c11b` (`feat: add project records and dependency engine`).
 
 ## Application rollback
 
@@ -48,3 +48,50 @@ Run the Node 22 lint, typecheck, unit, build, and diff gates. Verify owner/admin
 ## Incident ownership
 
 Deston owns database, RLS, server-operation, and graph-engine rollback decisions. Andres owns any presentation-only rollback. Security-sensitive or cross-boundary compensation requires both owners to review the user-visible effect and the verification evidence before writes resume.
+
+## Prompt 7 analysis rollback
+
+Prompt 7 adds an application route and a forward database schema for immutable evidence, analysis claims, model-derived review records, and the inert `request_confirmation` action type. Its rollback objective is to stop new model spend and unsafe finalization while preserving evidence and review history. It is not a destructive data reversal.
+
+### Contain first
+
+1. Disable access to `POST /api/projects/[projectId]/analyze` at the deployment layer or redeploy the known-good Prompt 5 artifact `2c9c11b`.
+2. Preserve current application/provider logs under the project's normal retention controls, but do not copy raw source text, prompts, model output, credentials, or private project data into tickets or this repository.
+3. Record only safe incident coordinates: deployed commit, migration version, affected workspace/project/analysis-request IDs, claim state, model name, provider request ID when already stored, timestamps, and error code/stage.
+4. If credential exposure is suspected, rotate or revoke the affected key in its provider console and deployment secret store. Never place the replacement value in Git, chat, command output, or a tracked file.
+
+Redeploying Prompt 5 removes the analysis HTTP route while retaining project-item/dependency behavior. The Prompt 7 schema is additive for those paths: extra nullable source/change columns, the new analysis table, and an additional proposal enum value do not require a matching destructive down migration. The Prompt 7 migration also revokes direct authenticated source-document insertion; Prompt 5 has no supported source-write workflow that depends on that grant.
+
+### Preserve claims and evidence
+
+- Never delete `source_documents`, `analysis_requests`, `change_events`, `impact_runs`, `impact_items`, `action_proposals`, or `proposal_actions` to make a retry possible.
+- Succeeded analyses remain inert pending review. Reject them through the future authorized review workflow if they are unsuitable; do not mutate their evidence, paths, or model metadata.
+- Failed claims are terminal for the same project revision and normalized source hash. Do not alter the hash, revision, state, or source text to bypass duplicate protection.
+- A `processing` claim can remain if the provider path or terminal failure transition was interrupted. Keep the route contained, inspect only safe state/metadata, and ship a separately reviewed forward repair. The current duplicate path returns the existing processing state and does not resume or terminalize it. Do not issue an ad hoc direct table update.
+- Because evidence/claim creation commits before model work, a provider failure can legitimately leave a source document plus failed claim without derived rows. That is the intended auditable state, not partial derived corruption.
+
+### Database correction
+
+Do not drop the Prompt 7 enum value, table, columns, functions, constraints, triggers, policies, or stored analysis rows. PostgreSQL enum rollback and evidence deletion are especially unsuitable release-reversal mechanisms. If an RPC, policy, constraint, or validation rule is defective:
+
+1. contain the route;
+2. identify the exact migration and affected claim states;
+3. create a new numbered forward migration that narrows or replaces the faulty contract while retaining evidence;
+4. review function ownership, empty `search_path`, fully qualified objects, direct table grants, RPC execution grants, RLS, and anonymous/cross-tenant denial;
+5. run the migration in a transaction-capable test path and then against the confirmed linked project; and
+6. regenerate database types and rerun linked schema/security verification before reopening analysis.
+
+If finalization is suspected of producing invalid derived rows, do not edit or delete them in place. Keep the analysis route disabled, prevent those proposals from being approved, inventory affected IDs without copying private payloads, and use a product/security-reviewed forward quarantine or status transition. Prompt 7 itself has no operation that applies those rows to project items.
+
+### Reopen criteria
+
+Before restoring analysis traffic, require all of the following:
+
+- Node 22 lint, typecheck, unit tests, production build, and `git diff --check` pass on the exact artifact;
+- linked migration ledger, generated types, schema lint, RLS/grant/constraint SQL checks, and security advisors are clean for the exact forward migration;
+- duplicate processing/success/failure behavior, rate limiting, stale project revision, refusal, malformed output, timeout, transient retry, and terminal failure recording are verified;
+- a synthetic test proves the analysis path creates no project-item mutation and all proposal actions remain pending;
+- when funded credentials and safe synthetic input are available, exactly one controlled live request confirms both bounded logical model calls and records only safe metadata; and
+- browser/UI verification is completed if the analysis form or pending-review surface is part of the deployment.
+
+If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.

@@ -24,6 +24,13 @@ const demoEnvSchema = z.object({
   DEMO_PROJECT_SLUG: z.string().min(1),
 });
 
+export const openAIEnvSchema = z.object({
+  OPENAI_API_KEY: z.string().min(1),
+  OPENAI_MODEL: z.string().trim().min(1).default("gpt-5.6-luna"),
+});
+
+const openAIModelEnvSchema = openAIEnvSchema.pick({ OPENAI_MODEL: true });
+
 function parseEnvironment<T extends z.ZodType>(
   scope: string,
   schema: T,
@@ -60,4 +67,21 @@ export function getDemoProjectSlug(): string {
   return parseEnvironment("Demo project", demoEnvSchema, {
     DEMO_PROJECT_SLUG: process.env.DEMO_PROJECT_SLUG,
   }).DEMO_PROJECT_SLUG;
+}
+
+export function parseOpenAIEnv(values: unknown) {
+  return parseEnvironment("OpenAI", openAIEnvSchema, values);
+}
+
+export function getOpenAIEnv(): z.infer<typeof openAIEnvSchema> {
+  return parseOpenAIEnv({
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL,
+  });
+}
+
+export function getOpenAIModel(): string {
+  return parseEnvironment("OpenAI model", openAIModelEnvSchema, {
+    OPENAI_MODEL: process.env.OPENAI_MODEL,
+  }).OPENAI_MODEL;
 }

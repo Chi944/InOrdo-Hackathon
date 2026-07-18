@@ -100,6 +100,13 @@ describe("client bundle boundaries", () => {
       "src/lib/supabase/proxy.ts",
       "src/lib/auth/guards.ts",
       "src/lib/repositories/project-data.ts",
+      "src/features/analysis/context.ts",
+      "src/features/analysis/openai-adapter.ts",
+      "src/features/analysis/post-validation.ts",
+      "src/features/analysis/route-handler.ts",
+      "src/features/analysis/runtime.ts",
+      "src/features/analysis/service.ts",
+      "src/features/analysis/supabase-persistence.ts",
     ]) {
       expect(readFileSync(resolve(process.cwd(), path), "utf8"), path).toMatch(
         /^import "server-only";/,
@@ -107,16 +114,70 @@ describe("client bundle boundaries", () => {
     }
   });
 
-  it("keeps the privileged client out of request and feature modules", () => {
+  it("keeps OpenAI and server environment imports outside client-reachable modules", () => {
+    const clientEntries = listSourceFiles(sourceRoot).filter((path) =>
+      /^["']use client["'];/m.test(readFileSync(path, "utf8")),
+    );
+
+    for (const entry of clientEntries) {
+      for (const [path, source] of clientReachableModules(entry)) {
+        expect(source, relative(sourceRoot, path)).not.toMatch(
+          /from\s+["']openai(?:\/[^"']*)?["']/,
+        );
+        expect(source, relative(sourceRoot, path)).not.toContain(
+          "@/features/analysis/runtime",
+        );
+      }
+    }
+  });
+
+  it("keeps the analysis pipeline proposal-only and narrows privileged persistence", () => {
+    const analysisRoot = resolve(sourceRoot, "features", "analysis");
+    const analysisModules = listSourceFiles(analysisRoot).filter(
+      (path) => !path.includes(".test."),
+    );
+
+    for (const path of analysisModules) {
+      const source = readFileSync(path, "utf8");
+      const relativePath = relative(sourceRoot, path).replaceAll("\\", "/");
+      if (
+        relativePath !== "features/analysis/runtime.ts" &&
+        relativePath !== "features/analysis/supabase-persistence.ts"
+      ) {
+        expect(source, relativePath).not.toContain(
+          "@/lib/supabase/privileged",
+        );
+      }
+      expect(source, relative(sourceRoot, path)).not.toMatch(
+        /\.from\(["']project_items["']\)[\s\S]{0,160}\.(?:insert|update|delete)\(/,
+      );
+    }
+  });
+
+  it("keeps the privileged client outside the reviewed analysis persistence boundary", () => {
+    const allowedModules = new Set([
+      "features/analysis/runtime.ts",
+      "features/analysis/supabase-persistence.ts",
+    ]);
     const requestModules = [
       ...listSourceFiles(resolve(sourceRoot, "app")),
       ...listSourceFiles(resolve(sourceRoot, "features")),
     ].filter((path) => !path.includes(".test."));
 
     for (const path of requestModules) {
-      expect(readFileSync(path, "utf8"), relative(sourceRoot, path)).not.toContain(
-        "@/lib/supabase/privileged",
-      );
+      const relativePath = relative(sourceRoot, path).replaceAll("\\", "/");
+      if (!allowedModules.has(relativePath)) {
+        expect(readFileSync(path, "utf8"), relativePath).not.toContain(
+          "@/lib/supabase/privileged",
+        );
+      }
     }
+
+    expect(
+      readFileSync(
+        resolve(sourceRoot, "features/analysis/runtime.ts"),
+        "utf8",
+      ),
+    ).toContain("createPrivilegedSupabaseClient");
   });
 });

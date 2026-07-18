@@ -1,29 +1,69 @@
-# Prompt 7 readiness
+# Prompt 7 readiness and decisions
 
-Prompt 7 can start after this Prompt 5 branch is reviewed and its schema, graph contracts, and project-record operations are available on the branch used as Prompt 7's base. The OpenAI pipeline can be implemented and tested offline with an injected client; a live API key and browser login are verification gates, not prerequisites for writing the server-side code.
+Prompt 7 is based on the completed Prompt 5 project-record and deterministic-graph contracts. The server pipeline can be implemented and tested with an injected model adapter; a funded OpenAI project and browser credentials are verification gates, not prerequisites for offline development.
 
-## Required decisions before persistence work
+## Prompt 5 handoff (historical)
 
-1. **Proposal action vocabulary.** Prompt 7 names `update_item_field`, `create_task`, `create_risk`, and `request_confirmation`. The current database enum names `update_item`, `create_item`, `add_dependency`, and `remove_dependency`. Decide and document a narrow mapping, or add a forward migration, before persisting proposal actions. Do not silently coerce an unknown model action.
-2. **Project revision.** Prompt 7 requires idempotency from a project version plus a normalized source hash, but `projects` has no revision column. Prefer a deterministic revision derived from ordered active item IDs/versions and normalized edges, unless a reviewed migration adds a database-owned project revision maintained for every relevant change.
-3. **Atomic derived-record persistence.** Authenticated users cannot directly insert change events, impact runs/items, proposals, or proposal actions. Add a narrow authenticated `SECURITY DEFINER` transaction/RPC that rechecks `auth.uid()`, rejects anonymous identities, verifies role and project/workspace scope, and accepts only validated inert data. Do not put a service-role client in the request path. If no RPC is added, define and test explicit compensating cleanup for every possible partial write.
-4. **Immutable evidence and duplicate protection.** `source_documents` exists, but Prompt 7 must define the normalized source hash, uniqueness/idempotency behavior, bounded input, and small-demo rate protection before accepting analysis requests.
+Prompt 5 identified four decisions that had to be explicit before model-derived persistence:
 
-## Integration prerequisites
+1. Reconcile Prompt 7's action vocabulary with the existing database enum.
+2. Define a deterministic project revision for idempotency and stale-context rejection.
+3. Provide atomic derived-record persistence behind a narrowly reviewed server-only capability.
+4. Define immutable evidence hashing, duplicate behavior, and small-demo rate protection.
 
-- Base Prompt 7 on the reviewed Prompt 5 commit so it uses the documented edge direction and the pure graph traversal rather than reimplementing reachability.
-- Coordinate with Andres's Prompt 4/6 branches before merging because both may touch the project page. Their UI is not a backend prerequisite, but Prompt 6 should consume the final server contract and visual conflicts must be resolved deliberately.
-- Create an operator-owned Supabase Auth user and configure the public Supabase environment variables locally before browser verification. Never commit or print the values.
-- `OPENAI_API_KEY` is optional for mocked development. Run exactly one controlled live analysis only when the required variable names are present and the API project is funded; never print the key or raw private source text.
+Those were readiness gaps at the Prompt 5 handoff. Prompt 7 resolves them as follows.
 
-## Prompt 7 security invariants
+## Resolved Prompt 7 decisions
 
-- Use a server-only OpenAI Responses API adapter with `store: false`, bounded input/output, a timeout, and at most one transient retry.
-- Treat source text as untrusted evidence, use strict structured output, and validate target IDs, fields, evidence spans, enums, dates, and canonical previous values after the model call.
-- Do not enable model tools, web/file search, shell, arbitrary functions, embeddings, or RAG.
-- Feed only validated proposed changes and deterministic graph paths into proposal drafting.
-- Persist proposals as pending data only. Model output never calls a mutation operation and never changes a project item.
+### Action vocabulary
 
-## Ready-to-start gate
+The model may emit only `update_item_field`, `create_task`, `create_risk`, or `request_confirmation`.
 
-Prompt 7 is ready to branch when Prompt 5's checks pass, the branch base is agreed, and the three persistence decisions above have explicit answers. Browser credentials and an API key may remain absent while mocked tests are built, but they are required for the corresponding manual verification claims.
+- `update_item_field` persists as `update_item` with an allowlisted field, canonical previous value, proposed value, and expected item version.
+- `create_task` persists as `create_item` with `item_type: task`.
+- `create_risk` persists as `create_item` with `item_type: risk`.
+- `request_confirmation` persists as the dedicated `request_confirmation` inert action type.
+
+Unknown actions and unsafe fields are rejected. The mapping is explicit in application validation and revalidated by the database finalization RPC; there is no silent coercion.
+
+### Project revision
+
+The revision is SHA-256 over a stable `impact-graph-v1` representation of active item IDs/versions and normalized dependency endpoint pairs. Items and edges are ordered deterministically, self-edges/inactive endpoints are ignored, and duplicate endpoint pairs collapse exactly as they do for traversal. Relationship labels are not revision inputs because reachability uses endpoint pairs.
+
+The application computes the revision from its bounded one-project context. Both claim creation and finalization recompute it in the database. A change to relevant item versions or graph reachability between those phases produces a safe stale-project conflict before derived records are written.
+
+### Two-phase persistence
+
+The request-scoped client verifies the non-anonymous contributor and loads the bounded project context before any privileged capability or model client is initialized. `begin_project_analysis` is a `SECURITY INVOKER` public wrapper executable only by `service_role`; it passes the verified actor to a private implementation that rechecks contributor membership, project/workspace scope, source hash, bounds, and revision, then stores the immutable raw source and a unique `processing` claim before model work.
+
+`complete_project_analysis` accepts only the application's fully postvalidated inert result. It locks the claim, reauthorizes the actor, rechecks revision/current item state, independently recomputes deterministic paths, validates every change/impact/action, and creates the pending change event, impact run/items, proposal/actions, and succeeded claim state atomically. Any invalid element aborts the transaction; no partially persisted derived analysis is allowed. A separate terminal failure transition stores only an allowlisted stage/code and optional bounded provider request ID, never raw provider output or source text.
+
+Login, application authorization, bounded context reads, and ordinary project operations continue to use the user's Supabase session and RLS. Prompt 7 persistence lazily initializes the nominally distinct service-role client only after authorization/context loading and narrows it to three allowlisted RPCs. Authenticated and anonymous roles have no execution grant. The private implementations use an empty `search_path`, fully qualified relations, exact grants, and actor membership/ownership checks.
+
+### Evidence, duplicate, and rate semantics
+
+Raw evidence remains unchanged. Duplicate identity uses SHA-256 of NFC-normalized source text after line-ending normalization, per-line edge trimming, horizontal whitespace collapse, and outer trimming.
+
+The unique key is project/workspace + project revision + normalized source hash. A duplicate `processing` key returns the existing claim with a retry hint, a duplicate success returns its existing derived IDs, and a duplicate failure returns a safe conflict. No duplicate state starts another model call. Transaction advisory locks serialize the shared source key and actor rate check. The small-demo policy allows at most five new claims per actor and project in a rolling ten-minute window.
+
+## Implemented model boundary
+
+- Only the server calls the OpenAI Responses API.
+- `OPENAI_MODEL` defaults to `gpt-5.6-luna`.
+- Both logical calls use strict structured outputs, `store: false`, low reasoning effort, no tools, bounded context/output, a 30-second timeout per call, and at most one SDK retry per call for transient failures. A successful analysis therefore has two logical calls and at most four provider attempts.
+- Source text is explicitly untrusted. Embedded instructions cannot expand tools, fields, item IDs, or action vocabulary.
+- Application code postvalidates IDs, fields, evidence substrings/offsets, enums, dates, owners, current values, item versions, confidence, and deterministic impact coverage.
+- GPT extracts one candidate change and drafts inert recovery actions. Pure TypeScript, never GPT, determines downstream impact paths.
+- Every valid change is marked for human review. Low confidence, a previous-value mismatch, warnings, ambiguities, or unresolved references add explicit review reasons.
+- Model output never invokes a mutation operation and never changes a project item.
+
+## Remaining verification and integration gates
+
+- Preserve the recorded Node 22 lint, typecheck, 177-test, production-build, and final staged-diff evidence when reviewing the branch.
+- Preserve the recorded linked migration, regenerated types, rollback-wrapped SQL verification, clean schema lint, and clean security-advisor evidence when reviewing the final diff.
+- Coordinate the final API contract with Andres's Prompt 6 UI before merging; Prompt 7 does not redesign or claim an analysis form.
+- Create/use an operator-owned Supabase Auth account and untracked public Supabase environment configuration before browser verification.
+- Run exactly one controlled live analysis only when `OPENAI_API_KEY` and the required Supabase environment names are present and the OpenAI project is funded. Record safe model/request/usage metadata only; never record the key or raw private source.
+- Review the Prompt 7 threat controls and forward-only incident procedure in `docs/security-review.md` and `docs/rollback-plan.md` before enabling analysis traffic.
+
+At this documentation pass, no live OpenAI call or browser manual verification occurred because the required environment variable names were absent from the process environment. No credential or environment file was read. Automated and linked-database outcomes must be taken from the final command output and [qa-checklist.md](qa-checklist.md), not inferred from this readiness record.

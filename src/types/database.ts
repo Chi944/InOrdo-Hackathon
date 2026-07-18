@@ -142,17 +142,127 @@ export type Database = {
           },
         ]
       }
+      analysis_requests: {
+        Row: {
+          change_event_id: string | null
+          created_at: string
+          failure_code: string | null
+          failure_provider_request_id: string | null
+          failure_stage: string | null
+          finished_at: string | null
+          id: string
+          impact_run_id: string | null
+          model_name: string
+          normalized_content_sha256: string
+          project_id: string
+          project_revision: string
+          proposal_id: string | null
+          requested_by: string
+          result_metadata: Json | null
+          source_document_id: string
+          state: Database["public"]["Enums"]["analysis_request_state"]
+          workspace_id: string
+        }
+        Insert: {
+          change_event_id?: string | null
+          created_at?: string
+          failure_code?: string | null
+          failure_provider_request_id?: string | null
+          failure_stage?: string | null
+          finished_at?: string | null
+          id?: string
+          impact_run_id?: string | null
+          model_name: string
+          normalized_content_sha256: string
+          project_id: string
+          project_revision: string
+          proposal_id?: string | null
+          requested_by: string
+          result_metadata?: Json | null
+          source_document_id: string
+          state?: Database["public"]["Enums"]["analysis_request_state"]
+          workspace_id: string
+        }
+        Update: {
+          change_event_id?: string | null
+          created_at?: string
+          failure_code?: string | null
+          failure_provider_request_id?: string | null
+          failure_stage?: string | null
+          finished_at?: string | null
+          id?: string
+          impact_run_id?: string | null
+          model_name?: string
+          normalized_content_sha256?: string
+          project_id?: string
+          project_revision?: string
+          proposal_id?: string | null
+          requested_by?: string
+          result_metadata?: Json | null
+          source_document_id?: string
+          state?: Database["public"]["Enums"]["analysis_request_state"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_requests_change_fk"
+            columns: ["workspace_id", "project_id", "change_event_id"]
+            isOneToOne: false
+            referencedRelation: "change_events"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+          {
+            foreignKeyName: "analysis_requests_impact_fk"
+            columns: ["workspace_id", "project_id", "impact_run_id"]
+            isOneToOne: false
+            referencedRelation: "impact_runs"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+          {
+            foreignKeyName: "analysis_requests_project_fk"
+            columns: ["workspace_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["workspace_id", "id"]
+          },
+          {
+            foreignKeyName: "analysis_requests_proposal_fk"
+            columns: ["workspace_id", "project_id", "proposal_id"]
+            isOneToOne: false
+            referencedRelation: "action_proposals"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+          {
+            foreignKeyName: "analysis_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_requests_source_fk"
+            columns: ["workspace_id", "project_id", "source_document_id"]
+            isOneToOne: false
+            referencedRelation: "source_documents"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+        ]
+      }
       change_events: {
         Row: {
           confidence: number | null
           created_at: string
           created_by: string
+          evidence_end_offset: number | null
+          evidence_start_offset: number | null
+          evidence_text: string | null
           field_name: string
           id: string
           model_name: string | null
           previous_value: Json | null
           project_id: string
           proposed_value: Json
+          review_context: Json
           reviewed_at: string | null
           reviewed_by: string | null
           source_document_id: string
@@ -165,12 +275,16 @@ export type Database = {
           confidence?: number | null
           created_at?: string
           created_by: string
+          evidence_end_offset?: number | null
+          evidence_start_offset?: number | null
+          evidence_text?: string | null
           field_name: string
           id?: string
           model_name?: string | null
           previous_value?: Json | null
           project_id: string
           proposed_value: Json
+          review_context?: Json
           reviewed_at?: string | null
           reviewed_by?: string | null
           source_document_id: string
@@ -183,12 +297,16 @@ export type Database = {
           confidence?: number | null
           created_at?: string
           created_by?: string
+          evidence_end_offset?: number | null
+          evidence_start_offset?: number | null
+          evidence_text?: string | null
           field_name?: string
           id?: string
           model_name?: string | null
           previous_value?: Json | null
           project_id?: string
           proposed_value?: Json
+          review_context?: Json
           reviewed_at?: string | null
           reviewed_by?: string | null
           source_document_id?: string
@@ -841,9 +959,11 @@ export type Database = {
           content_sha256: string | null
           created_at: string
           id: string
+          normalized_content_sha256: string | null
           occurred_at: string | null
           project_id: string
           raw_text: string
+          source_author: string | null
           source_kind: string
           source_url: string | null
           title: string
@@ -854,9 +974,11 @@ export type Database = {
           content_sha256?: string | null
           created_at?: string
           id?: string
+          normalized_content_sha256?: string | null
           occurred_at?: string | null
           project_id: string
           raw_text: string
+          source_author?: string | null
           source_kind: string
           source_url?: string | null
           title: string
@@ -867,9 +989,11 @@ export type Database = {
           content_sha256?: string | null
           created_at?: string
           id?: string
+          normalized_content_sha256?: string | null
           occurred_at?: string | null
           project_id?: string
           raw_text?: string
+          source_author?: string | null
           source_kind?: string
           source_url?: string | null
           title?: string
@@ -981,9 +1105,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      begin_project_analysis: {
+        Args: {
+          p_actor_id: string
+          p_expected_project_revision: string
+          p_model_name: string
+          p_normalized_content_sha256: string
+          p_occurred_at: string
+          p_project_id: string
+          p_raw_text: string
+          p_source_author: string
+          p_source_kind: string
+          p_source_url: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      complete_project_analysis: {
+        Args: {
+          p_actor_id: string
+          p_analysis_request_id: string
+          p_expected_project_revision: string
+          p_result: Json
+        }
+        Returns: Json
+      }
+      fail_project_analysis: {
+        Args: {
+          p_actor_id: string
+          p_analysis_request_id: string
+          p_failure_code: string
+          p_failure_provider_request_id: string
+          p_failure_stage: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
+      analysis_request_state: "processing" | "succeeded" | "failed"
       change_event_state:
         | "needs_confirmation"
         | "confirmed"
@@ -1026,6 +1185,7 @@ export type Database = {
         | "create_item"
         | "add_dependency"
         | "remove_dependency"
+        | "request_confirmation"
       proposal_state:
         | "draft"
         | "ready"
@@ -1162,6 +1322,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      analysis_request_state: ["processing", "succeeded", "failed"],
       change_event_state: [
         "needs_confirmation",
         "confirmed",
@@ -1209,6 +1370,7 @@ export const Constants = {
         "create_item",
         "add_dependency",
         "remove_dependency",
+        "request_confirmation",
       ],
       proposal_state: [
         "draft",

@@ -8,10 +8,11 @@
 - [x] Complete and automatically verify typed Supabase browser/server clients, request refresh, email/password login, and the authentication boundary.
 - [x] Complete and automatically verify role-aware authorization helpers, bounded typed repositories, and protected real-data pages.
 - [x] Implement validated native project-item and dependency operations with optimistic concurrency and reliable server refresh.
-- [ ] Implement evidence intake and immutable provenance.
-- [ ] Implement server-only GPT-5.6 extraction with Zod validation.
+- [x] Implement bounded evidence intake, immutable provenance, source hashing, and duplicate/rate claims.
+- [x] Implement server-only two-stage GPT-5.6 Luna analysis with strict structured output and application postvalidation.
 - [x] Implement deterministic dependency traversal with cycle protection, stable shortest paths, and path explanations.
-- [ ] Implement recovery proposal drafting and per-action approval state.
+- [x] Implement recovery proposal drafting and atomic persistence of pending per-action review state.
+- [ ] Wire the analysis route and pending-review records into the project UI without weakening the server contract.
 - [ ] Implement authorized, idempotent, reversible internal operations.
 - [ ] Implement operation history, undo, and isolated demo reset.
 - [ ] Build and verify the end-to-end demo workspace.

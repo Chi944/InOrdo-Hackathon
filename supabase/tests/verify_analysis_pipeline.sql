@@ -1,0 +1,494 @@
+-- Prompt 7 database integration assertions.
+-- Run only after the Prompt 7 migration and demo seed are present. Every
+-- mutation is transaction-scoped and rolled back.
+
+begin;
+
+do $$
+declare
+  project_revision text;
+  item_version bigint;
+  deterministic_impacts jsonb;
+  completion_payload jsonb;
+  rate_index integer;
+begin
+  if not exists (
+    select 1
+    from public.projects
+    where id = '20000000-0000-4000-8000-000000000001'::uuid
+  ) then
+    raise exception 'Prompt 7 verification requires the demo seed';
+  end if;
+
+  project_revision := private.compute_project_revision(
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid
+  );
+  select version
+  into item_version
+  from public.project_items
+  where id = '30000000-0000-4000-8000-000000000001'::uuid;
+
+  select coalesce(
+    pg_catalog.jsonb_agg(
+      pg_catalog.jsonb_build_object(
+        'item_id', path.item_id,
+        'severity', 'medium',
+        'depth', path.depth,
+        'path_item_ids', pg_catalog.to_jsonb(path.path_item_ids),
+        'explanation', 'Deterministic SQL verification impact.'
+      ) order by path.depth, path.item_id
+    ),
+    '[]'::jsonb
+  )
+  into deterministic_impacts
+  from private.compute_impact_paths(
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    '30000000-0000-4000-8000-000000000001'::uuid,
+    5
+  ) as path;
+
+  completion_payload := pg_catalog.jsonb_build_object(
+    'model_name', 'gpt-5.6-luna',
+    'extraction_metadata', pg_catalog.jsonb_build_object(
+      'request_id', null,
+      'usage', null
+    ),
+    'proposal_metadata', pg_catalog.jsonb_build_object(
+      'request_id', null,
+      'usage', null
+    ),
+    'validation_outcome', pg_catalog.jsonb_build_object(
+      'status', 'needs_review',
+      'ambiguities', '[]'::jsonb,
+      'unresolved_references', '[]'::jsonb,
+      'warnings', '[]'::jsonb,
+      'review_reasons', pg_catalog.jsonb_build_array(
+        'human_approval_required'
+      )
+    ),
+    'change', pg_catalog.jsonb_build_object(
+      'target_item_id', '30000000-0000-4000-8000-000000000001',
+      'field_name', 'event_date',
+      'previous_value', '2026-09-12',
+      'proposed_value', '2026-09-19',
+      'confidence', 0.95,
+      'evidence_text', '2026-09-19',
+      'evidence_start_offset', 16,
+      'evidence_end_offset', 26,
+      'expected_item_version', item_version
+    ),
+    'impact', pg_catalog.jsonb_build_object(
+      'max_depth', 5,
+      'items', deterministic_impacts
+    ),
+    'proposal', pg_catalog.jsonb_build_object(
+      'title', 'Verify the date change before applying it',
+      'rationale', 'The source proposes a date change that requires review.',
+      'actions', pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'target_item_id', '30000000-0000-4000-8000-000000000001',
+          'expected_item_version', null,
+          'rationale', 'A reviewer must confirm the supplied date.',
+          'payload', pg_catalog.jsonb_build_object(
+            'prompt_action_type', 'request_confirmation',
+            'question', 'Should the summit date move to 2026-09-19?',
+            'linked_impact_item_id',
+              '30000000-0000-4000-8000-000000000001',
+            'confidence', 0.95,
+            'requires_human_input', true
+          )
+        )
+      )
+    )
+  );
+
+  perform pg_catalog.set_config(
+    'inordo.prompt7_revision', project_revision, true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_success_hash',
+    private.source_normalized_sha256('Summit moved to 2026-09-19.'),
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_failure_hash',
+    private.source_normalized_sha256('Verification failure source.'),
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_viewer_hash',
+    private.source_normalized_sha256('Viewer must not analyze.'),
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_anonymous_hash',
+    private.source_normalized_sha256('Anonymous must not analyze.'),
+    true
+  );
+  for rate_index in 1..4 loop
+    perform pg_catalog.set_config(
+      'inordo.prompt7_rate_hash_' || rate_index::text,
+      private.source_normalized_sha256(
+        pg_catalog.format('Rate verification %s.', rate_index)
+      ),
+      true
+    );
+  end loop;
+  perform pg_catalog.set_config(
+    'inordo.prompt7_result', completion_payload::text, true
+  );
+
+  if private.normalize_source_text(E'  alpha\r\n beta\t value  \n')
+       <> E'alpha\nbeta value' then
+    raise exception 'source normalization parity failed';
+  end if;
+  if not private.evidence_matches_utf16_offsets(
+    'A' || pg_catalog.chr(128512) || 'BC', 'BC', 3, 5
+  ) then
+    raise exception 'UTF-16 evidence offset parity failed';
+  end if;
+  if private.evidence_matches_utf16_offsets(
+    'A' || pg_catalog.chr(128512) || 'BC',
+    pg_catalog.chr(128512) || 'B',
+    2,
+    4
+  ) then
+    raise exception 'split-surrogate evidence offset was accepted';
+  end if;
+
+  if has_table_privilege(
+    'authenticated', 'public.source_documents', 'INSERT'
+  ) then
+    raise exception 'authenticated can bypass analysis source intake';
+  end if;
+  if has_table_privilege(
+    'authenticated', 'public.analysis_requests', 'INSERT'
+  ) then
+    raise exception 'authenticated can insert analysis claims directly';
+  end if;
+  if has_function_privilege(
+    'authenticated',
+    'public.begin_project_analysis(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text)',
+    'EXECUTE'
+  ) then
+    raise exception 'authenticated can execute server-only analysis intake';
+  end if;
+  if not has_function_privilege(
+    'service_role',
+    'public.begin_project_analysis(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text)',
+    'EXECUTE'
+  ) then
+    raise exception 'service_role lacks begin_project_analysis execution';
+  end if;
+end;
+$$;
+
+set local role service_role;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000102',
+  true
+);
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"role":"service_role"}',
+  true
+);
+
+do $$
+declare
+  begin_result jsonb;
+begin
+  begin_result := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Prompt 7 SQL verification',
+    'manual_note',
+    'SQL verifier',
+    'Summit moved to 2026-09-19.',
+    pg_catalog.current_setting('inordo.prompt7_success_hash'),
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+  if begin_result ->> 'status' <> 'claimed'
+     or begin_result ->> 'state' <> 'processing' then
+    raise exception 'analysis claim failed: %', begin_result;
+  end if;
+  perform pg_catalog.set_config(
+    'inordo.prompt7_request_id',
+    begin_result ->> 'analysis_request_id',
+    true
+  );
+end;
+$$;
+
+do $$
+declare
+  completion_result jsonb;
+  persisted_impact_count integer;
+  expected_impact_count integer;
+  item_date date;
+begin
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  completion_result := public.complete_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_request_id')::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    pg_catalog.current_setting('inordo.prompt7_result')::jsonb
+  );
+  if completion_result ->> 'status' <> 'succeeded'
+     or completion_result ->> 'state' <> 'succeeded' then
+    raise exception 'analysis completion failed: %', completion_result;
+  end if;
+
+  select event_date
+  into item_date
+  from public.project_items
+  where id = '30000000-0000-4000-8000-000000000001'::uuid;
+  if item_date is distinct from date '2026-09-12' then
+    raise exception 'analysis directly mutated the project item';
+  end if;
+
+  if not exists (
+    select 1
+    from public.change_events
+    where id = (completion_result ->> 'change_event_id')::uuid
+      and state = 'needs_confirmation'::public.change_event_state
+  ) then
+    raise exception 'change event is not awaiting confirmation';
+  end if;
+  if not exists (
+    select 1
+    from public.action_proposals
+    where id = (completion_result ->> 'proposal_id')::uuid
+      and state = 'draft'::public.proposal_state
+  ) then
+    raise exception 'proposal is not an inert draft';
+  end if;
+  if not exists (
+    select 1
+    from public.proposal_actions
+    where proposal_id = (completion_result ->> 'proposal_id')::uuid
+      and state = 'pending'::public.proposal_action_state
+      and action_type = 'request_confirmation'::public.proposal_action_type
+  ) then
+    raise exception 'pending confirmation action was not persisted';
+  end if;
+
+  select pg_catalog.count(*)::integer
+  into persisted_impact_count
+  from public.impact_items
+  where impact_run_id = (completion_result ->> 'impact_run_id')::uuid;
+  expected_impact_count := pg_catalog.jsonb_array_length(
+    pg_catalog.current_setting('inordo.prompt7_result')::jsonb
+      -> 'impact' -> 'items'
+  );
+  if persisted_impact_count <> expected_impact_count then
+    raise exception 'persisted impact set differs from deterministic set';
+  end if;
+end;
+$$;
+
+do $$
+declare
+  duplicate_result jsonb;
+begin
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  duplicate_result := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Prompt 7 SQL verification',
+    'manual_note',
+    'SQL verifier',
+    'Summit moved to 2026-09-19.',
+    pg_catalog.current_setting('inordo.prompt7_success_hash'),
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+  if duplicate_result ->> 'status' <> 'duplicate'
+     or duplicate_result ->> 'state' <> 'succeeded' then
+    raise exception 'succeeded duplicate was not suppressed: %', duplicate_result;
+  end if;
+end;
+$$;
+
+do $$
+declare
+  begin_result jsonb;
+  failure_result jsonb;
+begin
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  begin_result := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Prompt 7 failure verification',
+    'manual_note',
+    'SQL verifier',
+    'Verification failure source.',
+    pg_catalog.current_setting('inordo.prompt7_failure_hash'),
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+  if begin_result ->> 'status' <> 'claimed' then
+    raise exception 'failure-path claim failed: %', begin_result;
+  end if;
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  failure_result := public.fail_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    (begin_result ->> 'analysis_request_id')::uuid,
+    'extraction',
+    'model_timeout',
+    'req_prompt7_verification'
+  );
+  if failure_result ->> 'status' <> 'failed'
+     or failure_result ->> 'state' <> 'failed' then
+    raise exception 'failure-path finalization failed: %', failure_result;
+  end if;
+end;
+$$;
+
+do $$
+declare
+  rate_index integer;
+  begin_result jsonb;
+begin
+  for rate_index in 1..3 loop
+    perform pg_catalog.set_config(
+      'request.jwt.claims', '{"role":"service_role"}', true
+    );
+    begin_result := public.begin_project_analysis(
+      '00000000-0000-4000-8000-000000000102'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      pg_catalog.current_setting('inordo.prompt7_revision'),
+      pg_catalog.format('Prompt 7 rate verification %s', rate_index),
+      'manual_note',
+      'SQL verifier',
+      pg_catalog.format('Rate verification %s.', rate_index),
+      pg_catalog.current_setting(
+        'inordo.prompt7_rate_hash_' || rate_index::text
+      ),
+      null,
+      null,
+      'gpt-5.6-luna'
+    );
+    if begin_result ->> 'status' <> 'claimed' then
+      raise exception 'rate setup claim failed: %', begin_result;
+    end if;
+  end loop;
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  begin_result := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Prompt 7 rate verification 4',
+    'manual_note',
+    'SQL verifier',
+    'Rate verification 4.',
+    pg_catalog.current_setting('inordo.prompt7_rate_hash_4'),
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+  if begin_result ->> 'status' <> 'rate_limited'
+     or (begin_result ->> 'retry_after_seconds')::integer not between 1 and 600 then
+    raise exception 'rate limit did not fail closed: %', begin_result;
+  end if;
+end;
+$$;
+
+reset role;
+
+set local role service_role;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000108',
+  true
+);
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"role":"service_role"}',
+  true
+);
+
+do $$
+begin
+  begin
+    perform public.begin_project_analysis(
+      '00000000-0000-4000-8000-000000000108'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      pg_catalog.current_setting('inordo.prompt7_revision'),
+      'Viewer rejection verification',
+      'manual_note',
+      'SQL verifier',
+      'Viewer must not analyze.',
+      pg_catalog.current_setting('inordo.prompt7_viewer_hash'),
+      null,
+      null,
+      'gpt-5.6-luna'
+    );
+    raise exception 'viewer analysis unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
+set local role authenticated;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000102',
+  true
+);
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000102","role":"authenticated","is_anonymous":true}',
+  true
+);
+
+do $$
+begin
+  begin
+    perform public.begin_project_analysis(
+      '00000000-0000-4000-8000-000000000102'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      pg_catalog.current_setting('inordo.prompt7_revision'),
+      'Anonymous rejection verification',
+      'manual_note',
+      'SQL verifier',
+      'Anonymous must not analyze.',
+      pg_catalog.current_setting('inordo.prompt7_anonymous_hash'),
+      null,
+      null,
+      'gpt-5.6-luna'
+    );
+    raise exception 'anonymous analysis unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+rollback;
