@@ -22,6 +22,24 @@ Supabase Postgres + Auth + RLS
 
 Use React Server Components by default. Client Components may hold browser interaction state but must not import server secrets, call OpenAI, or make authorization decisions.
 
+### Project-view presentation boundary
+
+The authenticated project-management shell exposes one consistent route set:
+
+- `/app` is the project overview and guided entry point;
+- `/app/items` is the filterable project-item table/card view;
+- `/app/items/[itemId]` is the item detail and edit view;
+- `/app/decisions` and `/app/risks` are focused projections of the same project records; and
+- `/app/dependencies` is the text-first dependency inspector and relationship editor. An optional `item` query selects the record opened from an item detail view.
+
+Server Components load the current authorized project through the existing bounded, RLS-scoped repositories and validated project-record operations. They pass only serializable view data to interactive Client Components. Search, filters, selected tabs/items, and dialog visibility are local presentation state; the browser does not keep a second canonical project fixture. Create, edit, add-relationship, and remove-relationship controls submit to the existing validated server actions, and refreshed server state remains authoritative. Loading, empty, validation-error, permission, success, and optimistic-version conflict states are presented explicitly.
+
+Dependency language follows the database contract exactly: `from_item_id` is the dependent item and `to_item_id` is its upstream prerequisite or context. A selected item's **Depends on** section contains edges whose `from_item_id` is that item; its **Affects** section contains downstream items from edges whose `to_item_id` is that item. The relationship editor asks for the dependent item first, previews the sentence “dependent item depends on upstream prerequisite,” and preserves the existing relationship enum. This presentation does not redefine graph reachability or traversal semantics.
+
+The dependency experience is deliberately text-first: labeled item controls, complete relationship sentences, item keys, relationship names, rationales, and separate upstream/downstream lists carry the meaning. Arrows, color, and status marks are supplementary, not the only signal. Tables yield to labeled cards on small screens, controls retain visible focus, modal interactions return focus, and the shell must not create horizontal page overflow at 375 pixels.
+
+The guided callout labels the workspace and records as synthetic and derives its destinations from the server-loaded seed. The current canonical seed contains no sponsor record or sponsor relationship, so the interface states that limitation and does not fabricate either. This branch adds presentation and route wiring only: it does not change SQL, RLS, authorization, OpenAI integration, project-record contracts, operation logic, dependency edge meaning, or deterministic traversal.
+
 ### Authentication and request refresh
 
 The installed Next.js 16 line uses `src/proxy.ts` for request interception. The proxy refreshes the Supabase session with a request-scoped server client and carries every cookie update to both the current request and outgoing response. It does not make domain authorization decisions and it does not use a service-role client.

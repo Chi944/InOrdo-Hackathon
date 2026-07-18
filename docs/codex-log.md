@@ -76,3 +76,14 @@
 - Completed the reviewer security checklist and forward-only rollback procedure. Unexpected database exceptions are documented as atomic rollbacks that may leave no failed audit row and therefore require containment/reconciliation rather than fabricated history.
 - Ran the settled Prompt 9 repository gate under Node 22: lint, typecheck, 223 tests across 37 files, the production build, and `git diff --check` passed.
 - The authenticated HTTP/browser operation flow remains pending. No live OpenAI request was performed, and no secret or environment file was read or logged.
+
+## 2026-07-18 — Project and dependency views
+
+- Added authenticated routes for a filterable project-item list, item detail/edit, focused decision and open-risk views, and a text-first dependency inspector, all presented from current authorized server-loaded project records.
+- Reused the existing validated create/update and dependency add/remove server actions. Client state is limited to filters, selection, dialogs, and feedback; it does not duplicate canonical project records in a hard-coded frontend fixture.
+- Made the edge contract explicit throughout the interface: `from_item_id` is the dependent record and `to_item_id` is its upstream prerequisite/context, shown as **Depends on** and **Affects** from the selected item's perspective.
+- Added labeled responsive table/card states, empty/loading/error/success/conflict feedback, keyboard-operable dialogs with focus return, focused decision rationale and risk context, and a dismissible callout that identifies the summit workspace as synthetic.
+- Derived guided-demo destinations from real seeded records covering the summit event, venue decision, speakers, campaign/media, printing, volunteers, approval/readiness, and runbook. The current canonical seed has no sponsor record or relationship; the UI states that gap and does not invent one.
+- Added component tests for item filters/forms and dependency direction/forms, plus exact manual review steps in `docs/qa-checklist.md` for data integrity, stale-version conflict handling, keyboard behavior, and 375/768/1440 pixel layouts.
+- Documented the project-view route and data boundary in `docs/architecture.md`. No SQL, RLS, authorization, OpenAI integration, operation logic, backend contract, graph direction, or deterministic traversal behavior was changed.
+- Ran the settled branch gate under Node 22: lint, typecheck, 236 tests across 40 files, the production build, and `git diff --check` passed. Browser review found no public landing-shell overflow at 375, 768, or 1440 pixels. Authenticated project-route review remains pending because this clean worktree has no public Supabase configuration or operator-created login; the Playwright script was also attempted and reported that the repository has no end-to-end test files.

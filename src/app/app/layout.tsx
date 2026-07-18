@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 import { logoutAction } from "@/app/login/actions";
+import { ProjectNavigation } from "@/app/app/project-navigation";
 import { AuthorizationError } from "@/lib/auth/errors";
 import { requireUser, type AuthenticatedUser } from "@/lib/auth/guards";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -50,9 +51,13 @@ export default async function ProtectedAppLayout({
             InOrdo
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <span className="inline-flex border border-signal/25 bg-[#eef1ff] px-2 py-2 font-mono text-[0.58rem] uppercase tracking-[0.08em] text-signal sm:px-3 sm:text-[0.62rem] sm:tracking-[0.1em]">
+              <span className="sm:hidden">Synthetic</span>
+              <span className="hidden sm:inline">Synthetic demo</span>
+            </span>
             <p className="hidden max-w-56 truncate text-sm text-muted sm:block">
-              {user.email ?? "Authenticated demo user"}
+              Authenticated session
             </p>
             <form action={logoutAction}>
               <button
@@ -65,6 +70,7 @@ export default async function ProtectedAppLayout({
             </form>
           </div>
         </div>
+        <ProjectNavigation />
       </header>
       {children}
     </div>

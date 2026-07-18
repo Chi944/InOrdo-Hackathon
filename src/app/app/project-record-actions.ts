@@ -25,7 +25,13 @@ function nullableString(formData: FormData, name: string) {
 }
 
 function actionError(error: unknown): RecordActionState {
-  if (error instanceof ProjectRecordError || error instanceof AuthorizationError) {
+  if (error instanceof ProjectRecordError) {
+    if (error.code === "conflict") {
+      return { status: "conflict", message: `Conflict: ${error.message}` };
+    }
+    return { status: "error", message: error.message };
+  }
+  if (error instanceof AuthorizationError) {
     return { status: "error", message: error.message };
   }
   return {
@@ -58,7 +64,7 @@ export async function createProjectItemAction(
       dueDate: optionalString(formData, "dueDate"),
       eventDate: optionalString(formData, "eventDate"),
     });
-    revalidatePath("/app");
+    revalidatePath("/app", "layout");
     return { status: "success", message: "Project item created." };
   } catch (error) {
     return actionError(error);
@@ -105,7 +111,7 @@ export async function updateProjectItemAction(
       }),
     };
     await projectRecords.updateItem(input);
-    revalidatePath("/app");
+    revalidatePath("/app", "layout");
     return { status: "success", message: "Project item updated." };
   } catch (error) {
     return actionError(error);
@@ -125,7 +131,7 @@ export async function createDependencyAction(
       relationship: stringValue(formData, "relationship"),
       rationale: optionalString(formData, "rationale"),
     });
-    revalidatePath("/app");
+    revalidatePath("/app", "layout");
     return { status: "success", message: "Dependency added." };
   } catch (error) {
     return actionError(error);
@@ -142,7 +148,7 @@ export async function removeDependencyAction(
       projectId: stringValue(formData, "projectId"),
       dependencyId: stringValue(formData, "dependencyId"),
     });
-    revalidatePath("/app");
+    revalidatePath("/app", "layout");
     return { status: "success", message: "Dependency removed." };
   } catch (error) {
     return actionError(error);

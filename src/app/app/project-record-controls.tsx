@@ -49,10 +49,11 @@ function ActionFeedback({
   state: typeof initialRecordActionState;
 }) {
   if (state.status === "idle") return null;
+  const isProblem = state.status === "error" || state.status === "conflict";
   return (
     <p
-      className={`mt-3 text-sm ${state.status === "error" ? "text-red-700" : "text-green-700"}`}
-      role={state.status === "error" ? "alert" : "status"}
+      className={`mt-3 text-sm ${isProblem ? "text-red-700" : "text-green-700"}`}
+      role={isProblem ? "alert" : "status"}
     >
       {state.message}
     </p>

@@ -1,5 +1,5 @@
 export type RecordActionState = {
-  status: "idle" | "success" | "error";
+  status: "idle" | "success" | "error" | "conflict";
   message: string;
 };
 

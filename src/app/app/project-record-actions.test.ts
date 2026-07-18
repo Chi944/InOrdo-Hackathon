@@ -75,7 +75,7 @@ describe("project record Server Actions", () => {
       dueDate: undefined,
       eventDate: undefined,
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/app");
+    expect(revalidatePath).toHaveBeenCalledWith("/app", "layout");
   });
 
   it("submits an item edit with its optimistic concurrency version", async () => {
@@ -93,7 +93,7 @@ describe("project record Server Actions", () => {
       expectedVersion: 7,
       status: "at_risk",
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/app");
+    expect(revalidatePath).toHaveBeenCalledWith("/app", "layout");
   });
 
   it("creates and removes dependencies through scoped operations", async () => {
@@ -138,8 +138,9 @@ describe("project record Server Actions", () => {
     await expect(
       updateProjectItemAction(initialRecordActionState, form),
     ).resolves.toEqual({
-      status: "error",
-      message: "This item changed since you loaded it. Refresh and try again.",
+      status: "conflict",
+      message:
+        "Conflict: This item changed since you loaded it. Refresh and try again.",
     });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
