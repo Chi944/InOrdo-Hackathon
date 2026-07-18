@@ -7,10 +7,16 @@ import {
   publicEnvSchema,
 } from "@/lib/env/public";
 
+const openAIModelSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .default("gpt-5.6-luna");
+
 export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_MODEL: z.string().min(1),
+  OPENAI_MODEL: openAIModelSchema,
   DEMO_PROJECT_SLUG: z.string().min(1),
   DEMO_RESET_SECRET: z.string().min(1),
 });
@@ -30,7 +36,7 @@ const demoResetEnvSchema = demoEnvSchema.extend({
 
 export const openAIEnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_MODEL: z.string().trim().min(1).default("gpt-5.6-luna"),
+  OPENAI_MODEL: openAIModelSchema,
 });
 
 const openAIModelEnvSchema = openAIEnvSchema.pick({ OPENAI_MODEL: true });

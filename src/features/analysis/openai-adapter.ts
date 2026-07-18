@@ -63,7 +63,7 @@ export type AnalysisModelCall = AnalysisPrompt & {
 
 export type ResponsesParseRequestOptions = {
   timeout: number;
-  maxRetries: 1;
+  maxRetries: 0;
 };
 
 export type ParsedAnalysisResponse = {
@@ -306,7 +306,7 @@ export function createOpenAIAnalysisAdapter(
     try {
       response = await responses.parse(body, {
         timeout: timeoutMs,
-        maxRetries: 1,
+        maxRetries: 0,
       });
     } catch (error) {
       throw normalizeThrownError(error);

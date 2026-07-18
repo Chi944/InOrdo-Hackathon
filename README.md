@@ -168,7 +168,7 @@ Codex also accelerated review decisions: the model boundary stayed interpretive 
 ## Prerequisites
 
 - Node.js 22.x and npm.
-- A Supabase project and the Supabase CLI for database/authenticated flows.
+- A Supabase project; the development dependencies pin Supabase CLI `2.109.1` for database/authenticated flows.
 - Docker Desktop or another compatible container runtime only when running Supabase locally.
 - An OpenAI API key with access to the configured GPT-5.6 model for live analysis.
 - An operator-created Supabase Auth user mapped to the synthetic workspace for the protected demo.
@@ -218,17 +218,17 @@ DEMO_RESET_SECRET=
 For an isolated hosted project, authenticate and inspect the target before applying migrations:
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <SUPABASE_PROJECT_REF>
-npx supabase db push --dry-run
-npx supabase db push
+npx --no-install supabase login
+npx --no-install supabase link --project-ref <SUPABASE_PROJECT_REF>
+npx --no-install supabase db push --dry-run
+npx --no-install supabase db push
 ```
 
 For a local Supabase stack, start the containers and rebuild from migrations plus `supabase/seed.sql`:
 
 ```bash
-npx supabase start
-npx supabase db reset
+npx --no-install supabase start
+npx --no-install supabase db reset
 ```
 
 `db reset` is destructive. Use it only for the local or explicitly disposable demo database. For a new isolated hosted demo, review `supabase/seed.sql` and apply it through the team's approved Supabase workflow; never seed a shared customer database. The seed creates fictional profiles and workspace data but no Auth password. Follow [`docs/demo-user-setup.md`](docs/demo-user-setup.md) to provision access outside source control.
@@ -259,11 +259,13 @@ The exact synthetic source text and expected dependency path are documented in [
 ## Deployment
 
 - Production URL: **`<PRODUCTION_URL>`**
-- Hosting target: **`<DEPLOYMENT_PLATFORM_OR_PROJECT>`**
+- Hosting target: **Vercel Hobby, manual Deston CLI deployment to `chi944s-projects/inordo-hackathon`**
 
-No production URL was supplied for this documentation pass. For deployment, use a Node.js 22-compatible Next.js host, configure all required variables in the host's secret store, apply reviewed Supabase migrations to the intended project, provision the demo account separately, run `npm run build`, and verify `/`, `/login`, and `/app` in a fresh incognito session.
+No production URL has been recorded yet. The release uses a single Deston-operated Vercel project with no automatic Git deployment. Preserve commit authorship, deploy only a clean reviewed `main` whose `HEAD` exactly equals `origin/main`, and confirm the current Vercel Hobby terms still permit this small non-commercial hackathon demo. Do not add analytics, paid monitoring, a custom domain, workers, scheduled jobs, Railway, or another hosting path for P0.
 
-Do not expose server variables to client code, do not use a service-role key for normal reads, and do not call the deployment production-ready until the unresolved QA gates are complete.
+The exact login, link, Preview, production, environment-name, Supabase redirect, smoke, SHA-recording, and rollback commands are in [`docs/deployment-runbook.md`](docs/deployment-runbook.md). The required production command is `npx vercel --prod` after a clean status and the complete Node 22 gate. `/api/health` is a no-spend configuration readiness check: while `OPENAI_API_KEY` is intentionally absent, it must return `503 not_ready` and live analysis remains unavailable; after Deston adds the key through Vercel's hidden prompt and redeploys, require `200 ready` before a funded smoke.
+
+Do not expose server variables to client code, point a Preview at the production Supabase/reset configuration, use a service-role key for normal reads, or call the deployment production-ready until the unresolved QA gates are complete. Configure hosted Supabase Auth only after the real deployment hosts exist: use the exact production origin as Site URL, allow the exact production redirect, both documented local HTTP redirects, and the account-scoped Vercel Preview wildcard.
 
 ## Known limitations
 
@@ -303,6 +305,7 @@ InOrdo is available under the [MIT License](LICENSE). Copyright is held by the I
 - Product and technical decisions: [`docs/product-brief.md`](docs/product-brief.md), [`docs/architecture.md`](docs/architecture.md)
 - Synthetic demo evidence: [`docs/demo-scenario.md`](docs/demo-scenario.md), [`supabase/seed.sql`](supabase/seed.sql)
 - Verification and unresolved gates: [`docs/qa-checklist.md`](docs/qa-checklist.md)
+- Manual Vercel/Supabase release and rollback procedure: [`docs/deployment-runbook.md`](docs/deployment-runbook.md)
 - Codex contribution summary: [`docs/codex-log.md`](docs/codex-log.md)
 - Submission copy and video plan: [`docs/submission-copy.md`](docs/submission-copy.md), [`docs/video-script.md`](docs/video-script.md)
 - Final human handoff: [`docs/submission-checklist.md`](docs/submission-checklist.md)

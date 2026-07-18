@@ -148,6 +148,7 @@ function metadataPayload(
 ) {
   return {
     request_id: metadata.requestId,
+    model_name: metadata.model,
     usage: usagePayload(metadata.usage),
   };
 }

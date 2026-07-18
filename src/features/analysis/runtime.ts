@@ -12,22 +12,26 @@ import {
   createSupabaseAnalysisPersistence,
   type AnalysisRpcExecutor,
 } from "@/features/analysis/supabase-persistence";
-import { getOpenAIEnv, getOpenAIModel } from "@/lib/env/server";
+import { getOpenAIEnv } from "@/lib/env/server";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/privileged";
 import type { ServerSupabaseClient } from "@/lib/supabase/server";
 
 export function createProjectAnalysisRuntime(client: ServerSupabaseClient) {
-  const modelName = getOpenAIModel();
+  let initializedEnvironment: ReturnType<typeof getOpenAIEnv> | null = null;
+  const getModelEnvironment = () => {
+    initializedEnvironment ??= getOpenAIEnv();
+    return initializedEnvironment;
+  };
   let initializedModel: OpenAIAnalysisAdapter | null = null;
   const getModel = () => {
     if (initializedModel) return initializedModel;
-    const environment = getOpenAIEnv();
+    const environment = getModelEnvironment();
     const openai = new OpenAI({
       apiKey: environment.OPENAI_API_KEY,
       maxRetries: 0,
     });
     initializedModel = createOpenAIAnalysisAdapter(openai.responses, {
-      model: modelName,
+      model: environment.OPENAI_MODEL,
     });
     return initializedModel;
   };
@@ -51,6 +55,6 @@ export function createProjectAnalysisRuntime(client: ServerSupabaseClient) {
     client,
     persistence,
     model,
-    modelName,
+    resolveModelName: () => getModelEnvironment().OPENAI_MODEL,
   });
 }

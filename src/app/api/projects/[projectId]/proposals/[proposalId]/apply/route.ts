@@ -3,6 +3,7 @@ import { createProjectOperationsRuntime } from "@/features/operations/runtime";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type ApplyRouteContext = {
   params: Promise<{ projectId: string; proposalId: string }>;

@@ -95,6 +95,7 @@ describe("client bundle boundaries", () => {
   it("marks privileged and user-scoped server modules as server-only", () => {
     for (const path of [
       "src/lib/env/server.ts",
+      "src/lib/env/readiness.ts",
       "src/lib/supabase/server.ts",
       "src/lib/supabase/privileged.ts",
       "src/lib/supabase/proxy.ts",
@@ -117,6 +118,17 @@ describe("client bundle boundaries", () => {
         /^import "server-only";/,
       );
     }
+  });
+
+  it("keeps health readiness free of provider and database calls", () => {
+    const healthRoute = readFileSync(
+      resolve(sourceRoot, "app", "api", "health", "route.ts"),
+      "utf8",
+    );
+
+    expect(healthRoute).not.toMatch(/from\s+["']openai(?:\/[^"']*)?["']/);
+    expect(healthRoute).not.toContain("@/lib/supabase");
+    expect(healthRoute).not.toMatch(/\bfetch\s*\(/);
   });
 
   it("keeps OpenAI and server environment imports outside client-reachable modules", () => {

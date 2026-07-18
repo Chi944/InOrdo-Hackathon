@@ -23,6 +23,15 @@ describe("OpenAI environment validation", () => {
     });
   });
 
+  it("rejects a whitespace-only model override", () => {
+    expect(() =>
+      parseOpenAIEnv({
+        OPENAI_API_KEY: "test-only-key",
+        OPENAI_MODEL: "   ",
+      }),
+    ).toThrow("OPENAI_MODEL");
+  });
+
   it("reports only the missing variable name", () => {
     expect(() => parseOpenAIEnv({ OPENAI_API_KEY: "" })).toThrow(
       EnvironmentConfigurationError,

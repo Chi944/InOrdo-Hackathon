@@ -1,5 +1,46 @@
 # QA checklist
 
+## Prompt 12 production-readiness gate (`deston/08-production-readiness`)
+
+This section is intentionally unchecked until each command or live step is run on the settled branch/deployment. The exact operator commands and evidence limits are in [`docs/deployment-runbook.md`](deployment-runbook.md).
+
+- [x] Clean `npm ci` under Node 22 reproduced the lockfile after adding the exact Supabase CLI `2.109.1` development pin.
+- [x] `npm run lint`.
+- [x] `npm run typecheck`.
+- [x] `npm run test:run` — 299 tests across 53 files.
+- [x] `npm run test:e2e` — one guarded Chromium journey.
+- [x] `npm run build` without an OpenAI request.
+- [x] `npm audit --omit=dev` — zero production vulnerabilities reported.
+- [x] `git diff --check` and both staged/unstaged whitespace checks.
+- [x] Formal multi-persona review against current `main`, independent validation, applied-fix re-review, and adversarial re-review completed with every surviving finding resolved; the documented route-deadline/log-volume concerns remain explicit residual operational risks.
+- [x] Linked migration dry-run/apply through `20260719101500`, ledger comparison, generated-type comparison, schema lint, security advisor, and all four rollback-wrapped SQL verifiers passed. The public generated TypeScript types match exactly; the security advisor reports no findings.
+- [x] `/api/health` returns non-cacheable `200 ready` with complete test configuration, makes no database/provider call, and exposes no values.
+- [x] With `OPENAI_API_KEY` absent, the built local server returned `503 not_ready`, logged only `OPENAI_API_KEY`, and returned no secret, stack, or internal database/provider detail.
+- [x] Static/build boundary checks prove browser modules cannot import service-role/OpenAI configuration and server-only modules fail closed if pulled into a client graph.
+- [x] Safe response and persisted metadata retain the provider-returned actual model name; default request configuration remains `gpt-5.6-luna`.
+- [x] The current metadata envelope and prior artifact's exact legacy envelope both validate during the rollback window; malformed model names, unknown fields, and direct public/API-role execution remain denied.
+- [x] Missing/invalid model configuration fails safely before the idempotency claim is created, while runtime construction and production build remain provider-free.
+- [x] `vercel.json` enables Fluid Compute; analyze uses a 90-second application duration below the supported 300-second Hobby Fluid maximum, two sequential 30-second provider limits, no SDK/request retry, and approximately 30 seconds of application headroom. Other mutation/history routes use 30 seconds.
+- [x] Local Supabase Auth config uses `http://localhost:3000`, plus `http://localhost:3000/**` and `http://127.0.0.1:3000/**`; it contains no `https://127.0.0.1` redirect.
+- [x] Reset still requires owner/admin authorization, the exact configured synthetic slug/demo marker, explicit confirmation, idempotency, server-held guard, and rate limiting; no demo password or reset secret is committed.
+- [x] No analytics, paid monitoring, custom domain, worker, scheduled job, Railway service, Git-connected automatic deployment, or authorship rewrite was introduced.
+- [x] The fail-closed release helpers pin Supabase CLI `2.109.1`, reject malformed/unknown ledger shapes and versions, preserve applied migrations, check staged and unstaged patches, and passed dedicated parser/runbook tests plus Bash syntax validation.
+
+### Vercel/Supabase release evidence
+
+- [ ] Deston confirms current Vercel Hobby terms permit this small non-commercial hackathon demo and records the review date without presenting this checklist as legal advice.
+- [ ] Deston logs in, verifies the `chi944s-projects` scope, links the manual `inordo-hackathon` project, and confirms no Git repository/automatic deployment is connected.
+- [ ] Production has the six non-OpenAI names in the correct Production scopes: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Names/scopes only are recorded; no value is copied.
+- [ ] Until `OPENAI_API_KEY` is supplied, the deployed health route returns `503 not_ready`, analysis is unavailable, and public copy does not claim otherwise.
+- [ ] After the real hosts exist, hosted Supabase Auth Site URL is the exact production origin and its redirects contain both local HTTP wildcards, the exact production `/**` path, and the account-scoped Vercel Preview wildcard.
+- [ ] Preview deploy proves `HEAD == origin/main` and divergence `0 0` before and after the gate, inspected deployment metadata matches that recorded full Git SHA, public `/` and `/login` work, and expected missing Preview configuration is not called ready.
+- [ ] Production deploy proves `HEAD == origin/main` and divergence `0 0` before and after the gate, runs with `npx vercel --prod`, and has inspected deployment metadata plus logs matching that exact release without secret/value, build-time provider call, server/client boundary failure, or route timeout.
+- [ ] In a fresh incognito profile, `/`, `/login`, signed-out `/app`, login/session refresh/logout, and tenant denial behave as documented.
+- [ ] After Deston supplies `OPENAI_API_KEY` and redeploys, `/api/health` returns `200 ready`; exactly one funded synthetic venue analysis records only safe actual-model/ID/status metadata and no prompt, source body, output, key, header, or cookie.
+- [ ] Owner/admin completes the canonical evidence -> deterministic impact -> selective apply -> ordered history -> compensating undo -> protected reset flow; viewer/nonmember/cross-project attempts fail closed.
+- [ ] The exact deployed UI passes keyboard, visible-focus, status-announcement, and no-horizontal-overflow checks at approximately 375, 768, and 1440 pixels.
+- [ ] The previous schema-compatible deployment is identified; the Vercel rollback path is reviewed, and any Git revert either proves the target has no applied migration or preserves every applied migration while using a reviewed forward repair.
+
 ## Prompt 11 submission integration gate (`codex/andres-05-integration`)
 
 - [x] `npm run lint`
@@ -281,6 +322,8 @@ Successful analysis completion now promotes only an eligible, exactly linked cur
 
 ### Prompt 7 implementation evidence (code review, not command results)
 
+This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its original one-SDK-retry setting by disabling request/SDK retries to fit the documented 90-second deployment budget; the current release gate is at the top of this file.
+
 - [x] The request and source schemas are strict and bounded; unsupported keys, source types, depths, and oversized request bodies fail closed.
 - [x] Contributor authorization and one-project context loading happen before the model boundary.
 - [x] The server-only Responses adapter sets `store: false`, low reasoning, no tools, bounded output, a 30-second timeout per logical call, and at most one SDK retry per call.
@@ -329,7 +372,7 @@ Successful analysis completion now promotes only an eligible, exactly linked cur
 | High | No funded live GPT-5.6 request has been recorded in the available environment. | Deston / Shared | Run one safe synthetic analysis after deployment configuration, recording only non-secret metadata. If unavailable, keep all public copy explicit that the live provider call remains unverified. |
 | High | No authenticated production/incognito browser pass or final production URL has been recorded. | Shared | Deploy the reviewed commit, provision the operator-managed synthetic account out of band, and complete the live smoke matrix. There is no documentation-only substitute. |
 | High | Final production/demo-access/Devpost/video URLs, team roles, official deadline, and primary `/feedback` Session ID are not supplied. | Shared | Replace each submission placeholder from its authoritative human/external source and verify every public link before submission. |
-| Medium | Deployment-level request limits, runtime budgets, secret rotation, and stuck-analysis reconciliation require platform configuration and an operator runbook. | Deston | Complete Prompt 12 production-readiness configuration and document the exact containment and rollback sequence. |
+| Medium | Prompt 12 now documents the platform runtime budget, secret scopes, containment, and rollback, but the live Vercel/Supabase configuration and deployment evidence are still pending. | Deston | Execute `docs/deployment-runbook.md` from reviewed `main`, record only safe SHA/status evidence, and keep unavailable capabilities unclaimed. |
 | Medium | Authenticated Playwright does not cover live Supabase/Auth/OpenAI. | Andres / Shared | Use the guarded journey only as UI/contract evidence; complete the real production browser matrix before making live-service claims. |
 
 ## Submission claim rule

@@ -3,6 +3,7 @@ import { createProjectOperationsRuntime } from "@/features/operations/runtime";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type UndoRouteContext = {
   params: Promise<{ projectId: string; operationId: string }>;

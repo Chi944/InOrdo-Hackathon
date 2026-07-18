@@ -118,6 +118,7 @@ type CreateProjectAnalysisServiceOptions = {
   persistence: AnalysisPersistence;
   model: OpenAIAnalysisAdapter;
   modelName?: string;
+  resolveModelName?: () => string | Promise<string>;
   authorize?: AnalysisAuthorizer;
   loadContext?: (
     client: ServerSupabaseClient,
@@ -212,6 +213,7 @@ export function createProjectAnalysisService({
   persistence,
   model,
   modelName = "gpt-5.6-luna",
+  resolveModelName = () => modelName,
   authorize = defaultAuthorizer,
   loadContext = loadProjectAnalysisContext,
 }: CreateProjectAnalysisServiceOptions) {
@@ -239,12 +241,18 @@ export function createProjectAnalysisService({
         }
         throw error;
       }
+      let activeModelName: string;
+      try {
+        activeModelName = await resolveModelName();
+      } catch (error) {
+        throw new AnalysisError("model_unavailable", undefined, error);
+      }
       const beginning = await persistence.begin({
         actorId: user.id,
         projectId,
         projectRevision: context.revision,
         source: parsed.data.source,
-        modelName,
+        modelName: activeModelName,
       });
       if (beginning.kind === "duplicate") return beginning;
 
@@ -323,7 +331,7 @@ export function createProjectAnalysisService({
           requestId: beginning.requestId,
           projectRevision: context.revision,
           maxDepth: parsed.data.maxDepth,
-          modelName,
+          modelName: activeModelName,
           change,
           proposal,
           extractionMetadata: extraction.metadata,

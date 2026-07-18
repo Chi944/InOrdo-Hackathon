@@ -2,7 +2,7 @@
 -- Profiles are durable attribution identities, not login accounts. This seed
 -- intentionally creates no auth.users rows or credentials. A later auth/demo
 -- task must explicitly provision or map a login to this fixture. Reproduce the
--- exact baseline with `npx supabase db reset`; this is not a reset RPC.
+-- exact baseline with `npx --no-install supabase db reset`; this is not a reset RPC.
 
 begin;
 

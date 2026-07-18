@@ -53,10 +53,12 @@ begin
     'model_name', 'gpt-5.6-luna',
     'extraction_metadata', pg_catalog.jsonb_build_object(
       'request_id', null,
+      'model_name', 'gpt-5.6-luna-provider-fixture',
       'usage', null
     ),
     'proposal_metadata', pg_catalog.jsonb_build_object(
       'request_id', null,
+      'model_name', 'gpt-5.6-luna-provider-fixture',
       'usage', null
     ),
     'validation_outcome', pg_catalog.jsonb_build_object(
@@ -103,6 +105,81 @@ begin
       )
     )
   );
+
+  if not private.is_valid_model_metadata(
+    completion_payload -> 'extraction_metadata'
+  ) then
+    raise exception 'provider model metadata validator rejected valid metadata';
+  end if;
+  if not private.is_valid_model_metadata(
+    (completion_payload -> 'extraction_metadata') - 'model_name'
+  ) then
+    raise exception 'provider model metadata rejected the legacy envelope';
+  end if;
+  if private.is_valid_model_metadata(
+    pg_catalog.jsonb_set(
+      completion_payload -> 'extraction_metadata',
+      '{model_name}',
+      '42'::jsonb
+    )
+  ) then
+    raise exception 'provider model metadata accepted a non-string model name';
+  end if;
+  if private.is_valid_model_metadata(
+    pg_catalog.jsonb_set(
+      completion_payload -> 'extraction_metadata',
+      '{model_name}',
+      pg_catalog.to_jsonb('bad model name!'::text)
+    )
+  ) then
+    raise exception 'provider model metadata accepted illegal model characters';
+  end if;
+  if private.is_valid_model_metadata(
+    pg_catalog.jsonb_set(
+      completion_payload -> 'extraction_metadata',
+      '{model_name}',
+      pg_catalog.to_jsonb(pg_catalog.repeat('x', 121))
+    )
+  ) then
+    raise exception 'provider model metadata accepted an overlong model name';
+  end if;
+  if private.is_valid_model_metadata(
+    (completion_payload -> 'extraction_metadata')
+      || pg_catalog.jsonb_build_object('unexpected', true)
+  ) then
+    raise exception 'provider model metadata accepted an unknown field';
+  end if;
+  if private.is_valid_model_metadata(
+    ((completion_payload -> 'extraction_metadata') - 'model_name')
+      || pg_catalog.jsonb_build_object('unexpected', true)
+  ) then
+    raise exception 'legacy provider metadata accepted an unknown field';
+  end if;
+  if exists (
+    select 1
+    from pg_catalog.pg_proc as function_row
+    join pg_catalog.pg_namespace as namespace
+      on namespace.oid = function_row.pronamespace
+    cross join lateral pg_catalog.aclexplode(
+      coalesce(
+        function_row.proacl,
+        pg_catalog.acldefault('f', function_row.proowner)
+      )
+    ) as permission
+    left join pg_catalog.pg_roles as grantee
+      on grantee.oid = permission.grantee
+    where namespace.nspname = 'private'
+      and function_row.proname = 'is_valid_model_metadata'
+      and pg_catalog.pg_get_function_identity_arguments(function_row.oid)
+        = 'candidate jsonb'
+      and permission.privilege_type = 'EXECUTE'
+      and (
+        permission.grantee = 0
+        or grantee.rolname in ('anon', 'authenticated', 'service_role')
+      )
+  ) then
+    raise exception 'provider model metadata validator is directly executable';
+  end if;
 
   perform pg_catalog.set_config(
     'inordo.prompt7_revision', project_revision, true
@@ -303,6 +380,19 @@ begin
       and state = 'needs_confirmation'::public.change_event_state
   ) then
     raise exception 'change event is not awaiting confirmation';
+  end if;
+  if not exists (
+    select 1
+    from public.analysis_requests as request
+    where request.id = (
+        completion_result ->> 'analysis_request_id'
+      )::uuid
+      and request.result_metadata #>> '{extraction_metadata,model_name}'
+        = 'gpt-5.6-luna-provider-fixture'
+      and request.result_metadata #>> '{proposal_metadata,model_name}'
+        = 'gpt-5.6-luna-provider-fixture'
+  ) then
+    raise exception 'provider-returned model names were not persisted';
   end if;
   if not exists (
     select 1

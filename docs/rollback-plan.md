@@ -195,3 +195,32 @@ The Prompt 10 proposal-readiness migration is forward-only. Never delete or edit
 - The complete Node 22 lint, typecheck, unit, Playwright, production build, dependency audit, and diff gates pass on the repair artifact.
 - The linked migration ledger, generated types, schema lint, security advisor, and rollback-wrapped P0/analysis/operation suites pass before routes reopen.
 - One operator-held live production smoke follows `docs/qa-checklist.md`; unavailable steps remain visibly pending and the corresponding capability stays unclaimed.
+
+## Prompt 12 Vercel production rollback
+
+Prompt 12 adds deployment/readiness configuration and may include a forward-only metadata validator migration. Its release target is one Deston-operated Vercel Hobby project with manual CLI deployment and no Git-connected automatic deploy. Rollback must preserve Git authorship, database evidence, operation history, and the migration ledger.
+
+### Contain and restore the last known-good artifact
+
+1. Stop the affected write route first. For an analysis/provider defect, contain the analyze POST; for an apply/undo/reset defect, use the Prompt 9 route-specific containment above. A failing configuration-readiness check is not permission to keep a privileged route open.
+2. Record only the deployed full Git SHA, Vercel deployment URL/ID, safe route/status/error code, model name/provider request ID if already stored, and applicable database migration version. Do not copy environment values, request bodies, evidence, model output, human responses, authorization headers, cookies, or private audit payloads.
+3. List and inspect the known-good deployment, then repoint production with `npx vercel rollback <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>`. Verify the served deployment metadata and rerun `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected path. Do not disable Vercel deployment protection or delete the failed deployment to hide evidence.
+4. A Vercel rollback changes only the served application artifact. It does not revert a database migration, rotate a credential, undo an operation, or erase an analysis claim. Keep migrations forward-only and use the matching Prompt 7/9/10 recovery section for persisted state.
+
+If bad environment configuration caused the incident, correct only the affected name in Vercel's secret store, never on the command line or in Git. Redeploy before testing because environment updates do not change an existing artifact. If exposure is suspected, rotate the credential in the provider/Supabase console and Vercel, keep privileged routes contained, and never print or record either old or replacement value.
+
+### Git revert and redeploy fallback
+
+If no safe Vercel artifact exists or source must change, start from current `main` and use the migration-aware revert procedure in `docs/deployment-runbook.md`. A whole-commit `git revert` is permitted only when the inspected target contains no migration already applied to the linked project. Otherwise use a no-commit revert, restore `supabase/migrations` from current `HEAD`, verify application/schema compatibility, and commit only the truthful repair; if database behavior must change, add a new numbered forward migration. Never reset, force-push, rewrite another contributor's authorship, edit/remove an applied migration, or manufacture a new author to bypass a Hobby-plan restriction.
+
+Run clean `npm ci`, lint, typecheck, the complete Vitest and Playwright suites, production build, production dependency audit, and diff/status checks on the revert. Open and review a PR, merge normally, pull the new `main` with `--ff-only`, record the new full SHA, rerun the complete gate, and deploy with `npx vercel --prod`. The exact commands are in `docs/deployment-runbook.md`.
+
+If the Prompt 12 database validator is defective, keep analysis/finalization contained and ship a new numbered forward migration that narrows or replaces it. The current forward validator accepts both the prior artifact's exact legacy envelope and the current exact envelope during the rollback window; malformed present model names and unknown fields are still denied, and the function remains non-executable to public API roles. Preserve existing model metadata and derived records; never delete metadata or substitute a configured/requested model name for the actual provider-returned identifier. Re-run the linked ledger, generated-type comparison, schema lint, advisors, and rollback-wrapped SQL verifiers before reopening.
+
+### Reopen criteria
+
+- The exact artifact's SHA matches inspected Vercel deployment metadata and both working-tree status checks are empty.
+- `/api/health` returns `200 ready` only with complete configuration, performs no database/provider call, and exposes/logs no values; deliberate missing-name verification returns safe `503 not_ready`.
+- Fluid Compute is enabled; analysis retains its 90-second application budget, two sequential 30-second provider limits, disabled SDK/request retries, and application headroom. Other mutation/history routes retain their 30-second budget.
+- Hosted Supabase Site URL/redirects match the exact production host, both local HTTP wildcards, and the account-scoped Preview wildcard; Auth login/logout and tenant denial pass in a fresh browser profile.
+- The applicable authenticated synthetic analysis/operation/reset and responsive/accessibility smoke steps in `docs/qa-checklist.md` pass. If `OPENAI_API_KEY` or an operator Auth account is unavailable, keep those steps pending and the capability unclaimed.

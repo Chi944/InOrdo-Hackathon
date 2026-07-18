@@ -73,7 +73,7 @@ Analysis is intentionally two stage:
 1. GPT-5.6 Luna extracts at most one candidate change from the untrusted source and a bounded canonical snapshot of one project.
 2. Application code postvalidates that change, runs the pure deterministic graph traversal, and gives the second model call only the validated change, deterministic paths, and bounded current values needed to draft inert recovery actions.
 
-The model is a constrained interpreter and drafting assistant. It does not authorize users, traverse dependencies, call tools, persist records directly, approve actions, or mutate project data. Both logical calls use the OpenAI Responses API from a server-only adapter with `OPENAI_MODEL` (default `gpt-5.6-luna`), strict Zod-backed structured output, `store: false`, low reasoning effort, an empty tools list, bounded prompts and output tokens, a 30-second timeout per call, and at most one SDK retry per call for transient provider failures. There is no application retry loop.
+The model is a constrained interpreter and drafting assistant. It does not authorize users, traverse dependencies, call tools, persist records directly, approve actions, or mutate project data. Both logical calls use the OpenAI Responses API from a server-only adapter with `OPENAI_MODEL` (default `gpt-5.6-luna`), strict Zod-backed structured output, `store: false`, low reasoning effort, an empty tools list, bounded prompts and output tokens, a 30-second timeout per call, and SDK/request retries disabled. There is no application retry loop.
 
 The canonical context loader still fails closed above 200 active items or 1,000 edges. Before either prompt is built, a pure deterministic projection limits each item description to 500 characters and all item descriptions to 15,000 characters, marks every truncated description, and rejects an encoded item projection above 160,000 bytes. Extraction does not receive dependency rows because the model does not traverse the graph. The second call receives only bounded affected-item values plus application-computed paths. Canonical database rows are never truncated or rewritten by this projection.
 
@@ -174,7 +174,19 @@ After both model calls and all application checks succeed, `complete_project_ana
 - Extraction and proposal responses are capped separately at 2,048 and 4,096 output tokens.
 - Low reasoning effort, no tools, no web/file search, no embeddings, no RAG, no background jobs, and no model-driven loops keep calls predictable.
 - Duplicate claims and the per-actor rolling rate limit run before either provider call.
-- Exactly two logical model calls are required for a successful new analysis. A validation/provider failure stops the pipeline. Because each logical call permits one transient SDK retry, a successful analysis can make two to four provider attempts; no model-driven or application retry loop can exceed that bound.
+- Exactly two logical model calls and two provider attempts are required for a successful new analysis. A validation/provider failure stops the pipeline. SDK/request retries and model-driven/application retry loops are disabled.
+
+### Deployment and readiness boundary
+
+The Build Week deployment target is one manually operated Vercel Hobby project with Fluid Compute explicitly enabled. There is no Git-connected automatic deployment. Deston deploys a clean reviewed `main` through the CLI and records the exact source SHA without rewriting another contributor's author or committer metadata. Preview deployments do not receive production Supabase, service-role, reset, or OpenAI values by default.
+
+`GET /api/health` is a no-store, no-spend configuration-readiness endpoint. It checks only whether the required environment names parse; it does not call OpenAI, query Supabase, validate a credential by using it, reveal a value, or claim the authenticated workflow passed. Readiness and runtime share the same trimmed/defaulted model schema, so an omitted model uses the documented default and whitespace-only configuration fails consistently. Complete configuration returns `200 ready`; a missing or invalid name returns a generic `503 not_ready` status. The server log includes only the allowlisted missing/invalid names needed by the operator, never their values, the source body, provider output, credentials, authorization headers, or cookies.
+
+The analysis route uses the Node.js runtime and an application `maxDuration` of 90 seconds. Vercel's currently supported Hobby Fluid maximum is 300 seconds, so 90 seconds is a conservative application budget rather than the plan ceiling. The two sequential OpenAI calls each have a 30-second internal timeout with SDK/request retries disabled, leaving about 30 seconds for authorization, deterministic graph work, persistence, and safe failure recording. Other mutation/history routes use a 30-second duration. No route introduces background work, and the OpenAI client remains lazy so `next build` and Vercel's build phase cannot contact the provider.
+
+The configured model defaults to `gpt-5.6-luna`. After authorization and bounded-context validation but before the database creates an idempotency claim, the service validates and resolves the lazy model environment and fails with a safe unavailable result if required model configuration is absent; configuration failure therefore consumes no claim. Safe response and persisted model-call metadata retain the actual model identifier returned by the provider so release evidence does not silently substitute the requested name. The private metadata validator accepts the current exact envelope and the prior artifact's exact envelope during the rollback compatibility window, without fabricating a historical model name; unknown fields and malformed present model names remain rejected. This metadata never grants mutation authority and excludes prompts, source text, provider output, and keys.
+
+Hosted Supabase Auth uses the exact Vercel production origin as Site URL. Its redirect allowlist contains the exact production origin, the `http://localhost:3000/**` and `http://127.0.0.1:3000/**` local paths, and the account-scoped Vercel Preview wildcard documented in `docs/deployment-runbook.md`. The local CLI config uses `http://localhost:3000` and both local HTTP wildcards; it never uses `https://127.0.0.1`. Full release, smoke, rollback, and environment-scope procedures live in the runbook.
 
 ### Prompt 7 threat model
 
@@ -243,7 +255,7 @@ Reset preserves history with a monotonically increasing `projects.workflow_gener
 - `src/features/operations/`: authorized application, history, undo, and reset.
 - `supabase/migrations/`: schema, constraints, functions, and RLS policies.
 
-The Supabase, authentication, repository, project-record, and deterministic-impact paths were implemented through Prompt 5. Prompt 7 adds the server-only evidence/analysis pipeline and pending proposal persistence. Prompt 9 adds the approval/application, ordered operation history, compensating undo, and history-preserving demo-reset backend contracts. Linked migrations, schema/security checks, and rollback-wrapped RPC/audit verification are complete. Complete browser wiring and authenticated HTTP verification remain integration tasks.
+The Supabase, authentication, repository, project-record, and deterministic-impact paths were implemented through Prompt 5. Prompt 7 adds the server-only evidence/analysis pipeline and pending proposal persistence. Prompt 9 adds the approval/application, ordered operation history, compensating undo, and history-preserving demo-reset backend contracts. The protected browser workflow is integrated, and linked migrations, schema/security checks, and rollback-wrapped RPC/audit verification are complete. Authenticated live HTTP/production-browser verification remains a release task.
 
 ## P0 database model
 
@@ -280,7 +292,7 @@ The private membership predicates are stable `SECURITY DEFINER` functions used t
 
 ### Demo seed and verification
 
-`supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx supabase db reset` reconstructs the fixture for local development. The Prompt 9 production-safe reset uses a reviewed named-project RPC, baseline snapshots, workflow generations, non-destructive retirement, idempotency, and rate limiting instead of deleting history.
+`supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx --no-install supabase db reset` uses the repository-pinned CLI to reconstruct the fixture for local development. The Prompt 9 production-safe reset uses a reviewed named-project RPC, baseline snapshots, workflow generations, non-destructive retirement, idempotency, and rate limiting instead of deleting history.
 
 The transaction-wrapped `supabase/tests/verify_p0.sql` checks seed counts and the expected path, anonymous and cross-workspace invisibility, viewer mutation denial, cross-workspace owner rejection, reviewer attribution, immutable record identity, server-only audit writes, the self-dependency constraint, and operation idempotency uniqueness, then rolls back its test rows. It is plain assertion SQL, not pgTAP.
 
@@ -289,5 +301,5 @@ Local `db reset` and CLI pgTAP execution still require Docker Desktop.
 Database types are generated from the linked hosted schema with:
 
 ```bash
-npx supabase gen types typescript --linked --schema public > src/types/database.ts
+npx --no-install supabase gen types typescript --linked --schema public > src/types/database.ts
 ```

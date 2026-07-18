@@ -138,7 +138,7 @@ describe("createOpenAIAnalysisAdapter", () => {
     });
   });
 
-  it("sends a stateless, tool-free, bounded extraction request with one SDK retry", async () => {
+  it("sends a stateless, tool-free, bounded extraction request without retries", async () => {
     const parse = vi
       .fn()
       .mockResolvedValue(testOnlyCompletedResponse(TEST_ONLY_EXTRACTION_FIXTURE));
@@ -171,7 +171,7 @@ describe("createOpenAIAnalysisAdapter", () => {
         },
       },
     });
-    expect(options).toEqual({ timeout: 30_000, maxRetries: 1 });
+    expect(options).toEqual({ timeout: 30_000, maxRetries: 0 });
   });
 
   it("uses the proposal schema and its own bounded output budget", async () => {
@@ -203,7 +203,7 @@ describe("createOpenAIAnalysisAdapter", () => {
         },
       },
     });
-    expect(options).toEqual({ timeout: 15_000, maxRetries: 1 });
+    expect(options).toEqual({ timeout: 15_000, maxRetries: 0 });
   });
 
   it("maps an explicit refusal without exposing refusal text", async () => {

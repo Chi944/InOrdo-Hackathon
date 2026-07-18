@@ -5,6 +5,7 @@ import { createProjectAnalysisRuntime } from "@/features/analysis/runtime";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 90;
 
 type AnalyzeRouteContext = {
   params: Promise<{ projectId: string }>;

@@ -243,13 +243,13 @@ describe("Supabase analysis persistence", () => {
       extractionMetadata: {
         requestId: "req_test_extract",
         responseId: "resp_test_extract",
-        model: "gpt-5.6-luna",
+        model: "gpt-5.6-luna-extraction-fixture",
         usage,
       },
       proposalMetadata: {
         requestId: "req_test_propose",
         responseId: "resp_test_propose",
-        model: "gpt-5.6-luna",
+        model: "gpt-5.6-luna-proposal-fixture",
         usage: null,
       },
     });
@@ -262,6 +262,14 @@ describe("Supabase analysis persistence", () => {
       p_expected_project_revision: "a".repeat(64),
       p_result: {
         model_name: "gpt-5.6-luna",
+        extraction_metadata: {
+          request_id: "req_test_extract",
+          model_name: "gpt-5.6-luna-extraction-fixture",
+        },
+        proposal_metadata: {
+          request_id: "req_test_propose",
+          model_name: "gpt-5.6-luna-proposal-fixture",
+        },
         validation_outcome: {
           status: "needs_review",
           review_reasons: ["human_approval_required"],

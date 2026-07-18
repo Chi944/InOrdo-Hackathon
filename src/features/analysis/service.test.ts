@@ -356,6 +356,28 @@ describe("project analysis service", () => {
     expect(deps.model.extractChange).not.toHaveBeenCalled();
   });
 
+  it("checks model configuration before creating an idempotency claim", async () => {
+    const deps = dependencies();
+    const resolveModelName = vi.fn(() => {
+      throw new Error("test-only missing model configuration");
+    });
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+      resolveModelName,
+    });
+
+    await expect(service.analyze(projectId, request)).rejects.toMatchObject({
+      code: "model_unavailable",
+    });
+    expect(resolveModelName).toHaveBeenCalledOnce();
+    expect(deps.persistence.begin).not.toHaveBeenCalled();
+    expect(deps.persistence.complete).not.toHaveBeenCalled();
+    expect(deps.persistence.fail).not.toHaveBeenCalled();
+    expect(deps.model.extractChange).not.toHaveBeenCalled();
+    expect(deps.model.draftProposal).not.toHaveBeenCalled();
+  });
+
   it("propagates a stale-project conflict from atomic completion and marks the claim failed", async () => {
     const deps = dependencies();
     deps.persistence.complete.mockRejectedValueOnce(
