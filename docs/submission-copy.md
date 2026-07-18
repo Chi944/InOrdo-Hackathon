@@ -14,7 +14,7 @@ InOrdo preserves the original update, uses GPT-5.6 to structure the changed fact
 
 ## Honest status rule
 
-Before submission, replace this section with the exact verified workflow. Do not claim extraction, impact traversal, approval, undo, reset, performance, adoption, or production readiness unless the current build demonstrates it.
+The integrated P0 code and automated/linked verification cover evidence intake, bounded structured extraction, deterministic impact traversal, eligible-but-inert proposal readiness, selective approval, audit, supported undo, and named synthetic reset. CI browser coverage uses an explicitly labeled fixture and mocked external seams. Before submission, run and record the operator-held live production smoke path in `docs/qa-checklist.md`; do not imply that CI proved hosted authentication, RLS, a funded OpenAI response, deployment security, adoption, scale, or production readiness.
 
 ## Differentiator
 

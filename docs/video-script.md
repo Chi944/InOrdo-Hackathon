@@ -24,6 +24,8 @@ Review the recovery draft. Approve low-risk actions individually and leave trave
 
 Show operation history, undo, and reset only if each works in the recorded build. Otherwise omit this segment and describe it as the next P0 milestone.
 
+Before recording, complete the live production smoke path in `docs/qa-checklist.md`. Do not record the guarded CI-only fixture as if it were a live OpenAI/Supabase result, and keep credentials, cookies, headers, environment values, provider metadata, and private payloads out of the capture.
+
 ## Close
 
 “InOrdo keeps the chain visible: evidence, impact, approval, and a way back.”

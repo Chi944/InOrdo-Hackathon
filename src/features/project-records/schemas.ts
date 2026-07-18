@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { maximumDependencyRationaleLength } from "@/features/project-records/constants";
+
 const itemTypes = [
   "task",
   "milestone",
@@ -64,7 +66,10 @@ const rationaleSchema = z
   .string()
   .trim()
   .min(1, "Rationale cannot be empty.")
-  .max(2_000, "Rationale must be 2,000 characters or fewer.");
+  .max(
+    maximumDependencyRationaleLength,
+    "Rationale must be 2,000 characters or fewer.",
+  );
 
 const dateSchema = z.iso.date({
   error: "Date must use the YYYY-MM-DD format.",

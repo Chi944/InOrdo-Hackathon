@@ -259,6 +259,78 @@ describe("recovery action selection", () => {
     ).toBe(true);
   });
 
+  it("rotates after a definitive apply rejection and retains the replacement key across ambiguous failures", async () => {
+    const user = userEvent.setup();
+    const onApplied = vi.fn();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: { code: "conflict", message: "Review the current values." },
+          }),
+          { status: 409, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: { code: "internal_error", message: "Apply status is uncertain." },
+          }),
+          { status: 503, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: "succeeded",
+            operationId: "d1669e0f-604c-4ec2-8ff1-717b2a4d5102",
+            appliedActionIds: [actions[0].id, actions[1].id],
+            duplicate: true,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <RecoveryActionReview
+        canApprove
+        onApplied={onApplied}
+        projectId={projectId}
+        proposal={proposal}
+      />,
+    );
+
+    async function attemptApply(expectedCalls: number) {
+      await user.click(screen.getByRole("button", { name: "Approve selected" }));
+      await user.click(
+        screen.getByRole("button", { name: "Confirm and apply selected" }),
+      );
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(expectedCalls));
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Approve selected" }),
+        ).toBeEnabled(),
+      );
+    }
+
+    await attemptApply(1);
+    await attemptApply(2);
+    await attemptApply(3);
+    await attemptApply(4);
+
+    const keys = fetchMock.mock.calls.map((call) => {
+      const [, options] = call as [string, RequestInit];
+      return (JSON.parse(String(options.body)) as { idempotencyKey: string })
+        .idempotencyKey;
+    });
+    expect(keys[0]).not.toBe(keys[1]);
+    expect(keys[1]).toBe(keys[2]);
+    expect(keys[2]).toBe(keys[3]);
+    expect(onApplied).toHaveBeenCalledTimes(1);
+  });
+
   it("gates draft approval and clears visible selection in a terminal state", () => {
     const { rerender } = render(
       <RecoveryActionReview

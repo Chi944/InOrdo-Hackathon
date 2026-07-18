@@ -96,7 +96,7 @@ async function parseJsonBody<T>(
     Number.isFinite(Number(declaredLength)) &&
     Number(declaredLength) > maximumOperationRequestBytes
   ) {
-    throw new OperationError("validation");
+    throw new OperationError("payload_too_large");
   }
 
   let rawBody: string;
@@ -106,7 +106,7 @@ async function parseJsonBody<T>(
     throw new OperationError("validation");
   }
   if (new TextEncoder().encode(rawBody).byteLength > maximumOperationRequestBytes) {
-    throw new OperationError("validation");
+    throw new OperationError("payload_too_large");
   }
 
   let json: unknown;

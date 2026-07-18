@@ -22,6 +22,12 @@ Supabase Postgres + Auth + RLS
 
 Use React Server Components by default. Client Components may hold browser interaction state but must not import server secrets, call OpenAI, or make authorization decisions.
 
+### CI-only browser seam
+
+`/__e2e__/core-demo` is a guarded server-rendered fixture for Playwright. Next treats underscore-prefixed source folders as private, so a minimal encoded route segment delegates to the canonical fixture page. Access is allowed only when the runtime is `development` or `test` and the exact test opt-in is `1`; production returns not found even if an operator sets the flag. The flag is intentionally absent from `.env.example` and is not a deployment variable.
+
+The page renders the real `ImpactWorkflow`, approval, audit, undo, and reset components with conspicuously labeled, deterministic synthetic records. An HTTP-only stage cookie changes fixture presentation after Playwright intercepts the four existing API seams. Tests parse every intercepted body with the production Zod schemas and abort unexpected project API requests. No production auth, proxy, API route, Supabase, OpenAI, RLS, or operation implementation contains a fixture switch, and a static boundary test enforces that separation. This seam proves browser contract integration only; the live production smoke remains separate.
+
 ### Project-view presentation boundary
 
 The authenticated project-management shell exposes one consistent route set:
@@ -68,6 +74,8 @@ Analysis is intentionally two stage:
 2. Application code postvalidates that change, runs the pure deterministic graph traversal, and gives the second model call only the validated change, deterministic paths, and bounded current values needed to draft inert recovery actions.
 
 The model is a constrained interpreter and drafting assistant. It does not authorize users, traverse dependencies, call tools, persist records directly, approve actions, or mutate project data. Both logical calls use the OpenAI Responses API from a server-only adapter with `OPENAI_MODEL` (default `gpt-5.6-luna`), strict Zod-backed structured output, `store: false`, low reasoning effort, an empty tools list, bounded prompts and output tokens, a 30-second timeout per call, and at most one SDK retry per call for transient provider failures. There is no application retry loop.
+
+The canonical context loader still fails closed above 200 active items or 1,000 edges. Before either prompt is built, a pure deterministic projection limits each item description to 500 characters and all item descriptions to 15,000 characters, marks every truncated description, and rejects an encoded item projection above 160,000 bytes. Extraction does not receive dependency rows because the model does not traverse the graph. The second call receives only bounded affected-item values plus application-computed paths. Canonical database rows are never truncated or rewritten by this projection.
 
 The extraction prompt labels source text as untrusted evidence and instructs the model to ignore embedded instructions, use only supplied item IDs, quote exact evidence, and surface ambiguities rather than guess. The proposal prompt treats all values as data, makes deterministic impacts authoritative, and allowlists only `update_item_field`, `create_task`, `create_risk`, and `request_confirmation`. Metadata contains stage/version and internal record IDs only; raw source text, credentials, and source secrets are excluded.
 
@@ -156,12 +164,13 @@ Analysis uses two related hashes without changing the original evidence. The nor
 
 Evidence/claim creation is deliberately committed before model work so the original source and attempt remain auditable even when the provider refuses, times out, or returns invalid output. A failure transition records only an allowlisted stage/code and optional bounded provider request ID, never raw provider output or source text.
 
-After both model calls and all application checks succeed, `complete_project_analysis` passes the same verified actor into a private implementation, locks the claim and graph tables against concurrent record writes, reauthorizes claim ownership/membership, recomputes the project revision, rechecks the changed item/version/current value, independently recomputes deterministic impact paths, and validates the entire derived payload. It then creates the pending change event, impact run/items, proposal/actions, and succeeds the claim in one transaction. Any invalid element aborts the entire finalization; there are no partially written derived records. Public wrappers are `SECURITY INVOKER`, require a service-role JWT, and grant execution only to `service_role`; the validation implementations are private `SECURITY DEFINER` functions with empty `search_path`, fully qualified relations, and exact grants. Authenticated and anonymous browser roles cannot execute the persistence RPCs.
+After both model calls and all application checks succeed, `complete_project_analysis` passes the same verified actor into a private implementation, locks the claim and graph tables against concurrent record writes, reauthorizes claim ownership/membership, recomputes the project revision, rechecks the changed item/version/current value, independently recomputes deterministic impact paths, and validates the entire derived payload. It then creates the pending change event, impact run/items, proposal/actions, and succeeds the claim in one transaction. A narrow completion trigger promotes only the exactly linked, current-generation proposal from `draft` to `ready` after confirming the change still needs confirmation, the impact run completed, and every one-to-eight action is pending and unattributed. Anomalous historical drafts stay quarantined. Readiness means eligible for human review, not approved: no action, item, or operation row changes during promotion. Any invalid element aborts the entire finalization; there are no partially written derived records. Public wrappers are `SECURITY INVOKER`, require a service-role JWT, and grant execution only to `service_role`; the validation implementations are private `SECURITY DEFINER` functions with empty `search_path`, fully qualified relations, and exact grants. Authenticated and anonymous browser roles cannot execute the persistence RPCs or directly update change/action review state.
 
 ### Cost and abuse controls
 
 - The route caps the encoded request body at 24,000 bytes and source text at 12,000 characters.
 - Analysis context is limited to 200 active items and 1,000 dependencies for one authorized project; graph loading fails closed above the bound.
+- Model-item descriptions are capped at 500 characters each and 15,000 characters in aggregate, with a 160,000-byte encoded item-context ceiling.
 - Extraction and proposal responses are capped separately at 2,048 and 4,096 output tokens.
 - Low reasoning effort, no tools, no web/file search, no embeddings, no RAG, no background jobs, and no model-driven loops keep calls predictable.
 - Duplicate claims and the per-actor rolling rate limit run before either provider call.
@@ -181,6 +190,8 @@ Residual operational risks are tracked rather than hidden: a request without a t
 ### Approval and mutation
 
 A recovery action is immutable proposal data until a person selects it. Prompt 7 stores model `update_item_field` as database `update_item`; `create_task` and `create_risk` as `create_item` with an explicit `item_type`; and `request_confirmation` as its dedicated inert action. Unsupported action types are rejected, never coerced. All new proposal actions are `pending` and have no mutation privilege.
+
+Successful analysis completion makes an eligible proposal `ready` so the integrated review UI can offer selective approval. The browser cannot directly approve/reject a change or proposal action: legacy authenticated review-update policies and column grants are removed. The operation transaction remains the only supported review-plus-mutation path, keeping selected action state, item mutations, and audit evidence atomic.
 
 The Prompt 9 operation routes are:
 
@@ -261,7 +272,7 @@ RLS is enabled on every public user-facing table and no anonymous table privileg
 - members can manage ordinary project records, while project deletion is owner/admin only;
 - owner/admin access is required for reviewed changes, impacts, proposals, operations, activity, and membership administration;
 - admins can manage only member/viewer membership rows; owners manage privileged roles, and a trigger prevents removing or demoting the final owner;
-- derived change, impact, proposal, operation, and activity rows are inserted only by server-side orchestration; authenticated reviewers can only confirm/reject pending changes and approve/reject pending proposal actions;
+- derived change, impact, proposal, operation, and activity rows are inserted only by server-side orchestration; authenticated users cannot directly update change or proposal-action review state, and owner/admin review plus mutation occurs only through the constrained operation transaction;
 - analysis evidence/claims and derived records are created only through the exact authenticated analysis RPC signatures; direct authenticated inserts are revoked, the functions recheck caller/project role, and finalization accepts only comprehensively validated inert JSON;
 - no policy encodes an anonymous or service-role client bypass.
 

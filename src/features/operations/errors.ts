@@ -1,5 +1,6 @@
 export type OperationErrorCode =
   | "validation"
+  | "payload_too_large"
   | "forbidden"
   | "conflict"
   | "rate_limited"
@@ -19,6 +20,7 @@ export type OperationErrorDetails = {
 
 const safeMessages: Record<OperationErrorCode, string> = {
   validation: "The operation request is invalid.",
+  payload_too_large: "The operation request is too large.",
   forbidden: "You are not allowed to perform this operation.",
   conflict: "The project changed before the operation could be completed.",
   rate_limited: "Please wait before resetting the demo again.",
@@ -28,6 +30,7 @@ const safeMessages: Record<OperationErrorCode, string> = {
 
 const safeStatuses = {
   validation: 400,
+  payload_too_large: 413,
   forbidden: 403,
   conflict: 409,
   rate_limited: 429,

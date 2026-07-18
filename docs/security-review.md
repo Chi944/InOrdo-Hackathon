@@ -34,7 +34,9 @@ Relevant tests include:
 - `src/features/impact/graph.test.ts`
 - `src/features/impact/loader.test.ts`
 - `src/features/impact/loader-boundary.test.ts`
-- `src/app/app/project-record-controls.test.tsx`
+- `src/app/app/project-record-actions.test.ts`
+- `src/app/app/items/project-items-view.test.tsx`
+- `src/app/app/dependencies/dependency-view.test.tsx`
 
 `supabase/tests/verify_p0.sql` is transaction-wrapped and now covers anonymous denial and cross-workspace owner rejection in addition to the earlier RLS/integrity assertions.
 
@@ -145,3 +147,34 @@ Result: the implementation has explicit approval, authorization, transaction, au
 - [ ] Confirm product copy clearly marks create-task, create-risk, and confirmation operations as nonreversible. Recovery for them requires a new reviewed forward action, not an implied undo.
 
 The unchecked items remain release/demo gates. This review contains no secret value. It claims the exact Node, linked migration/type/lint/advisor, and rollback-wrapped SQL/RPC evidence recorded above; the authenticated HTTP/browser workflow remains unclaimed.
+
+## Prompt 10 integrated security review
+
+Scope: the complete P0 diff from current `main` through `deston/07-integration-deploy`, including the integrated Andres UI, proposal-readiness transition, model-context budget, operation retry behavior, reset control, and guarded browser test seam.
+
+### Reviewed controls
+
+- [x] **Secrets stay outside the browser graph.** Static boundary tests reject server-only environment, privileged Supabase, and OpenAI imports from browser-reachable modules. The service-role client remains nominally distinct, `server-only`, and initialized only after request-scoped authorization.
+- [x] **Every production project route reauthorizes scope.** Analyze requires contributor membership; apply, undo, and reset require owner/admin membership; history is user-scoped. Path project/proposal/operation identifiers remain authoritative and tenant-sensitive failures disclose no other workspace.
+- [x] **Redirect and session boundaries remain local.** Protected routes use verified claims and the allowlisted `/app` redirect contract; proxy/session tests cover refreshed cookies without treating an unverified browser session as authorization.
+- [x] **Source and model data remain untrusted.** Source bodies, project context, Responses output, evidence spans, IDs, fields, values, owners, dates, impacts, and proposal actions are strictly bounded and postvalidated. GPT receives no tools, does no traversal, and has no mutation capability.
+- [x] **Model context is aggregate-bounded.** Descriptions are deterministically limited per item and in aggregate, the encoded item projection has a hard ceiling, and extraction no longer receives dependency rows that only deterministic traversal needs.
+- [x] **Readiness does not equal approval.** The completion transition promotes only a fully eligible proposal to `ready`; the change remains `needs_confirmation`, all actions remain pending/unattributed, and no item or operation is created. Anomalous drafts remain quarantined.
+- [x] **Browser roles cannot race review state.** Legacy authenticated direct-review policies and column grants are removed. Only the authorized apply transaction can move selected action review state together with allowlisted mutation and audit evidence.
+- [x] **Operation requests are consistently bounded.** The UI/model/apply action count is one shared maximum of eight, encoded bodies above 32,000 bytes return safe `413` responses, and database validation remains defense in depth.
+- [x] **Retries distinguish definitive, successful, and ambiguous outcomes.** A received 4xx clears the current browser idempotency key so a corrected request can create a new attempt; a structurally valid success retires the completed key before another logical operation; network errors, 5xx responses, and malformed success bodies retain it so an ambiguous committed result can be replayed safely. Apply, undo, and reset have regression coverage.
+- [x] **Reset remains explicitly protected.** Only an owner/admin can open the confirmation control. The browser sends `confirmed` plus an idempotency key and never receives or supplies the reset secret.
+- [x] **The browser fixture cannot become a production backdoor.** The test-only page requires a non-production runtime plus an exact test opt-in, is conspicuously labeled synthetic, and never changes production auth, proxy, or API route behavior. Boundary tests reject test-seam references from those production modules.
+- [x] **Logs and UI errors are safe.** Client errors prefer stable server messages without database/provider details; documentation and tests contain no credentials, session values, private headers, or fake production keys.
+- [x] **RLS and constrained grants remain documented.** User-scoped tables retain RLS, privileged wrappers retain exact grants, and linked SQL verification includes anonymous/cross-tenant denial plus authenticated direct-review denial.
+- [ ] **Live deployment verification remains pending.** CI-safe Playwright cannot prove hosted cookies, RLS, service-role/OpenAI configuration, one funded provider response, or deployment monitoring. Follow the production smoke path in `docs/qa-checklist.md` before presenting those as verified.
+
+### Residual operational risks
+
+- Deployment-level body limits are still required because `Request.text()` is not a streaming memory bound when a length header is absent or false.
+- A failed terminal analysis-status write can leave a `processing` claim that needs forward-only operator reconciliation; never delete evidence to unblock it.
+- The service-role credential remains high impact despite narrow adapters. Rotation, alerting, deployment access control, and rapid route containment remain operator responsibilities.
+- P0 reset rate limiting is not reauthentication. A compromised owner/admin session can still request the named synthetic reset.
+- The guarded browser fixture proves UI contract integration only. The open manual-QA issue tracks live authorization, responsive, provider, mutation, and reset evidence.
+
+Final command, dependency-audit, linked-database, and formal-review evidence is recorded in the current Prompt 10 section of `docs/qa-checklist.md`. This section contains no secret value.

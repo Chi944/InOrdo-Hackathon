@@ -4,9 +4,9 @@ InOrdo is a Work and Productivity application for small teams. It turns an unstr
 
 ## Current status
 
-This repository contains the P0 application foundation, workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, protected project records, deterministic dependency traversal, and the Prompt 7 server-only analysis API. The Prompt 9 branch adds the reviewed operation boundary for selectively applying allowlisted proposal actions, reading ordered audit history, creating compensating undo operations, and resetting only the named synthetic demo project.
+This repository contains the integrated P0 demo: the workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, email/password authentication, protected project records, deterministic dependency traversal, server-only GPT-5.6 analysis, selective approval, ordered audit history, compensating undo, and the named-demo reset workflow. Successful validated analysis finalization promotes only an eligible proposal to `ready`; every action remains `pending` until an owner or admin explicitly selects it.
 
-This is backend foundation, not an end-to-end product claim. Every generated change and action still requires human review, and the Prompt 9 operation routes are not yet wired into a complete browser journey. The linked Prompt 9 migrations, generated types, schema/security checks, and rollback-wrapped apply/history/undo/reset RPC verification are complete and recorded in the QA checklist. Authenticated HTTP and browser verification remain pending.
+The browser workflow is wired to the reviewed server contracts. A guarded CI-only Playwright fixture exercises the real journey UI while mocking only provider/database seams; it is not evidence of a live Supabase or OpenAI request. The separate authenticated production smoke path remains an operator gate until deployment configuration and credentials are available. InOrdo is a hackathon P0, not a production-readiness claim.
 
 ## Local setup
 
@@ -67,7 +67,7 @@ Security evidence and recovery procedures are recorded in [docs/security-review.
 
 The OpenAI Responses adapter uses `OPENAI_MODEL` with a `gpt-5.6-luna` default, strict structured output, `store: false`, low reasoning effort, no tools, a 30-second timeout per logical call, at most one SDK retry per call for transient failures, and bounded input/output. Source text is explicitly marked untrusted. Returned IDs, fields, values, dates, enums, evidence excerpts/offsets, confidence, and canonical previous values are checked again by application code.
 
-The first database phase stores immutable evidence and an idempotency claim. After both model results pass validation, a server-only service-role wrapper passes the already verified actor to a private implementation that rechecks contributor membership, project revision, claim ownership, and current item state. It then atomically writes only a pending change, deterministic impact paths, and pending proposal actions. Authenticated browser roles cannot execute these RPCs, and no item mutation occurs. Model actions map narrowly as follows: `update_item_field` to `update_item`; `create_task` and `create_risk` to `create_item` with an explicit item type; and `request_confirmation` to its dedicated inert action type.
+The first database phase stores immutable evidence and an idempotency claim. After both model results pass validation, a server-only service-role wrapper passes the already verified actor to a private implementation that rechecks contributor membership, project revision, claim ownership, and current item state. It then atomically writes only a pending change, deterministic impact paths, and pending proposal actions. Completion promotes an eligible proposal from `draft` to `ready` in the same transaction, but readiness grants no mutation authority: its actions remain pending and unattributed. Authenticated browser roles cannot execute these RPCs or directly change review state, and no item mutation occurs. Model actions map narrowly as follows: `update_item_field` to `update_item`; `create_task` and `create_risk` to `create_item` with an explicit item type; and `request_confirmation` to its dedicated inert action type.
 
 The analysis modules include injected-adapter test cases for successful orchestration, refusal, malformed output, unknown IDs, evidence mismatch, timeout, duplicate handling, and transient provider errors. On the settled Prompt 7 diff, Node 22 lint, typecheck, 177 tests across 32 files, and the production build passed. Linked migration, schema-lint, rollback-wrapped SQL, generated-type, and security-advisor evidence is recorded in [docs/qa-checklist.md](docs/qa-checklist.md). Live OpenAI and browser verification remain explicitly pending.
 
@@ -92,9 +92,29 @@ The unit suite covers strict request allowlists, stale item versions, authorizat
 
 The general project graph loader treats `not_started`, `in_progress`, `blocked`, and `at_risk` items as active. It loads only the authorized project, then passes normalized TypeScript records into a pure traversal with no network or model call. It rejects projects beyond the documented 500-active-item or 2,000-edge demo bounds instead of returning a truncated graph. The model-analysis context uses stricter 200-active-item and 1,000-edge limits before either model call.
 
+Descriptions sent to the model are additionally capped at 500 characters per item and 15,000 characters across the project snapshot. The encoded model-item context must remain within 160,000 bytes. These budgets do not truncate canonical database records; they create a deterministic, explicitly marked model projection and fail closed if canonical metadata alone exceeds the byte ceiling.
+
 ## P0 scope
 
 The Build Week demo targets native project records, explicit dependencies, pasted source evidence, structured extraction, deterministic impact paths, selective recovery approval, operation history, undo, and a reliable reset for one synthetic workspace. External connectors, embeddings, autonomous mutations, and production-readiness claims are out of scope.
+
+## Known limitations
+
+- The supported demo is one named synthetic project. It is not a general multi-project onboarding flow.
+- The canonical fixture has 24 active records and 26 edges and intentionally contains no sponsor record or sponsor relationship.
+- Current project and dependency presentation reads are bounded for the P0 fixture. Larger workspaces need pagination before being represented as supported.
+- The impact workflow is a substantial interactive Client Component; splitting static review sections into smaller server-rendered boundaries is a post-P0 optimization.
+- The CI-safe Playwright journey uses conspicuously labeled synthetic records and intercepted API seams. Live authentication, RLS, Supabase RPCs, and OpenAI must still pass the production smoke procedure in `docs/qa-checklist.md`.
+- External connectors, notifications, proposal editing, autonomous actions, embeddings, and production operations/monitoring are deferred.
+
+## Troubleshooting
+
+- If `/app` redirects to `/login`, confirm the public Supabase variables are configured and the operator-created account is mapped to the seeded workspace; do not add a password to source control.
+- If analysis is unavailable, verify the server-only Supabase and OpenAI variables are present in the deployment environment. A timeout or validation failure preserves the source attempt without applying project changes.
+- A `409` during approval or undo means canonical state changed. Refresh, inspect current values and history, then submit a newly reviewed request rather than forcing the stale action.
+- A `429` during reset is the deliberate reset-rate boundary. Wait for the safe retry window; do not bypass it or alter history.
+- For local Playwright failures caused by a missing browser binary, run `npx playwright install chromium`, then rerun `npm run test:e2e`.
+- Never paste environment values, cookies, authorization headers, source text, or private operation payloads into logs or issues.
 
 ## Supabase
 

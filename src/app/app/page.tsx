@@ -14,16 +14,14 @@ import { notFound, redirect } from "next/navigation";
 import { buildGuidedDemoTargets } from "@/app/app/demo-targets";
 import { GuidedDemoCallout } from "@/app/app/guided-demo-callout";
 import { ImpactWorkflow } from "@/app/app/impact-workflow";
+import { buildWorkflowOverview } from "@/app/app/workflow-overview";
 import { createProjectRecordOperations } from "@/features/project-records/operations";
 import { AuthorizationError } from "@/lib/auth/errors";
 import { requireProjectToWorkspace, requireUser } from "@/lib/auth/guards";
 import {
   getDemoWorkspaceProject,
   getProjectOverview,
-  listImpactRunsAndProposals,
-  listOperations,
   listProjectItems,
-  listSourceUpdates,
 } from "@/lib/repositories/project-data";
 import { getImpactWorkflowData } from "@/lib/repositories/impact-review";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -59,9 +57,6 @@ export default async function DemoWorkspacePage({
     | {
         overview: Awaited<ReturnType<typeof getProjectOverview>>;
         items: Awaited<ReturnType<typeof listProjectItems>>;
-        sources: Awaited<ReturnType<typeof listSourceUpdates>>;
-        planning: Awaited<ReturnType<typeof listImpactRunsAndProposals>>;
-        operations: Awaited<ReturnType<typeof listOperations>>;
         workflow: Awaited<ReturnType<typeof getImpactWorkflowData>>;
         dependencies: Awaited<
           ReturnType<
@@ -83,21 +78,10 @@ export default async function DemoWorkspacePage({
       demoProject.id,
     );
     const projectRecords = createProjectRecordOperations({ client });
-    const [
-      overview,
-      items,
-      sources,
-      planning,
-      operations,
-      workflow,
-      dependencies,
-    ] =
+    const [overview, items, workflow, dependencies] =
       await Promise.all([
         getProjectOverview(client, scope),
         listProjectItems(client, scope),
-        listSourceUpdates(client, scope),
-        listImpactRunsAndProposals(client, scope),
-        listOperations(client, scope),
         getImpactWorkflowData(client, scope, {
           analysisRequestId: requestedAnalysisId,
         }),
@@ -107,9 +91,6 @@ export default async function DemoWorkspacePage({
     result = {
       overview,
       items,
-      sources,
-      planning,
-      operations,
       workflow,
       dependencies,
       role: scope.membership.role,
@@ -128,11 +109,8 @@ export default async function DemoWorkspacePage({
   const {
     dependencies,
     items,
-    operations,
     overview,
-    planning,
     role,
-    sources,
     workflow,
   } = result;
   const workspace = overview.project.workspace;
@@ -163,7 +141,14 @@ export default async function DemoWorkspacePage({
       ),
     ).values(),
   ].sort((left, right) => left.display_name.localeCompare(right.display_name));
-  const latestSource = sources.data[0];
+  const latestSource = workflow.analysis?.source;
+  const workflowOverview = buildWorkflowOverview({
+    analysisLoadFailed: workflow.analysisLoadFailed,
+    operationsLoadFailed: workflow.operationsLoadFailed,
+    impactCount: workflow.analysis?.impacts.length ?? 0,
+    hasProposal: Boolean(workflow.analysis?.proposal),
+    operationCount: workflow.operations.length,
+  });
   const summaryCards = [
     { label: "Project items", value: overview.counts.items, icon: ListChecks },
     { label: "Dependencies", value: dependencies.length, icon: GitBranch },
@@ -189,12 +174,12 @@ export default async function DemoWorkspacePage({
     {
       href: "#impact-status",
       label: "Impacts",
-      detail: `${planning.impacts.length} current impact runs`,
+      detail: workflowOverview.impactDetail,
     },
     {
       href: "#history-status",
       label: "History",
-      detail: `${operations.data.length} recorded operations`,
+      detail: workflowOverview.historyDetail,
     },
   ] as const;
 
@@ -373,23 +358,33 @@ export default async function DemoWorkspacePage({
               Evidence
             </p>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.035em]" id="source-heading">
-              Latest source update
+              Selected analysis source
             </h2>
           </div>
-          {latestSource ? (
+          {workflowOverview.analysisUnavailable ? (
+            <div className="p-5">
+              <p className="font-semibold text-caution">
+                Analysis source unavailable
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                The latest evidence record could not be loaded. Refresh before
+                relying on source status.
+              </p>
+            </div>
+          ) : latestSource ? (
             <div className="p-5">
               <p className="font-semibold text-ink">{latestSource.title}</p>
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-xs text-muted">Source type</dt>
-                  <dd className="mt-1 capitalize text-ink">{words(latestSource.source_kind)}</dd>
+                  <dd className="mt-1 capitalize text-ink">{words(latestSource.sourceKind)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted">Occurred</dt>
                   <dd className="mt-1 text-ink">
                     {formatDate(
-                      latestSource.occurred_at
-                        ? latestSource.occurred_at.slice(0, 10)
+                      latestSource.occurredAt
+                        ? latestSource.occurredAt.slice(0, 10)
                         : null,
                     )}
                   </dd>
@@ -437,21 +432,19 @@ export default async function DemoWorkspacePage({
         <article className="border border-rule bg-white p-5" id="impact-status">
           <p className="font-mono text-[0.63rem] uppercase tracking-[0.12em] text-muted">Impact and proposals</p>
           <p className="mt-4 text-2xl font-semibold text-ink">
-            {planning.impacts.length + planning.proposals.length}
+            {workflowOverview.reviewRecordCountLabel}
           </p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            {planning.impacts.length + planning.proposals.length === 0
-              ? "No impact analysis or recovery proposal exists in the reset baseline."
-              : "Reviewable impact and proposal records are available in the current workflow generation."}
+            {workflowOverview.reviewMessage}
           </p>
         </article>
         <article className="border border-rule bg-white p-5" id="history-status">
           <p className="font-mono text-[0.63rem] uppercase tracking-[0.12em] text-muted">Operation history</p>
-          <p className="mt-4 text-2xl font-semibold text-ink">{operations.data.length}</p>
+          <p className="mt-4 text-2xl font-semibold text-ink">
+            {workflowOverview.operationCountLabel}
+          </p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            {operations.data.length === 0
-              ? "No applied operation exists in the reset baseline."
-              : "Applied and reversed operations are recorded in the current workflow generation."}
+            {workflowOverview.operationMessage}
           </p>
         </article>
       </section>

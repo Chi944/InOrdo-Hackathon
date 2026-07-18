@@ -166,3 +166,32 @@ Keep operation writes closed until all applicable criteria are recorded:
 - viewer denial and complete browser feedback/accessibility checks if those controls are exposed in the deployed UI.
 
 This runbook defines recovery procedure; it is not execution evidence. Exact Prompt 9 migration, linked SQL/RPC, Node, and remaining authenticated browser results belong in `docs/qa-checklist.md` and `docs/codex-log.md`. If any applicable gate is unavailable, leave it visibly pending and keep the affected write route contained.
+
+## Prompt 10 integration and readiness rollback
+
+The Prompt 10 proposal-readiness migration is forward-only. Never delete or edit the applied migration, decrement proposal/workflow state, restore broad authenticated review grants, or rewrite proposal/action/operation history.
+
+### Contain first
+
+1. If analysis completion promotes an ineligible proposal, block the analyze and apply POST routes at the deployment layer. Keep authorized read/history access available unless the defect is a disclosure issue.
+2. Record only safe coordinates: deployed commit, migration version, project/analysis/change/impact/proposal/action IDs, workflow generation, states, counts, and timestamps. Do not copy source text, prompts, model output, human responses, before/after payloads, credentials, cookies, or headers.
+3. Confirm whether an operation exists. A readiness transition alone must leave the change `needs_confirmation`, every action pending/unattributed, project items unchanged, and operation history unchanged. If any mutation exists, switch to the Prompt 9 apply-operation recovery procedure.
+4. If browser retry behavior is suspect, contain the affected apply, undo, or reset route and reconcile the idempotency key through authorized history before retrying. Never guess whether a network/5xx request committed and never reuse a key after a definitive failed 4xx correction.
+
+### Forward repair
+
+- Ship a new numbered migration that narrows or disables the readiness trigger/function. Prefer a guard that leaves affected proposals `draft` or moves them through a separately reviewed forward quarantine state; do not bulk-promote or delete historical drafts.
+- Preserve the removal of direct authenticated `change_events` and `proposal_actions` review updates. If product requirements later need a reject/edit workflow, add a separately authorized, transactional server/RPC contract rather than restoring browser table writes.
+- Preserve pending action state and append-only operation history. A ready proposal has no applied effect to compensate; correcting eligibility should not fabricate an operation row.
+- If the model-context budget rejects legitimate canonical data, adjust only the deterministic projection in reviewed application code. Do not relax database bounds blindly or send the full database graph to GPT.
+- A defect in the CI-only browser fixture is fixed or disabled in test configuration; it is never a reason to change production auth, proxy, project routes, or API authorization.
+
+### Reopen criteria
+
+- A linked transaction proves eligible completion yields exactly one ready proposal with all actions pending/unattributed and no item/operation mutation; failed, incomplete, wrong-generation, or structurally anomalous analyses stay unpromoted.
+- The read-only `supabase/tests/verify_proposal_readiness_reconciliation.sql` query records the ready inventory and returns zero eligible succeeded drafts plus zero ready invariant violations.
+- Authenticated direct review-table updates remain denied, while the authorized service-role completion and owner/admin apply contracts still work.
+- Apply/undo/reset regression tests prove new keys after definitive 4xx outcomes and stable key replay after network/5xx ambiguity.
+- The complete Node 22 lint, typecheck, unit, Playwright, production build, dependency audit, and diff gates pass on the repair artifact.
+- The linked migration ledger, generated types, schema lint, security advisor, and rollback-wrapped P0/analysis/operation suites pass before routes reopen.
+- One operator-held live production smoke follows `docs/qa-checklist.md`; unavailable steps remain visibly pending and the corresponding capability stays unclaimed.

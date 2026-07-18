@@ -1,7 +1,8 @@
 import { z } from "zod";
 
+import { maximumProposalActions } from "@/features/proposals/constants";
+
 const MAX_REVIEW_NOTES = 8;
-const MAX_PROPOSAL_ACTIONS = 8;
 const MAX_IMPACT_ANNOTATIONS = 200;
 
 const itemIdSchema = z.uuid({
@@ -131,7 +132,7 @@ export const recoveryProposalSchema = z.strictObject({
   actions: z
     .array(recoveryProposalActionSchema)
     .min(1)
-    .max(MAX_PROPOSAL_ACTIONS),
+    .max(maximumProposalActions),
 });
 
 export type ChangeExtraction = z.infer<typeof changeExtractionSchema>;

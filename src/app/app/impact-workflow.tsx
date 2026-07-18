@@ -24,6 +24,7 @@ import {
   useTransition,
 } from "react";
 
+import { DemoResetControl } from "@/app/app/demo-reset-control";
 import type {
   AnalysisReview,
   ChangeReview,
@@ -32,6 +33,10 @@ import type {
   OperationSummary,
   ReviewItem,
 } from "@/app/app/impact-workflow-types";
+import {
+  createOperationIdempotencyKey,
+  shouldRotateOperationIdempotencyKey,
+} from "@/app/app/operation-idempotency";
 import {
   type ApplyResult,
   RecoveryActionReview,
@@ -46,6 +51,7 @@ type ImpactWorkflowProps = {
   role: string;
   syntheticWorkspace: boolean;
   data: ImpactWorkflowData;
+  refreshPath?: string;
 };
 
 type UndoConflict = {
@@ -533,11 +539,9 @@ function AppliedResult({
     setMessage(null);
     setError(null);
     setConflicts([]);
-    keyRef.current ??= `impact-ui:undo:${undoTarget.id}:${
-      typeof globalThis.crypto?.randomUUID === "function"
-        ? globalThis.crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    }`;
+    keyRef.current ??= createOperationIdempotencyKey(
+      `undo:${undoTarget.id}`,
+    );
     try {
       const response = await fetch(
         `/api/projects/${projectId}/operations/${undoTarget.id}/undo`,
@@ -549,6 +553,9 @@ function AppliedResult({
       );
       const body = (await response.json().catch(() => null)) as unknown;
       if (!response.ok) {
+        if (shouldRotateOperationIdempotencyKey(response.status)) {
+          keyRef.current = null;
+        }
         setConflicts(undoConflicts(body));
         throw new Error(
           safeErrorMessage(
@@ -779,7 +786,13 @@ function DemoGuide({ analysis, operations }: { analysis: AnalysisReview | null; 
   );
 }
 
-export function ImpactWorkflow({ projectId, role, syntheticWorkspace, data }: ImpactWorkflowProps) {
+export function ImpactWorkflow({
+  projectId,
+  role,
+  syntheticWorkspace,
+  data,
+  refreshPath = "/app",
+}: ImpactWorkflowProps) {
   const prefix = useId();
   const router = useRouter();
   const [, startRefresh] = useTransition();
@@ -824,7 +837,7 @@ export function ImpactWorkflow({ projectId, role, syntheticWorkspace, data }: Im
     }
     startRefresh(() =>
       router.replace(
-        `/app?analysisRequestId=${encodeURIComponent(result.analysisRequestId)}`,
+        `${refreshPath}?analysisRequestId=${encodeURIComponent(result.analysisRequestId)}`,
       ),
     );
   }
@@ -836,6 +849,10 @@ export function ImpactWorkflow({ projectId, role, syntheticWorkspace, data }: Im
 
   function refreshAfterUndo(operationId: string) {
     awaitedOperationId.current = operationId;
+    startRefresh(() => router.refresh());
+  }
+
+  function refreshAfterReset() {
     startRefresh(() => router.refresh());
   }
 
@@ -917,6 +934,14 @@ export function ImpactWorkflow({ projectId, role, syntheticWorkspace, data }: Im
         projectId={projectId}
       />
       <AuditHistory failed={data.operationsLoadFailed} operations={data.operations} />
+
+      {syntheticWorkspace ? (
+        <DemoResetControl
+          canReset={canApprove}
+          onResetFinished={refreshAfterReset}
+          projectId={projectId}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3 border border-rule bg-white px-4 py-4 text-sm leading-6 text-muted sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2">

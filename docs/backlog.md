@@ -12,10 +12,11 @@
 - [x] Implement server-only two-stage GPT-5.6 Luna analysis with strict structured output and application postvalidation.
 - [x] Implement deterministic dependency traversal with cycle protection, stable shortest paths, and path explanations.
 - [x] Implement recovery proposal drafting and atomic persistence of pending per-action review state.
-- [ ] Wire the analysis route and pending-review records into the project UI without weakening the server contract.
+- [x] Wire the analysis route and pending-review records into the project UI without weakening the server contract.
 - [x] Implement and linked-verify authorized, idempotent, reversible internal operation contracts.
 - [x] Implement and linked-verify operation history, undo, and isolated demo reset contracts.
-- [ ] Build and verify the end-to-end demo workspace.
+- [x] Build the integrated end-to-end demo workspace and CI-safe core browser journey.
+- [ ] Complete the operator-held live production smoke path for authentication, Supabase/RLS, one funded GPT-5.6 analysis, selective apply, audit, undo, and reset.
 
 ## P1
 
@@ -23,6 +24,7 @@
 - [ ] Proposal editing, richer conflicts, and approval roles.
 - [ ] Search, filtering, saved views, and reusable project templates.
 - [ ] Observability, retention policy, and hardened failure recovery.
+- [ ] Paginate project/dependency presentation beyond the bounded P0 fixture and split the large impact workflow client boundary.
 
 ## Explicitly deferred
 

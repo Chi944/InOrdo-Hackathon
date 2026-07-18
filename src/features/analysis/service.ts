@@ -10,6 +10,11 @@ import {
   AnalysisError,
   type AnalysisErrorCode,
 } from "@/features/analysis/errors";
+import {
+  buildBoundedModelItemContext,
+  type ModelContextItem,
+  ModelContextBoundsError,
+} from "@/features/analysis/model-context";
 import type {
   AnalysisModelMetadata,
   OpenAIAnalysisAdapter,
@@ -123,15 +128,19 @@ type CreateProjectAnalysisServiceOptions = {
 const defaultAuthorizer: AnalysisAuthorizer = (client, projectId) =>
   requireCurrentUserProjectAccess(client, projectId, workspaceContributorRoles);
 
-function contextForExtraction(context: ProjectAnalysisContext): PromptJson {
+function contextForExtraction(
+  context: ProjectAnalysisContext,
+  modelItems: readonly ModelContextItem[],
+): PromptJson {
   return {
     projectRevision: context.revision,
-    items: context.items.map((item) => ({
+    items: modelItems.map((item) => ({
       id: item.id,
       key: item.itemKey,
       type: item.itemType,
       title: item.title,
       description: item.description,
+      descriptionTruncated: item.descriptionTruncated,
       status: item.status,
       priority: item.priority,
       ownerId: item.ownerId,
@@ -139,11 +148,6 @@ function contextForExtraction(context: ProjectAnalysisContext): PromptJson {
       dueDate: item.dueDate,
       eventDate: item.eventDate,
       version: item.version,
-    })),
-    dependencies: context.graph.dependencies.map((dependency) => ({
-      dependentItemId: dependency.fromItemId,
-      upstreamItemId: dependency.toItemId,
-      relationship: dependency.relationship,
     })),
   };
 }
@@ -181,10 +185,10 @@ function safeAnalysisError(error: unknown): AnalysisError {
 }
 
 function proposalAffectedItems(
-  context: ProjectAnalysisContext,
+  modelItems: readonly ModelContextItem[],
   itemIds: ReadonlySet<string>,
 ): PromptJson {
-  return context.items
+  return modelItems
     .filter(({ id }) => itemIds.has(id))
     .map((item) => ({
       id: item.id,
@@ -192,6 +196,7 @@ function proposalAffectedItems(
       type: item.itemType,
       title: item.title,
       description: item.description,
+      descriptionTruncated: item.descriptionTruncated,
       status: item.status,
       priority: item.priority,
       ownerId: item.ownerId,
@@ -225,6 +230,15 @@ export function createProjectAnalysisService({
 
       const { user, scope } = await authorize(client, projectId);
       const context = await loadContext(client, scope);
+      let modelItems: ModelContextItem[];
+      try {
+        modelItems = buildBoundedModelItemContext(context.items);
+      } catch (error) {
+        if (error instanceof ModelContextBoundsError) {
+          throw new AnalysisError("validation", error.message, error);
+        }
+        throw error;
+      }
       const beginning = await persistence.begin({
         actorId: user.id,
         projectId,
@@ -247,7 +261,7 @@ export function createProjectAnalysisService({
               timestamp: parsed.data.source.timestamp,
               text: parsed.data.source.text,
             },
-            projectContext: contextForExtraction(context),
+            projectContext: contextForExtraction(context, modelItems),
           }),
           metadata: {
             analysis_request_id: beginning.requestId,
@@ -288,7 +302,7 @@ export function createProjectAnalysisService({
               depth: impact.depth,
               path: impact.path,
             })),
-            affectedItems: proposalAffectedItems(context, proposalItemIds),
+            affectedItems: proposalAffectedItems(modelItems, proposalItemIds),
           }),
           metadata: {
             analysis_request_id: beginning.requestId,

@@ -168,6 +168,46 @@ begin
   ) then
     raise exception 'authenticated can insert analysis claims directly';
   end if;
+  if has_table_privilege(
+       'authenticated', 'public.change_events', 'UPDATE'
+     ) or has_any_column_privilege(
+       'authenticated', 'public.change_events', 'UPDATE'
+     ) then
+    raise exception 'authenticated retains direct change-event review writes';
+  end if;
+  if has_table_privilege(
+       'authenticated', 'public.proposal_actions', 'UPDATE'
+     ) or has_any_column_privilege(
+       'authenticated', 'public.proposal_actions', 'UPDATE'
+     ) then
+    raise exception 'authenticated retains direct proposal-action review writes';
+  end if;
+  if exists (
+    select 1
+    from pg_catalog.pg_policies as policy
+    where policy.schemaname = 'public'
+      and policy.policyname in (
+        'change_events_review_admin',
+        'proposal_actions_review_admin'
+      )
+  ) then
+    raise exception 'legacy authenticated review policy still exists';
+  end if;
+  if has_function_privilege(
+       'anon',
+       'private.promote_succeeded_analysis_proposal()',
+       'EXECUTE'
+     ) or has_function_privilege(
+       'authenticated',
+       'private.promote_succeeded_analysis_proposal()',
+       'EXECUTE'
+     ) or has_function_privilege(
+       'service_role',
+       'private.promote_succeeded_analysis_proposal()',
+       'EXECUTE'
+     ) then
+    raise exception 'proposal readiness trigger function is directly executable';
+  end if;
   if has_function_privilege(
     'authenticated',
     'public.begin_project_analysis(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text)',
@@ -232,6 +272,7 @@ declare
   persisted_impact_count integer;
   expected_impact_count integer;
   item_date date;
+  proposal_action_id uuid;
 begin
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
@@ -267,9 +308,28 @@ begin
     select 1
     from public.action_proposals
     where id = (completion_result ->> 'proposal_id')::uuid
-      and state = 'draft'::public.proposal_state
+      and state = 'ready'::public.proposal_state
   ) then
-    raise exception 'proposal is not an inert draft';
+    raise exception 'proposal is not ready but inert';
+  end if;
+  if exists (
+    select 1
+    from public.proposal_actions
+    where proposal_id = (completion_result ->> 'proposal_id')::uuid
+      and (
+        state <> 'pending'::public.proposal_action_state
+        or reviewed_by is not null
+        or reviewed_at is not null
+      )
+  ) then
+    raise exception 'proposal readiness reviewed or activated an action';
+  end if;
+  if exists (
+    select 1
+    from public.operation_logs
+    where proposal_id = (completion_result ->> 'proposal_id')::uuid
+  ) then
+    raise exception 'proposal readiness created an operation';
   end if;
   if not exists (
     select 1
@@ -291,6 +351,140 @@ begin
   );
   if persisted_impact_count <> expected_impact_count then
     raise exception 'persisted impact set differs from deterministic set';
+  end if;
+
+  select action.id
+  into strict proposal_action_id
+  from public.proposal_actions as action
+  where action.proposal_id = (completion_result ->> 'proposal_id')::uuid;
+
+  perform pg_catalog.set_config(
+    'inordo.prompt7_source_document_id',
+    completion_result ->> 'source_document_id',
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_change_event_id',
+    completion_result ->> 'change_event_id',
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_impact_run_id',
+    completion_result ->> 'impact_run_id',
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_proposal_id',
+    completion_result ->> 'proposal_id',
+    true
+  );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_proposal_action_id',
+    proposal_action_id::text,
+    true
+  );
+end;
+$$;
+
+-- A succeeded state cannot make an incomplete draft actionable. The rejected
+-- statement rolls back while the deliberately anomalous draft remains inert.
+do $$
+declare
+  anomalous_proposal_id uuid;
+  anomalous_request_id uuid;
+  anomalous_request_state public.analysis_request_state;
+  anomalous_proposal_state public.proposal_state;
+begin
+  insert into public.action_proposals (
+    workspace_id,
+    project_id,
+    change_event_id,
+    impact_run_id,
+    state,
+    title,
+    rationale,
+    model_name,
+    created_by
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_change_event_id')::uuid,
+    pg_catalog.current_setting('inordo.prompt7_impact_run_id')::uuid,
+    'draft'::public.proposal_state,
+    'Incomplete SQL verification proposal',
+    'This draft intentionally has no actions.',
+    'gpt-5.6-luna',
+    '00000000-0000-4000-8000-000000000102'::uuid
+  )
+  returning id into anomalous_proposal_id;
+
+  insert into public.analysis_requests (
+    workspace_id,
+    project_id,
+    source_document_id,
+    project_revision,
+    normalized_content_sha256,
+    model_name,
+    state,
+    requested_by,
+    created_at
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_source_document_id')::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    pg_catalog.repeat('a', 64),
+    'gpt-5.6-luna',
+    'processing'::public.analysis_request_state,
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    pg_catalog.statement_timestamp() - interval '1 day'
+  )
+  returning id into anomalous_request_id;
+
+  begin
+    update public.analysis_requests
+    set state = 'succeeded'::public.analysis_request_state,
+        change_event_id = pg_catalog.current_setting(
+          'inordo.prompt7_change_event_id'
+        )::uuid,
+        impact_run_id = pg_catalog.current_setting(
+          'inordo.prompt7_impact_run_id'
+        )::uuid,
+        proposal_id = anomalous_proposal_id,
+        result_metadata = '{}'::jsonb,
+        finished_at = pg_catalog.statement_timestamp()
+    where id = anomalous_request_id;
+
+    raise exception 'incomplete analysis proposal was promoted';
+  exception
+    when check_violation then
+      if sqlerrm <> 'completed analysis proposal is not ready for review' then
+        raise;
+      end if;
+  end;
+
+  select request.state
+  into strict anomalous_request_state
+  from public.analysis_requests as request
+  where request.id = anomalous_request_id;
+  select proposal.state
+  into strict anomalous_proposal_state
+  from public.action_proposals as proposal
+  where proposal.id = anomalous_proposal_id;
+
+  if anomalous_request_state <> 'processing'::public.analysis_request_state
+     or anomalous_proposal_state <> 'draft'::public.proposal_state
+     or exists (
+       select 1
+       from public.proposal_actions as action
+       where action.proposal_id = anomalous_proposal_id
+     )
+     or exists (
+       select 1
+       from public.operation_logs as operation
+       where operation.proposal_id = anomalous_proposal_id
+     ) then
+    raise exception 'incomplete analysis draft did not remain quarantined';
   end if;
 end;
 $$;
@@ -484,6 +678,52 @@ begin
       'gpt-5.6-luna'
     );
     raise exception 'anonymous analysis unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
+set local role authenticated;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000102',
+  true
+);
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000102","role":"authenticated","is_anonymous":false}',
+  true
+);
+
+-- Browser clients can read review state through RLS, but only the authorized
+-- server operation may atomically attribute and apply a selected action.
+do $$
+begin
+  begin
+    update public.change_events
+    set state = 'rejected'::public.change_event_state,
+        reviewed_by = '00000000-0000-4000-8000-000000000102'::uuid,
+        reviewed_at = pg_catalog.statement_timestamp()
+    where id = pg_catalog.current_setting(
+      'inordo.prompt7_change_event_id'
+    )::uuid;
+    raise exception 'authenticated directly reviewed a change event';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    update public.proposal_actions
+    set state = 'approved'::public.proposal_action_state,
+        reviewed_by = '00000000-0000-4000-8000-000000000102'::uuid,
+        reviewed_at = pg_catalog.statement_timestamp()
+    where id = pg_catalog.current_setting(
+      'inordo.prompt7_proposal_action_id'
+    )::uuid;
+    raise exception 'authenticated directly reviewed a proposal action';
   exception
     when insufficient_privilege then null;
   end;

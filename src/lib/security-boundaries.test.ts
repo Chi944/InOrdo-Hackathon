@@ -193,4 +193,26 @@ describe("client bundle boundaries", () => {
       ),
     ).toContain("createPrivilegedSupabaseClient");
   });
+
+  it("keeps E2E fixture switches out of production API and proxy boundaries", () => {
+    const productionBoundaryFiles = [
+      resolve(sourceRoot, "proxy.ts"),
+      resolve(sourceRoot, "lib", "supabase", "proxy.ts"),
+      ...listSourceFiles(resolve(sourceRoot, "app", "api")).filter(
+        (path) => !path.includes(".test."),
+      ),
+    ];
+    const fixtureMarkers = [
+      "INORDO_E2E_FIXTURES",
+      "/__e2e__",
+      "core-demo-access",
+    ] as const;
+
+    for (const path of productionBoundaryFiles) {
+      const source = readFileSync(path, "utf8");
+      for (const marker of fixtureMarkers) {
+        expect(source, relative(sourceRoot, path)).not.toContain(marker);
+      }
+    }
+  });
 });

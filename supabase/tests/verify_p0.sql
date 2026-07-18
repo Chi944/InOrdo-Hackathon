@@ -332,7 +332,7 @@ $$;
 reset role;
 
 -- Seed a review candidate as the trusted orchestration path, then prove that an
--- authenticated admin cannot forge reviewer attribution or record identity.
+-- authenticated admin cannot directly change review state or record identity.
 insert into public.source_documents (
   id, workspace_id, project_id, title, source_kind, raw_text, captured_by
 ) values (
@@ -363,21 +363,27 @@ select set_config(
   true
 );
 
-update public.change_events
-set state = 'confirmed',
-    reviewed_by = '00000000-0000-4000-8000-000000000108',
-    reviewed_at = '2000-01-01 00:00:00+00'
-where id = '50000000-0000-4000-8000-000000000011';
-
 do $$
 declare
+  actual_state public.change_event_state;
   actual_reviewer uuid;
 begin
-  select reviewed_by into actual_reviewer
+  begin
+    update public.change_events
+    set state = 'confirmed',
+        reviewed_by = '00000000-0000-4000-8000-000000000108',
+        reviewed_at = '2000-01-01 00:00:00+00'
+    where id = '50000000-0000-4000-8000-000000000011';
+    raise exception 'direct authenticated change review unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  select state, reviewed_by into actual_state, actual_reviewer
   from public.change_events
   where id = '50000000-0000-4000-8000-000000000011';
-  if actual_reviewer is distinct from '00000000-0000-4000-8000-000000000102'::uuid then
-    raise exception 'review attribution was not forced to auth.uid()';
+  if actual_state <> 'needs_confirmation' or actual_reviewer is not null then
+    raise exception 'denied direct review changed the candidate state or attribution';
   end if;
 
   begin

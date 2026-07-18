@@ -120,6 +120,32 @@ describe("project operation route handlers", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("returns 413 before parsing an oversized operation request", async () => {
+    const execute = vi.fn();
+    const response = await handleApplyProposalPost({
+      request: new Request("https://inordo.test/apply", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "content-length": "32001",
+        },
+        body: "{}",
+      }),
+      projectId,
+      proposalId,
+      execute,
+    });
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "payload_too_large",
+        message: "The operation request is too large.",
+      },
+    });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("routes undo and reset without accepting identifiers or secrets in bodies", async () => {
     const undo = vi.fn(async () => ({
       status: "succeeded" as const,
@@ -186,6 +212,7 @@ describe("project operation route handlers", () => {
     [new AuthorizationError("forbidden"), 403],
     [new AuthorizationError("not_found"), 404],
     [new OperationError("validation"), 400],
+    [new OperationError("payload_too_large"), 413],
     [new OperationError("conflict"), 409],
     [new OperationError("reset_unavailable"), 404],
     [new OperationError("rate_limited"), 429],

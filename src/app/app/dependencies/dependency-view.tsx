@@ -13,6 +13,7 @@ import {
   initialRecordActionState,
   type RecordActionState,
 } from "@/app/app/project-record-action-state";
+import { maximumDependencyRationaleLength } from "@/features/project-records/constants";
 import {
   createDependencyAction,
   removeDependencyAction,
@@ -324,7 +325,7 @@ function AddRelationshipDialog({
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      onClose();
+      if (!pending) onClose();
       return;
     }
 
@@ -350,7 +351,7 @@ function AddRelationshipDialog({
     <div
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/55 p-4"
       onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onClose();
+        if (!pending && event.currentTarget === event.target) onClose();
       }}
     >
       <div
@@ -380,6 +381,7 @@ function AddRelationshipDialog({
           <button
             aria-label="Close add relationship dialog"
             className="grid size-11 shrink-0 place-items-center border border-rule bg-white text-xl text-ink hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+            disabled={pending}
             onClick={onClose}
             type="button"
           >
@@ -387,12 +389,17 @@ function AddRelationshipDialog({
           </button>
         </div>
 
-        <form action={action} className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+        <form
+          action={action}
+          aria-busy={pending}
+          className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6"
+        >
           <input name="projectId" type="hidden" value={projectId} />
           <label className="text-sm font-medium text-ink" htmlFor={dependentId}>
             Dependent item
             <select
               className={fieldClass}
+              disabled={pending}
               id={dependentId}
               name="fromItemId"
               onChange={(event) => {
@@ -419,6 +426,7 @@ function AddRelationshipDialog({
             Upstream prerequisite
             <select
               className={fieldClass}
+              disabled={pending}
               id={upstreamId}
               name="toItemId"
               onChange={(event) => setUpstreamItemId(event.target.value)}
@@ -437,6 +445,7 @@ function AddRelationshipDialog({
             <select
               className={fieldClass}
               defaultValue="requires"
+              disabled={pending}
               id={relationshipId}
               name="relationship"
             >
@@ -451,8 +460,9 @@ function AddRelationshipDialog({
             Rationale (optional)
             <textarea
               className={`${fieldClass} min-h-24 py-3`}
+              disabled={pending}
               id={rationaleId}
-              maxLength={1000}
+              maxLength={maximumDependencyRationaleLength}
               name="rationale"
               placeholder="Explain why this dependency exists."
             />

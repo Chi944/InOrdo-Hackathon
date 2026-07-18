@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { maximumProposalActions } from "@/features/proposals/constants";
+
 const idempotencyKeySchema = z
   .string()
   .min(8)
@@ -18,8 +20,14 @@ const humanInputSchema = z.strictObject({
 
 export const applyProposalRequestSchema = z
   .strictObject({
-    selectedActionIds: z.array(actionIdSchema).min(1).max(50),
-    humanInputs: z.array(humanInputSchema).max(50).default([]),
+    selectedActionIds: z
+      .array(actionIdSchema)
+      .min(1)
+      .max(maximumProposalActions),
+    humanInputs: z
+      .array(humanInputSchema)
+      .max(maximumProposalActions)
+      .default([]),
     idempotencyKey: idempotencyKeySchema,
   })
   .superRefine((value, context) => {

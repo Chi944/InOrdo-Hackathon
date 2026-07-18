@@ -1,5 +1,50 @@
 # QA checklist
 
+## Prompt 10 integrated P0 gate (`deston/07-integration-deploy`)
+
+This is the current release evidence section. Earlier prompt/branch sections below remain historical records and must not be read as proof for the integrated artifact.
+
+- [x] `npm ci` under the pinned Node 22 toolchain without a lockfile change
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run test:run`
+- [x] `npm run test:e2e`
+- [x] `npm run build`
+- [x] `npm audit --omit=dev` interpreted for production dependencies
+- [x] `git diff --check`
+- [x] Linked migration dry run/apply, migration-ledger alignment, generated-type comparison, schema lint, security advisor, and rollback-wrapped SQL verification
+- [x] Formal review against current `main`, with all P0 and high-confidence critical findings resolved
+
+The CI-safe Playwright route is a guarded test seam, not a hidden demo mode. It is unavailable in production, requires an exact test-only opt-in during local/CI development, renders a conspicuous synthetic-fixture banner, and exercises the real impact, approval, history, undo, and reset components. Playwright intercepts only the analyze/apply/undo/reset HTTP seams, validates outgoing JSON with the production Zod contracts, and uses stable roles/labels. It does not claim to test live authentication, cookies, RLS, Supabase RPC behavior, or OpenAI.
+
+After the readiness migration, run `supabase/tests/verify_proposal_readiness_reconciliation.sql` as a read-only linked query. Record `eligible_succeeded_ready` as the inventory baseline; `eligible_succeeded_still_draft` and `ready_invariant_violations` must both be zero before analyze/apply routes reopen. Investigate any nonzero anomaly rather than bulk-promoting or rewriting history.
+
+Exact integrated evidence on 2026-07-19 used Node 22.23.1 and npm 10.9.8. Fresh `npm ci` installed 470 packages without changing the lockfile; lint and typecheck passed; Vitest passed 270 tests across 48 files; Playwright passed the one Chromium core-demo journey; the production build completed; `npm audit --omit=dev` reported zero vulnerabilities; and both staged/unstaged diff checks passed. A production server started with `INORDO_E2E_FIXTURES=1` still returned 404 for `/__e2e__/core-demo`. Formal review found no P0 issue; its confirmed completed-reset key reuse and workflow-outage truthfulness findings were fixed and regression-tested. The linked readiness reconciliation returned `eligible_succeeded_ready=0`, `eligible_succeeded_still_draft=0`, and `ready_invariant_violations=0`.
+
+The required production environment names were absent from this process, so the authenticated/provider smoke below was not attempted. No environment value, credential, cookie, or private provider/database payload was read or recorded.
+
+### Live production smoke path
+
+Use an operator-created owner/admin account and only the configured synthetic project. Never record credentials, cookies, authorization headers, environment values, raw provider payloads, or private source/operation content.
+
+1. Open the deployed landing page in a clean browser profile, follow `Open demo workspace`, and verify redirect to the local-only login path, invalid-password safe feedback, successful login, session refresh, and logout.
+2. Confirm the dashboard, 24 active seeded records, 26 dependency edges, decisions, risks, item detail, and text-first dependency direction at 375, 768, and 1440 pixels. Verify no sponsor record is fabricated.
+3. Insert the canonical venue update and submit once. Confirm only one analyze request, bounded loading, preserved evidence, a GPT-5.6 candidate for `EVT-01.event_date` from `2026-09-12` to `2026-09-26`, and no item mutation.
+4. Confirm deterministic direct/indirect paths, including the documented event-to-speaker-to-programme-to-briefing path. Distinguish source fact, model inference, confidence, and graph explanation visibly.
+5. Select only one reversible field-update action, leave a sensitive/human-input action pending, inspect the exact confirmation summary, and apply. Confirm actor-attributed ordered before/after history and no unselected mutation.
+6. Undo the eligible operation. Confirm the original history remains and a linked compensating operation appears. Exercise one stale conflict and verify it applies nothing and a subsequent newly reviewed attempt uses a fresh idempotency key.
+7. Open reset review, explicitly confirm, and reset once. Confirm the event date, 24 records, and 26 edges return to baseline, the workflow generation advances exactly once, and archived history remains available. Verify duplicate replay is stable and a distinct immediate reset receives safe rate-limit feedback.
+8. Repeat read-only checks as a viewer and verify apply/undo/reset are unavailable. Test a nonmember/cross-project identifier and confirm it fails closed without tenant details.
+9. Record only date, deployed commit, browser/viewport, route/status outcomes, counts, operation IDs when safe, and pass/fail notes in this checklist. Until that evidence is present, the live smoke remains pending.
+
+### Integrated known limitations
+
+- [ ] The live authenticated/provider smoke above is pending operator-held deployment configuration.
+- [x] The P0 supports one named synthetic project, not general project onboarding.
+- [x] Project/dependency presentation is bounded for the 24-item/26-edge fixture; larger-workspace pagination is deferred.
+- [x] The impact workflow remains a large Client Component; further server/client splitting is a post-P0 performance improvement.
+- [x] Deployment-level body limits, session monitoring, secret rotation, and stuck-analysis reconciliation remain operational controls outside this CI artifact.
+
 ## Project views branch gate (`andres/03-project-views`)
 
 These checks are pending until the complete branch diff is settled. Earlier checked gates below are historical evidence for their named implementation slices, not evidence for this branch.
@@ -188,9 +233,9 @@ At each viewport, confirm `document.documentElement.scrollWidth <= window.innerW
 
 Local browser evidence on 2026-07-18 used a temporary route with an unavoidable on-screen label stating that its records were synthetic fixtures and that no AI or backend call was made. The route was removed before the final diff. All three widths matched their requested viewport, reported no horizontal document overflow or out-of-viewport controls, and produced no console error after the deterministic date-format correction. Seed insertion, blank human-input prevention, dialog contents, initial Cancel focus, and trigger-focus return passed. Confirm/apply and undo were intentionally not clicked.
 
-### Known backend-state gate for Deston
+### Resolved proposal-readiness gate
 
-Fresh completed analyses currently persist `action_proposals.state = 'draft'`, while the existing apply RPC accepts only `ready` or `partially_approved`, and no current application route promotes a proposal. The UI truthfully gates `Approve selected` on those backend states. This branch does not modify SQL, RLS, analysis prompts/model code, graph traversal, or mutation logic.
+Successful analysis completion now promotes only an eligible, exactly linked current-generation proposal from `draft` to `ready`. The transition requires a completed impact run, a change still in `needs_confirmation`, and one-to-eight entirely pending, unattributed actions. It does not mutate a project item or create an operation. Anomalous historical drafts remain quarantined, and the UI still disables approval for every non-ready state. Linked verification for this forward migration is recorded in the current Prompt 10 gate above.
 
 ## Product behavior
 

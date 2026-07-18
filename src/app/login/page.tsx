@@ -36,8 +36,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Review real seeded project data.
           </h1>
           <p className="mt-5 text-sm leading-7 text-[#C9D0CD]">
-            Authentication and RLS protect this preview. Evidence extraction,
-            recovery actions, mutations, and undo are still being built.
+            Authentication and row-level security protect this preview. The
+            signed-in workspace keeps source evidence, model inference,
+            deterministic impact paths, human approval, and reversible
+            operations separately attributable.
           </p>
           <div className="mt-10 flex items-start gap-3 border-t border-white/15 pt-5 text-sm text-[#DCE1DF]">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#AEBEFF]" aria-hidden="true" />

@@ -13,6 +13,10 @@ import type {
   RecoveryAction,
   RecoveryProposal,
 } from "@/app/app/impact-workflow-types";
+import {
+  createOperationIdempotencyKey,
+  shouldRotateOperationIdempotencyKey,
+} from "@/app/app/operation-idempotency";
 
 export function defaultSelectedActionIds(actions: RecoveryAction[]) {
   return actions
@@ -112,14 +116,6 @@ function readConflicts(body: unknown): ConflictDetail[] {
     }
     return [entry as ConflictDetail];
   });
-}
-
-function randomIdempotencyKey(proposalId: string) {
-  const randomPart =
-    typeof globalThis.crypto?.randomUUID === "function"
-      ? globalThis.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `impact-ui:${proposalId}:${randomPart}`;
 }
 
 function ActionCard({
@@ -389,7 +385,7 @@ export function RecoveryActionReview({
         ? attemptRef.current
         : {
             signature,
-            key: randomIdempotencyKey(proposal.id),
+            key: createOperationIdempotencyKey(`apply:${proposal.id}`),
           };
     attemptRef.current = attempt;
     applyingLock.current = true;
@@ -413,6 +409,9 @@ export function RecoveryActionReview({
       );
       const body = (await response.json().catch(() => null)) as unknown;
       if (!response.ok) {
+        if (shouldRotateOperationIdempotencyKey(response.status)) {
+          attemptRef.current = null;
+        }
         setConflicts(readConflicts(body));
         throw new Error(
           readResponseMessage(

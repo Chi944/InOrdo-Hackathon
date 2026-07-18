@@ -6,6 +6,7 @@ import {
   resetDemoRequestSchema,
   undoOperationRequestSchema,
 } from "@/features/operations/request-schemas";
+import { maximumProposalActions } from "@/features/proposals/constants";
 
 const firstActionId = "4c320952-a5e8-40d3-824b-d528c61de101";
 const secondActionId = "4c320952-a5e8-40d3-824b-d528c61de102";
@@ -115,7 +116,7 @@ describe("applyProposalRequestSchema", () => {
       applyProposalRequestSchema.safeParse({
         ...validApplyRequest,
         selectedActionIds: Array.from(
-          { length: 51 },
+          { length: maximumProposalActions + 1 },
           (_, index) =>
             `4c320952-a5e8-40d3-824b-${String(index).padStart(12, "0")}`,
         ),

@@ -1,4 +1,12 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/app/project-record-actions", () => ({
@@ -17,8 +25,12 @@ import {
   type DependencyViewEdge,
   type DependencyViewItem,
 } from "@/app/app/dependencies/dependency-view";
+import { createDependencyAction } from "@/app/app/project-record-actions";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 const projectId = "8d2baf13-b687-4987-83a0-0b1294b0f001";
 const items: DependencyViewItem[] = [
@@ -147,6 +159,10 @@ describe("DependencyView", () => {
       "name",
       "relationship",
     );
+    expect(within(addDialog).getByLabelText("Rationale (optional)")).toHaveAttribute(
+      "maxlength",
+      "2000",
+    );
     fireEvent.click(
       within(addDialog).getByRole("button", {
         name: "Close add relationship dialog",
@@ -174,6 +190,61 @@ describe("DependencyView", () => {
     );
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Dependency removed.",
+    );
+  });
+
+  it("keeps the add relationship dialog mounted and locked while its server action is pending", async () => {
+    let resolveCreate: ((value: {
+      status: "success";
+      message: string;
+    }) => void) | undefined;
+    vi.mocked(createDependencyAction).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    render(
+      <DependencyView
+        canEdit
+        dependencies={dependencies}
+        initialSelectedItemId={items[1].id}
+        items={items}
+        projectId={projectId}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add relationship" }));
+    const addDialog = screen.getByRole("dialog", { name: "Add a relationship" });
+    const form = addDialog.querySelector("form");
+    expect(form).not.toBeNull();
+    fireEvent.click(
+      within(addDialog).getByRole("button", { name: "Add relationship" }),
+    );
+
+    await waitFor(() => expect(form).toHaveAttribute("aria-busy", "true"));
+    expect(
+      within(addDialog).getByRole("button", {
+        name: "Close add relationship dialog",
+      }),
+    ).toBeDisabled();
+    expect(within(addDialog).getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(within(addDialog).getByLabelText("Dependent item")).toBeDisabled();
+
+    fireEvent.keyDown(addDialog, { key: "Escape" });
+    fireEvent.mouseDown(addDialog.parentElement!);
+    expect(
+      screen.getByRole("dialog", { name: "Add a relationship" }),
+    ).toBeVisible();
+
+    await act(async () => {
+      resolveCreate?.({ status: "success", message: "Dependency added." });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Add a relationship" }),
+      ).not.toBeInTheDocument(),
     );
   });
 });
