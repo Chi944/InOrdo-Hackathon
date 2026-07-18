@@ -84,6 +84,40 @@ begin
 end;
 $$;
 
+-- Concurrency: one conditional item update succeeds and the stale token cannot
+-- update the same row again.
+do $$
+declare
+  expected_version bigint;
+  changed_count integer;
+begin
+  select version into expected_version
+  from public.project_items
+  where id = '30000000-0000-4000-8000-000000000002';
+
+  update public.project_items
+  set priority = case
+    when priority = 'low' then 'medium'::public.item_priority
+    else 'low'::public.item_priority
+  end
+  where id = '30000000-0000-4000-8000-000000000002'
+    and version = expected_version;
+  get diagnostics changed_count = row_count;
+  if changed_count <> 1 then
+    raise exception 'current item version update changed % rows', changed_count;
+  end if;
+
+  update public.project_items
+  set priority = priority
+  where id = '30000000-0000-4000-8000-000000000002'
+    and version = expected_version;
+  get diagnostics changed_count = row_count;
+  if changed_count <> 0 then
+    raise exception 'stale item version unexpectedly changed % rows', changed_count;
+  end if;
+end;
+$$;
+
 -- Invariant: the final owner cannot be removed or demoted, even by privileged SQL.
 do $$
 begin
@@ -141,8 +175,80 @@ values (
   '00000000-0000-4000-8000-000000000101'
 );
 
+insert into public.profiles (id, display_name)
+values ('00000000-0000-4000-8000-000000000109', 'Outside Workspace User');
+insert into public.workspace_members (workspace_id, user_id, role)
+values (
+  '10000000-0000-4000-8000-000000000099',
+  '00000000-0000-4000-8000-000000000109',
+  'owner'
+);
+
+insert into public.projects (id, workspace_id, name, slug, created_by)
+values (
+  '20000000-0000-4000-8000-000000000098',
+  '10000000-0000-4000-8000-000000000001',
+  'Second Project Verification',
+  'second-project-verification',
+  '00000000-0000-4000-8000-000000000101'
+);
+insert into public.project_items (
+  id, workspace_id, project_id, item_key, item_type, title, created_by
+) values (
+  '30000000-0000-4000-8000-000000000099',
+  '10000000-0000-4000-8000-000000000001',
+  '20000000-0000-4000-8000-000000000098',
+  'VERIFY-99',
+  'task',
+  'Cross-project verification item',
+  '00000000-0000-4000-8000-000000000101'
+);
+
+-- Tenant integrity: an item owner must belong to the item's workspace even
+-- when a direct database client bypasses the application service.
+do $$
+begin
+  begin
+    update public.project_items
+    set owner_id = '00000000-0000-4000-8000-000000000109'
+    where id = '30000000-0000-4000-8000-000000000001';
+    raise exception 'cross-workspace item owner unexpectedly succeeded';
+  exception
+    when foreign_key_violation then null;
+  end;
+end;
+$$;
+
+-- Tenant integrity: dependency endpoints cannot cross projects even inside one
+-- workspace.
+do $$
+begin
+  begin
+    insert into public.item_dependencies (
+      workspace_id, project_id, from_item_id, to_item_id,
+      relationship, created_by
+    ) values (
+      '10000000-0000-4000-8000-000000000001',
+      '20000000-0000-4000-8000-000000000001',
+      '30000000-0000-4000-8000-000000000002',
+      '30000000-0000-4000-8000-000000000099',
+      'requires',
+      '00000000-0000-4000-8000-000000000101'
+    );
+    raise exception 'cross-project dependency unexpectedly succeeded';
+  exception
+    when foreign_key_violation then null;
+  end;
+end;
+$$;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000108', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000108","role":"authenticated","is_anonymous":false}',
+  true
+);
 
 -- RLS: cross-workspace SELECT returns no rows.
 do $$
@@ -182,6 +288,45 @@ $$;
 
 reset role;
 
+-- RLS: an anonymous Auth identity still uses the authenticated Postgres role,
+-- but must fail closed even if its subject appears in workspace_members.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000108","role":"authenticated","is_anonymous":true}',
+  true
+);
+
+do $$
+declare
+  visible_count integer;
+  changed_count integer;
+begin
+  if private.is_workspace_member(
+    '10000000-0000-4000-8000-000000000001'::uuid
+  ) then
+    raise exception 'anonymous workspace member predicate unexpectedly allowed access';
+  end if;
+
+  select count(*) into visible_count
+  from public.projects
+  where id = '20000000-0000-4000-8000-000000000001';
+  if visible_count <> 0 then
+    raise exception 'anonymous identity unexpectedly read a project';
+  end if;
+
+  update public.project_items
+  set status = 'in_progress'
+  where id = '30000000-0000-4000-8000-000000000001';
+  get diagnostics changed_count = row_count;
+  if changed_count <> 0 then
+    raise exception 'anonymous identity unexpectedly changed a project item';
+  end if;
+end;
+$$;
+
+reset role;
+
 -- Seed a review candidate as the trusted orchestration path, then prove that an
 -- authenticated admin cannot forge reviewer attribution or record identity.
 insert into public.source_documents (
@@ -208,6 +353,11 @@ insert into public.change_events (
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000102', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000102","role":"authenticated","is_anonymous":false}',
+  true
+);
 
 update public.change_events
 set state = 'confirmed',

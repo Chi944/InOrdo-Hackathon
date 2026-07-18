@@ -1,12 +1,27 @@
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import { getPublicEnv } from "@/lib/env/public";
 import type { Database } from "@/types/database";
 
-export async function createServerSupabaseClient() {
+declare const requestScopedClientCapability: unique symbol;
+
+/** Cookie-backed, user-scoped client. Its nominal brand prevents privileged substitution. */
+export type ServerSupabaseClient = SupabaseClient<Database> & {
+  readonly [requestScopedClientCapability]: "request-scoped";
+};
+
+type CreateServerSupabaseClientOptions = {
+  /** Route Handlers must apply this same Headers object to their response. */
+  responseHeaders?: Headers;
+};
+
+export async function createServerSupabaseClient(
+  options: CreateServerSupabaseClientOptions = {},
+): Promise<ServerSupabaseClient> {
   const env = getPublicEnv();
   const cookieStore = await cookies();
 
@@ -16,7 +31,11 @@ export async function createServerSupabaseClient() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, responseHeaders) {
+          for (const [name, value] of Object.entries(responseHeaders)) {
+            options.responseHeaders?.set(name, value);
+          }
+
           try {
             for (const { name, value, options } of cookiesToSet) {
               cookieStore.set(name, value, options);
@@ -28,9 +47,5 @@ export async function createServerSupabaseClient() {
         },
       },
     },
-  );
+  ) as ServerSupabaseClient;
 }
-
-export type ServerSupabaseClient = Awaited<
-  ReturnType<typeof createServerSupabaseClient>
->;

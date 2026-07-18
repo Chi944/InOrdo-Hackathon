@@ -45,6 +45,11 @@ export type AuthorizedProjectScope = {
   membership: WorkspaceMembership;
 };
 
+export type CurrentUserProjectAccess = {
+  user: AuthenticatedUser;
+  scope: AuthorizedProjectScope;
+};
+
 export async function requireUser(
   client?: ServerSupabaseClient,
 ): Promise<AuthenticatedUser> {
@@ -170,4 +175,24 @@ export async function requireProjectAccess(
     projectId: data.id,
     membership,
   };
+}
+
+/**
+ * Preferred request-boundary guard. It derives identity from verified claims so
+ * callers cannot accidentally authorize with a user id supplied by a form,
+ * route parameter, model response, or another workspace member row.
+ */
+export async function requireCurrentUserProjectAccess(
+  client: ServerSupabaseClient,
+  projectId: string,
+  allowedRoles: readonly WorkspaceRole[] = workspaceReadRoles,
+): Promise<CurrentUserProjectAccess> {
+  const user = await requireUser(client);
+  const scope = await requireProjectAccess(
+    client,
+    user.id,
+    projectId,
+    allowedRoles,
+  );
+  return { user, scope };
 }

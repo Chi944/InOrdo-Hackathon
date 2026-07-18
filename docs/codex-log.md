@@ -31,3 +31,17 @@
 - Added redirect, error mapping, membership, identity, environment, server-action, query-boundary, and client-secret-boundary tests.
 - Ran the required Node 22 checks: lint, typecheck, 24 tests across 9 files, production build, and `git diff --check` all completed successfully.
 - Documented the manual demo-account flow without committing a password. Live login and project-load verification were not run because no `.env` or `.env.local` configuration and no operator-created Auth credential were available; no environment value or secret was read.
+
+## 2026-07-18 — Native project records and dependency engine
+
+- Added strict Zod allowlists for item/dependency mutations, list filters, and graph input/output, with bounded user-safe validation messages.
+- Added claim-bound project authorization, contributor/read role separation, scoped Supabase persistence, conditional item-version updates, safe conflict/error results, and same-project dependency validation.
+- Added pure deterministic upstream-to-dependent traversal with active-item filtering, complete paths, cycle/self-loop/duplicate defense, stable ordering, shortest-path policy, and a default maximum depth of 5.
+- Added a project-scoped graph loader with deterministic pagination and fail-closed 500-item/2,000-edge bounds, plus minimal server-refreshed project record/dependency controls without changing the established visual language or using optimistic UI.
+- Completed the reviewer checklist with nominal user/privileged client separation, proxy/Route Handler response-state tests, request-path privileged-import checks, and a claim-bound authorization helper.
+- Applied a forward migration that rejects Supabase anonymous Auth identities at RLS and requires an item owner to belong to the item's workspace. Linked schema lint reported no errors.
+- Performed a rollback-wrapped member-role verification: an item edit advanced version 1 to 2, the stale retry changed zero rows, and a dependency was created then removed. A post-rollback read confirmed item version 1 and no retained verification edge.
+- Confirmed against the linked database that anonymous identity/membership/project visibility all fail closed and that cross-workspace owner assignment and cross-project dependency creation are rejected.
+- Added a non-destructive rollback runbook, a refreshed-version UI regression test, and a Prompt 7 readiness checklist covering action vocabulary, project revision, and atomic persistence decisions.
+- Ran the required Node 22 checks: lint, typecheck, 84 tests across 21 files, production build, and `git diff --check` all completed successfully. The linked migration ledger matched and remote schema lint reported no errors.
+- Live browser action verification remains gated on an operator-created Auth account and untracked public Supabase environment configuration; no credential or environment file was read.

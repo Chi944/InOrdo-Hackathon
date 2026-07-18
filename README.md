@@ -4,7 +4,7 @@ InOrdo is a Work and Productivity application for small teams. It turns an unstr
 
 ## Current status
 
-This repository contains the P0 application foundation, the workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, and a protected read-only project overview. The Prompt 3 automated checks pass on `deston/03-auth-data`; a live login still requires an operator-created Auth account and local environment configuration. Model extraction, dependency traversal services, approvals, mutations, undo, and demo reset are not represented as working features yet.
+This repository contains the P0 application foundation, the workspace-scoped Supabase schema and synthetic Regional Climate Action Summit fixture, Supabase email/password authentication, bounded typed repositories, and a protected project overview. The Prompt 5 branch adds validated project-item and dependency operations, optimistic concurrency, a pure deterministic impact engine, a project-scoped graph loader, and minimal server-refreshed controls. Evidence intake, model extraction, approvals, application operations, undo, and demo reset are not represented as working features yet. A live browser login still requires an operator-created Auth account and local environment configuration.
 
 ## Local setup
 
@@ -47,10 +47,18 @@ Create the email/password demo account manually and map its generated Auth UUID 
 - Next.js App Router and React Server Components provide the web boundary.
 - Supabase will provide Postgres persistence, authentication, RLS, and durable operation history.
 - GPT-5.6 will run server-side only to structure evidence and draft recovery actions.
-- Application code—not the model—will traverse explicit dependency edges.
+- Application code—not the model—traverses explicit dependency edges.
 - Validated model output remains a proposal until a person approves a specific action; only authorized server code can mutate data and record an undoable operation.
 
 See [docs/architecture.md](docs/architecture.md) and [AGENTS.md](AGENTS.md) before implementing P0 contracts.
+
+Security evidence and recovery procedures are recorded in [docs/security-review.md](docs/security-review.md) and [docs/rollback-plan.md](docs/rollback-plan.md). The integration decisions required before the GPT-5.6 backend are listed in [docs/prompt-7-readiness.md](docs/prompt-7-readiness.md).
+
+## Project records and graph tests
+
+The unit suite covers strict request allowlists, stale item versions, authorization fail-closed behavior, cross-project dependency rejection, and safe database-error mapping. The impact suite covers chains, fan-out, fan-in, cycles, self-loops, duplicate edges, disconnected nodes, inactive items, maximum depth, stable ordering, and deterministic shortest paths.
+
+The graph loader treats `not_started`, `in_progress`, `blocked`, and `at_risk` items as active. It loads only the authorized project, then passes normalized TypeScript records into a pure traversal with no network or model call. It rejects projects beyond the documented 500-active-item or 2,000-edge demo bounds instead of returning a truncated graph.
 
 ## P0 scope
 

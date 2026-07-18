@@ -2,11 +2,11 @@
 
 ## Automated gate
 
-- [ ] `npm run lint`
-- [ ] `npm run typecheck`
-- [ ] `npm run test:run`
-- [ ] `npm run build`
-- [ ] `git diff --check`
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run test:run`
+- [x] `npm run build`
+- [x] `git diff --check`
 - [ ] `npm run test:e2e` for implemented browser workflows when a Playwright browser is available
 
 ## Product behavior
@@ -28,6 +28,15 @@
 - [ ] RLS and server authorization tests cover cross-project access.
 - [ ] Model output is schema-validated and never directly mutates data.
 - [ ] Stale versions, repeated requests, and partial failures fail safely.
+
+### Prompt 5 reviewer evidence
+
+- [x] Anonymous Auth identities fail closed in both application guards and linked RLS verification.
+- [x] Cross-workspace item owners and cross-project dependency endpoints are rejected by database constraints.
+- [x] Request and feature modules cannot import the privileged client; user/privileged clients are nominally distinct.
+- [x] Refreshed session cookies and cache-safety headers are preserved by tested response paths.
+- [x] A rollback-wrapped linked item edit, stale retry, dependency create/remove, and post-rollback read completed without retained test data.
+- [ ] Real browser login and UI mutation flow with an operator-created Auth user.
 
 ## Accessibility and responsive review
 

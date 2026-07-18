@@ -683,6 +683,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_items_owner_workspace_member_fk"
+            columns: ["workspace_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_members"
+            referencedColumns: ["workspace_id", "user_id"]
+          },
+          {
             foreignKeyName: "project_items_project_fk"
             columns: ["workspace_id", "project_id"]
             isOneToOne: false

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
+import { ProjectRecordControls } from "@/app/app/project-record-controls";
+import { createProjectRecordOperations } from "@/features/project-records/operations";
 import { AuthorizationError } from "@/lib/auth/errors";
 import {
   requireProjectToWorkspace,
@@ -39,6 +41,11 @@ export default async function DemoWorkspacePage() {
         sources: Awaited<ReturnType<typeof listSourceUpdates>>;
         planning: Awaited<ReturnType<typeof listImpactRunsAndProposals>>;
         operations: Awaited<ReturnType<typeof listOperations>>;
+        dependencies: Awaited<
+          ReturnType<
+            ReturnType<typeof createProjectRecordOperations>["listDependencies"]
+          >
+        >;
         role: string;
       }
     | undefined;
@@ -53,14 +60,17 @@ export default async function DemoWorkspacePage() {
       demoProject.workspace_id,
       demoProject.id,
     );
+    const projectRecords = createProjectRecordOperations({ client });
 
-    const [overview, items, sources, planning, operations] = await Promise.all([
-      getProjectOverview(client, scope),
-      listProjectItems(client, scope),
-      listSourceUpdates(client, scope),
-      listImpactRunsAndProposals(client, scope),
-      listOperations(client, scope),
-    ]);
+    const [overview, items, sources, planning, operations, dependencies] =
+      await Promise.all([
+        getProjectOverview(client, scope),
+        listProjectItems(client, scope),
+        listSourceUpdates(client, scope),
+        listImpactRunsAndProposals(client, scope),
+        listOperations(client, scope),
+        projectRecords.listDependencies(scope.projectId),
+      ]);
 
     result = {
       overview,
@@ -68,6 +78,7 @@ export default async function DemoWorkspacePage() {
       sources,
       planning,
       operations,
+      dependencies,
       role: scope.membership.role,
     };
   } catch (error) {
@@ -91,7 +102,8 @@ export default async function DemoWorkspacePage() {
     throw new Error("The project overview could not be loaded.");
   }
 
-  const { overview, items, sources, planning, operations, role } = result;
+  const { overview, items, sources, planning, operations, dependencies, role } =
+    result;
   const workspace = overview.project.workspace;
   const summaryCards = [
     {
@@ -135,7 +147,7 @@ export default async function DemoWorkspacePage() {
             Role: {role}
           </span>
           <span className="border border-signal/25 bg-[#eef1ff] px-3 py-2 text-signal">
-            Read-only foundation
+            {role === "viewer" ? "Viewer access" : "Project records connected"}
           </span>
         </div>
       </div>
@@ -210,10 +222,28 @@ export default async function DemoWorkspacePage() {
         </div>
       </section>
 
+      <ProjectRecordControls
+        canEdit={role !== "viewer"}
+        dependencies={dependencies.map((dependency) => ({
+          id: dependency.id,
+          fromItemId: dependency.from_item_id,
+          toItemId: dependency.to_item_id,
+          relationship: dependency.relationship,
+        }))}
+        items={items.data.map((item) => ({
+          id: item.id,
+          itemKey: item.item_key,
+          title: item.title,
+          status: item.status,
+          version: item.version,
+        }))}
+        projectId={overview.project.id}
+      />
+
       <section className="mt-5 grid gap-4 lg:grid-cols-3" aria-label="Workflow readiness">
         {[
           ["Evidence", sources.data.length, "No source update has been submitted in the baseline."],
-          ["Impact and proposals", planning.impacts.length + planning.proposals.length, "Deterministic analysis and recovery drafting are not connected yet."],
+          ["Impact and proposals", planning.impacts.length + planning.proposals.length, "Deterministic traversal is available; analysis intake and recovery drafting are not connected yet."],
           ["Operation history", operations.data.length, "No mutation operation exists in the baseline."],
         ].map(([label, count, emptyCopy]) => (
           <article className="border border-rule bg-white p-5" key={String(label)}>

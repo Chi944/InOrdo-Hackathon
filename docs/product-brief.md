@@ -34,4 +34,4 @@ External connectors, embeddings, autonomous mutations, enterprise administration
 
 ## Current status
 
-Only the repository foundation and public landing shell are established in this bootstrap. P0 product workflows remain to be implemented and verified.
+The repository, workspace database, RLS, authentication boundary, native project-item/dependency operations, and deterministic dependency traversal are implemented. The protected interface has minimal real-data controls pending Andres's full project-view work. Evidence intake, GPT analysis, recovery proposals, approvals, reversible operation application, undo, and demo reset remain unfinished and must not be presented as working.

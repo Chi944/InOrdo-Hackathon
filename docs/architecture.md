@@ -28,6 +28,8 @@ The installed Next.js 16 line uses `src/proxy.ts` for request interception. The 
 
 Server Components, route handlers, and server actions create a fresh Supabase server client per request. Protected entry points establish identity with `auth.getClaims()` and then apply explicit workspace and project authorization; they do not treat an unverified `getSession()` payload as authorization. Redirect destinations are accepted only when they are local application paths.
 
+The request-scoped and privileged clients have distinct nominal TypeScript capabilities, so a privileged client cannot accidentally satisfy an API that requires a user-scoped client. The session proxy copies refreshed cookies and cache-safety headers to normal and redirect responses. Route handlers can pass a response `Headers` sink to the server-client factory and must apply that same object to the returned response.
+
 The browser client can read only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server environment validation is isolated from the public schema. The privileged client imports a server-only marker, reads `SUPABASE_SERVICE_ROLE_KEY` only on the server, disables session persistence, and is reserved for narrowly reviewed operations such as a future controlled demo reset. Normal authenticated reads and writes always use the user's session so RLS remains in force.
 
 ### Authorization and data access
@@ -36,13 +38,19 @@ Reusable server-only guards establish the user, workspace membership, allowed ro
 
 Repositories are server-only, typed from the generated database schema, and bounded. They select explicit columns and cap collection sizes for the demo workspace/project lookup, project overview, items, item dependencies, source updates, impact runs and proposals, and operations. UI modules receive repository results rather than a privileged client, unrestricted query builder, or `select('*')` response.
 
+Project-record operations derive the current user from verified claims inside the authorizer; no user ID comes from form or model input. Mutations require owner, admin, or member membership, while viewers retain read access. Every query carries explicit workspace and project filters. Item updates also filter by the submitted positive version, and a zero-row update is a conflict rather than an overwrite. The database owns the next version. Dependency creation first resolves both endpoints inside the authorized project, then relies on composite foreign keys and self/duplicate constraints as defense in depth.
+
 ### Evidence and model output
 
 Persist raw source text and provenance before interpretation. A server-only OpenAI adapter requests structured output from `OPENAI_MODEL`; Zod validates the response into a candidate change or recovery draft. Validation failure produces a reviewable error and no mutation.
 
 ### Deterministic impact
 
-Store explicit directed dependency edges. Domain code traverses those edges from the reviewed changed record, records direct versus downstream depth, prevents cycles, and returns at least one ordered path for every affected item. The model does not choose graph reach.
+Store explicit directed dependency edges. Domain code traverses those edges from the reviewed changed record, records direct versus downstream depth, prevents cycles, and returns one deterministic full path for every affected item. The model does not choose graph reach.
+
+The project graph loader selects only one authorized project's active item IDs (`not_started`, `in_progress`, `blocked`, or `at_risk`) and dependency fields, then normalizes them into types that do not expose Supabase response objects. It pages deterministically and fails closed above the P0 bounds of 500 active items or 2,000 edges rather than traversing truncated state. No network or model call occurs inside traversal.
+
+Traversal builds adjacency from each upstream `to_item_id` to dependent `from_item_id`. It ignores self-loops, inactive endpoints, and duplicate endpoint pairs. A breadth-first work queue and best-depth map retain the shortest path, terminate cycles, and deduplicate affected items. Adjacency lists and final results use stable item-ID ordering, making equal-depth path selection reproducible. The configurable maximum depth defaults to 5 and is bounded at 20 by validation.
 
 ### Approval and mutation
 
@@ -66,12 +74,13 @@ Undo creates a compensating operation; it does not erase history. Demo reset is 
 - `src/lib/auth/`: identity, redirect validation, authorization guards, and typed errors.
 - `src/lib/repositories/`: bounded, explicit-column server-side reads.
 - `src/features/evidence/`: intake, validation, and provenance.
-- `src/features/impact/`: dependency graph traversal and path explanations.
+- `src/features/project-records/`: strict schemas, authorized operations, scoped persistence, and safe database-error mapping.
+- `src/features/impact/`: pure dependency graph traversal, schemas, and the project-scoped loader.
 - `src/features/proposals/`: recovery drafts and per-action approval state.
 - `src/features/operations/`: authorized application, history, undo, and reset.
 - `supabase/migrations/`: schema, constraints, functions, and RLS policies.
 
-The Supabase, authentication, and repository paths are implemented for the read-only Prompt 3 foundation. The feature paths remain planned boundaries for later prompts. Lint, type checking, unit/static tests, and the production build pass on the branch; live login and project-load verification still require an operator-created Auth account and local environment values.
+The Supabase, authentication, repository, project-record, and deterministic-impact paths are implemented through Prompt 5. Evidence intake, model analysis, proposals, approvals, operation application, undo, and reset remain planned boundaries. Live browser login still requires an operator-created Auth account and local environment values.
 
 ## P0 database model
 
@@ -83,11 +92,13 @@ Evidence and planning use `source_documents`, `change_events`, `impact_runs`, `i
 
 Operations use append-only `operation_logs` and `operation_items`. An operation header is inserted only in a final succeeded or failed state inside the same transaction as its effects. Each item can record expected/resulting versions, before/after snapshots, and an explicit reverse payload. Undo is a new compensating operation referencing the original; it never updates or deletes history. `activity_events` is append-only supplemental dashboard context.
 
-Composite foreign keys carry `workspace_id` and `project_id` through every project-owned domain relationship. This prevents project records and dependency edges from crossing tenant or project boundaries. Profile references such as creator, owner, reviewer, and actor remain durable global attribution identities; they do not grant membership. RLS and guarded review transitions establish authorization, while identity triggers prevent rewriting tenant scope or historical attribution. Core and audit parents use restrictive deletion rather than cascades that erase evidence or operation history.
+Composite foreign keys carry `workspace_id` and `project_id` through every project-owned domain relationship. This prevents project records and dependency edges from crossing tenant or project boundaries. An item's optional owner additionally has a composite foreign key to `workspace_members`, so direct database clients cannot assign a profile from another workspace. Other profile references remain durable attribution identities and do not grant membership. RLS and guarded review transitions establish authorization, while identity triggers prevent rewriting tenant scope or historical attribution. Core and audit parents use restrictive deletion rather than cascades that erase evidence or operation history.
 
 ### Dependency direction
 
 `item_dependencies.from_item_id` is always the dependent item. `to_item_id` is always its upstream prerequisite or context item. Downstream traversal therefore starts at a changed item and follows rows whose `to_item_id` is the current node to each `from_item_id`. Relationship labels (`depends_on`, `requires`, `informs`, and `scheduled_by`) are phrased consistently with that direction. Self-edges and duplicate typed edges are database constraints.
+
+The returned path begins with the changed item and ends with the affected item. `depth` is `path.length - 1`; depth 1 is direct and greater depths are indirect. Results are ordered first by depth and then by item ID. If two shortest paths reach the same item, sorted traversal retains the lexically earliest path.
 
 ### RLS strategy
 
@@ -101,17 +112,13 @@ RLS is enabled on every public user-facing table and no anonymous table privileg
 - derived change, impact, proposal, operation, and activity rows are inserted only by server-side orchestration; authenticated reviewers can only confirm/reject pending changes and approve/reject pending proposal actions;
 - no policy encodes an anonymous or service-role client bypass.
 
-The private membership predicates are stable `SECURITY DEFINER` functions used to avoid recursive membership-policy evaluation. They have an empty `search_path`, fully qualified relations, explicit `auth.uid()` checks, revoked anonymous execution, and only the minimum authenticated execution grants. Trigger functions have no API-role execution grants. Explicit `service_role` object grants support the server-only client, but the service-role key remains forbidden from browser code and server orchestration must still recheck user authorization.
+The private membership predicates are stable `SECURITY DEFINER` functions used to avoid recursive membership-policy evaluation. They have an empty `search_path`, fully qualified relations, explicit `auth.uid()` checks, and an `is_anonymous` JWT rejection because Supabase anonymous Auth users otherwise assume the `authenticated` Postgres role. Anonymous/public execution is revoked and only minimum authenticated execution is granted. Trigger functions have no API-role execution grants. Explicit `service_role` object grants support the server-only client, but the service-role key remains forbidden from browser code and server orchestration must still recheck user authorization.
 
 ### Demo seed and verification
 
 `supabase/seed.sql` contains deterministic UUIDs for the fictional eight-person Civic Futures Lab and the Regional Climate Action Summit 2026. It creates no Auth users or credentials. The project has 24 items, 26 directed relationships, the 2026-09-12 baseline event date, and the required event → speaker confirmation → programme lock → briefing pack path. `npx supabase db reset` reconstructs the fixture; a production-safe reset RPC is intentionally deferred to the operation-service task.
 
-The transaction-wrapped `supabase/tests/verify_p0.sql` checks seed counts and the expected path, cross-workspace invisibility, viewer mutation denial, reviewer attribution, immutable record identity, server-only audit writes, the self-dependency constraint, and operation idempotency uniqueness, then rolls back its test rows. It is plain assertion SQL, not pgTAP, and was executed successfully against the linked hosted project with:
-
-```bash
-npx supabase db query --linked --file supabase/tests/verify_p0.sql
-```
+The transaction-wrapped `supabase/tests/verify_p0.sql` checks seed counts and the expected path, anonymous and cross-workspace invisibility, viewer mutation denial, cross-workspace owner rejection, reviewer attribution, immutable record identity, server-only audit writes, the self-dependency constraint, and operation idempotency uniqueness, then rolls back its test rows. It is plain assertion SQL, not pgTAP.
 
 Local `db reset` and CLI pgTAP execution still require Docker Desktop.
 

@@ -1,12 +1,19 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { getPrivilegedSupabaseEnv } from "@/lib/env/server";
 import type { Database } from "@/types/database";
 
+declare const privilegedClientCapability: unique symbol;
+
+/** RLS-bypassing capability that must never satisfy a request-scoped client API. */
+export type PrivilegedSupabaseClient = SupabaseClient<Database> & {
+  readonly [privilegedClientCapability]: "privileged";
+};
+
 /** RLS-bypassing client for narrowly reviewed administrative workflows only. */
-export function createPrivilegedSupabaseClient() {
+export function createPrivilegedSupabaseClient(): PrivilegedSupabaseClient {
   const env = getPrivilegedSupabaseEnv();
   return createClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -18,5 +25,5 @@ export function createPrivilegedSupabaseClient() {
         persistSession: false,
       },
     },
-  );
+  ) as PrivilegedSupabaseClient;
 }

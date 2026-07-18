@@ -106,4 +106,17 @@ describe("client bundle boundaries", () => {
       );
     }
   });
+
+  it("keeps the privileged client out of request and feature modules", () => {
+    const requestModules = [
+      ...listSourceFiles(resolve(sourceRoot, "app")),
+      ...listSourceFiles(resolve(sourceRoot, "features")),
+    ].filter((path) => !path.includes(".test."));
+
+    for (const path of requestModules) {
+      expect(readFileSync(path, "utf8"), relative(sourceRoot, path)).not.toContain(
+        "@/lib/supabase/privileged",
+      );
+    }
+  });
 });

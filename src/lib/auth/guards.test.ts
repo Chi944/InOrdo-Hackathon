@@ -7,7 +7,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
 
-import { requireUser } from "@/lib/auth/guards";
+import {
+  requireCurrentUserProjectAccess,
+  requireUser,
+} from "@/lib/auth/guards";
 
 const userId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
@@ -58,5 +61,52 @@ describe("requireUser", () => {
         }),
       ),
     ).rejects.toMatchObject({ code: "unauthenticated", status: 401 });
+  });
+});
+
+describe("requireCurrentUserProjectAccess", () => {
+  it("binds project authorization to the verified claim subject", async () => {
+    const projectId = "8d2baf13-b687-4987-83a0-0b1294b0f001";
+    const workspaceId = "166645ec-1ab3-48dc-98c7-3b6f99b70301";
+    const membershipEqual = vi.fn();
+    const projectBuilder = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: projectId, workspace_id: workspaceId },
+        error: null,
+      }),
+    };
+    projectBuilder.select.mockReturnValue(projectBuilder);
+    projectBuilder.eq.mockReturnValue(projectBuilder);
+    const membershipBuilder = {
+      select: vi.fn(),
+      eq: membershipEqual,
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { workspace_id: workspaceId, user_id: userId, role: "member" },
+        error: null,
+      }),
+    };
+    membershipBuilder.select.mockReturnValue(membershipBuilder);
+    membershipEqual.mockReturnValue(membershipBuilder);
+    const client = {
+      auth: clientWithClaims({
+        sub: userId,
+        email: "demo@example.test",
+        role: "authenticated",
+        is_anonymous: false,
+      }).auth,
+      from: vi.fn((table: string) =>
+        table === "projects" ? projectBuilder : membershipBuilder,
+      ),
+    } as unknown as ServerSupabaseClient;
+
+    await expect(
+      requireCurrentUserProjectAccess(client, projectId),
+    ).resolves.toMatchObject({
+      user: { id: userId },
+      scope: { workspaceId, projectId, membership: { userId } },
+    });
+    expect(membershipEqual).toHaveBeenCalledWith("user_id", userId);
   });
 });

@@ -7,9 +7,10 @@
 - [x] Define, apply, and verify the Supabase schema, constraints, seed fixture, RLS policies, and generated TypeScript types.
 - [x] Complete and automatically verify typed Supabase browser/server clients, request refresh, email/password login, and the authentication boundary.
 - [x] Complete and automatically verify role-aware authorization helpers, bounded typed repositories, and protected real-data pages.
+- [x] Implement validated native project-item and dependency operations with optimistic concurrency and reliable server refresh.
 - [ ] Implement evidence intake and immutable provenance.
 - [ ] Implement server-only GPT-5.6 extraction with Zod validation.
-- [ ] Implement deterministic dependency traversal with cycle protection and path explanations.
+- [x] Implement deterministic dependency traversal with cycle protection, stable shortest paths, and path explanations.
 - [ ] Implement recovery proposal drafting and per-action approval state.
 - [ ] Implement authorized, idempotent, reversible internal operations.
 - [ ] Implement operation history, undo, and isolated demo reset.
