@@ -1,180 +1,156 @@
-# QA checklist
+# InOrdo QA checklist
 
-## Last completed automated gate (Prompt 5)
+This checklist is the submission truth source. A checked box means the named check was run on the stated scope and evidence is recorded in this repository. A historical check does not imply that the current documentation-only branch has passed its final gate. Unchecked items are release or submission gates, not implied functionality.
+
+## Current submission branch gate
+
+Run these commands on the final `andres/05-qa-submission` worktree immediately before commit. Do not check them from an earlier branch result.
 
 - [x] `npm run lint`
 - [x] `npm run typecheck`
 - [x] `npm run test:run`
 - [x] `npm run build`
 - [x] `git diff --check`
-- [ ] `npm run test:e2e` for implemented browser workflows when a Playwright browser is available
+- [x] Confirm the final diff changes documentation/submission assets only.
 
-The checked command results above are the preserved Prompt 5 handoff evidence. They do not imply that the Prompt 7 diff has passed.
+Final gate on 2026-07-18 used Node 22.23.1 and npm 10.9.8. ESLint and TypeScript completed without errors; Vitest passed 231 tests across 39 files; the Next.js 16.2.10 production build completed and listed the implemented page/API routes; and the final documentation/asset patch passed `git diff --check`. No application, package, migration, CI, or environment file changed.
 
-## Prompt 7 verification gate
+`npm run test:e2e` is not required by this documentation-only diff, but the authenticated browser journey below remains a release gate because it has never been completed in the recorded environment.
 
-- [x] `npm run lint` for the complete Prompt 7 diff under Node 22
-- [x] `npm run typecheck` for the complete Prompt 7 diff under Node 22
-- [x] `npm run test:run` for the complete Prompt 7 diff under Node 22 (177 tests across 32 files)
-- [x] `npm run build` for the complete Prompt 7 diff under Node 22
-- [x] `git diff --check` for the complete Prompt 7 diff
-- [x] Linked migration ledger, schema lint/security advisors, generated types, and Prompt 7 rollback-wrapped SQL verification
-- [ ] Exactly one controlled live OpenAI analysis with safe metadata only
-- [ ] Browser login, analysis submission, pending review display, and confirmation behavior
+### Current local browser evidence
 
-The linked database gate is complete: all three additive Prompt 7 migrations were applied to the confirmed project, generated types were refreshed, public/private schema lint returned no errors, security advisors returned no findings, and transaction-wrapped SQL assertions passed without retaining test rows. Performance advisors reported only unused-index informational notices expected on this new/small dataset. Node 22 lint, typecheck, 177 unit/integration tests across 32 files, and the production build passed. Live analysis and browser checks were not run because the required environment variable names were absent from the process environment.
+- [x] The public `/` route rendered locally at 1280 × 720 with one `h1`, a skip link, semantic workflow headings, and `document.documentElement.scrollWidth === window.innerWidth`.
+- [x] The public `/login` route rendered locally at 1280 pixels wide with one `h1`, visible Email and Password labels, a skip link, and no horizontal document overflow.
+- [x] Current-build landing and workflow-principle screenshots were captured from the optimized production build's real public route and saved under `docs/assets/`; neither is labeled as an authenticated or live-model result.
+- [ ] The protected `/app` route could not be exercised in this worktree because `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` were absent. No environment file or value was read.
 
-## Prompt 9 verification gate
+## Preserved implementation evidence
 
-Prompt 9 automated and linked database verification is complete on the applied schema. Authenticated HTTP/browser verification remains a separate release gate.
+These results are historical, scoped evidence from the implementation branches. They remain useful, but they are not substitutes for the current gate or an authenticated production test.
 
-- [x] `npm run lint` under Node 22
-- [x] `npm run typecheck` under Node 22
-- [x] `npm run test:run` under Node 22 (223 tests across 37 files)
-- [x] `npm run build` under Node 22
-- [x] `git diff --check`
-- [x] Reviewed linked `npx supabase db push --dry-run`, followed by the operations migrations
-- [x] Regenerated linked `src/types/database.ts` and confirmed no unexplained schema drift
-- [x] Public/private schema lint and Supabase security advisors with no new actionable finding
-- [x] Rollback-wrapped `supabase/tests/verify_operations.sql` against the linked project with no retained verification rows
-- [x] One authorized linked apply → history → undo → reset RPC/audit sequence using only synthetic data, explicitly rolled back
+### Authentication, tenancy, records, and graph
 
-Linked evidence on 2026-07-18: the migration ledger is aligned through `20260718191000_harden_prompt9_operations`; generated types match the linked schema after line-ending normalization; schema lint returned no errors; the security advisor returned no findings; and performance advisors reported only unused-index informational notices on the new/small dataset. `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql` all completed inside rollback-wrapped linked transactions. A separate evidence query observed `apply_state=succeeded`, ordered before/after history present, `undo_state=succeeded`, `reset_state=succeeded`, workflow generation `2`, and overflow-safe item creation, then a follow-up confirmed no verification operation keys were retained. This is database RPC/audit evidence, not authenticated HTTP, cookie, route, or browser evidence.
+- [x] Request-scoped identity, role, project membership, bounded repository, and safe error-mapping tests passed on the authentication/data branch.
+- [x] Linked RLS verification denied anonymous, viewer-write, cross-workspace owner, and cross-project dependency cases without retaining verification rows.
+- [x] Native item/dependency contract tests covered strict input allowlists, stale item versions, contributor/read roles, and same-project dependency validation.
+- [x] Pure TypeScript graph tests covered upstream-to-dependent direction, direct and downstream paths, cycles, duplicates, stable ordering, inactive items, bounds, and maximum depth.
+- [ ] Complete a real browser login, project load, item edit, dependency add/remove, session refresh, logout, and viewer-read-only pass.
 
-### Prompt 9 operation and security cases
+### Evidence, GPT-5.6 extraction, and impact review
 
-- [x] Owner/admin apply succeeds; viewer, nonmember, cross-workspace, and cross-project requests fail closed.
-- [x] Only pending actions belonging to the named proposal/project can be selected.
-- [x] The executable allowlist is limited to an allowlisted item-field update, constrained task creation, constrained risk creation, and confirmation activity.
-- [x] Delete, membership, dependency, arbitrary-patch/SQL, external-call, unknown-field, and malformed-payload attempts are rejected.
-- [x] A required human response must explicitly match one selected action; missing, duplicate, extra, or unselected responses are rejected.
-- [x] Partial selection applies only selected actions in proposal ordinal order and leaves unselected actions pending.
-- [x] Mutation, action/proposal transitions, the operation header, and every ordered before/after audit item commit together or all roll back.
-- [x] Same-key/same-request replay returns the original operation without repeating effects; same-key/different-request reuse conflicts.
-- [x] Undo restores only an entirely reversible update operation, processes reverse records in reverse order, and writes a new operation linked to the original.
-- [x] Undo rejects a stale version or after-state mismatch without partial reversal; repeat undo is stable and undo-of-undo is rejected.
-- [x] Current history is generation-scoped, bounded, ordered, and actor-attributed; `includeArchived=true` exposes preserved prior generations.
-- [x] Reset accepts only explicit confirmation and an idempotency key; no reset secret is accepted through a browser, URL, header, body, RPC argument, fixture, audit row, or log.
-- [x] Reset rechecks owner/admin access, configured slug, the demo marker, a deterministic baseline, idempotency, and rate limiting inside the reviewed database boundary.
-- [x] Reset restores 24 active canonical items and 26 edges, retires nonbaseline items without deleting history, records its operation in the closing generation, and advances the generation once.
+- [x] Analysis tests covered successful orchestration, provider refusal, malformed structured output, unknown IDs, evidence mismatch, timeout, duplicate handling, transient failure, stale state, prompt injection, and no-mutation boundaries.
+- [x] Linked rollback-wrapped analysis SQL verification covered authorization, immutable evidence, duplicate/rate claims, validated completion, deterministic impacts, pending actions, and no project-item mutation.
+- [x] Static contract review confirmed that the protected impact interface posts only to the existing analyze, apply, and undo routes; persisted review and operation history are read through scoped server repositories.
+- [x] Component tests covered source validation, duplicate-submit prevention, safe default action selection, human-input exclusion, approval request shape, and draft-state gating.
+- [ ] Run one funded synthetic live GPT-5.6 analysis and record only safe metadata: model name, provider/request identifiers already intended for storage, usage counts when returned, state transitions, and derived record IDs. Do not record a key, prompt, raw model output, or source body.
+- [ ] In an authenticated browser, confirm preserved evidence remains distinct from model inference and every impact shows its deterministic dependency path separately from the GPT-generated explanation.
+- [ ] Confirm live direct impacts have depth 1 and live indirect impacts have depth greater than 1 for the seeded venue-date scenario.
 
-### Pending authenticated HTTP/browser procedure
+### Proposal, approval, history, undo, and reset
 
-The linked SQL/RPC procedure above is complete. The following end-to-end procedure still requires an operator-created owner/admin Auth account and the configured synthetic project. Keep all credentials in untracked environment configuration; do not paste or print them.
+- [x] Linked rollback-wrapped RPC verification observed selective apply, ordered before/after history, a linked compensating undo, named-demo reset, workflow-generation advance, and no retained verification rows.
+- [x] Operation contract tests covered owner/admin authorization, viewer/cross-tenant denial, allowlisted actions, required human input, partial selection, atomic rollback, idempotency, stale undo conflicts, archived history, and reset safeguards.
+- [ ] Resolve the proposal-state blocker described below, then complete a fresh authenticated analysis → selective approval → current history → undo → reset journey.
+- [ ] Verify that the travel rebooking action remains unapproved while the chosen safe actions proceed.
+- [ ] Verify that the UI never claims a partial apply, successful undo, or reset when the server returns an error or conflict.
+- [ ] Verify reset restores 24 active canonical items, 26 dependency edges, and the original `2026-09-12` event date while preserving archived history.
 
-1. Create or identify a pending proposal with one reversible field update and note its proposal/action UUIDs, target value, and expected item version.
-2. `POST /api/projects/[projectId]/proposals/[proposalId]/apply` with that action UUID and a new idempotency key. Confirm a `201`, the expected value/version change, `succeeded` operation, actor attribution, action state, and ordered before/after/reverse audit item.
-3. Repeat the identical request and confirm `200`, `duplicate: true`, the same operation ID, and no second version increment. Reuse the key with a changed selection and confirm a safe conflict.
-4. `GET /api/projects/[projectId]/operations?limit=25&includeArchived=false` and confirm the apply header plus its item-level ordinal, before-state, after-state, expected/resulting versions, reversibility, and initiator.
-5. `POST /api/projects/[projectId]/operations/[operationId]/undo` with a new idempotency key. Confirm the before-state is restored at a newer version and a new `undo` operation references the original. Repeat it to confirm a stable duplicate; separately verify a post-apply target change produces an undo conflict without partial reversal.
-6. With `DEMO_PROJECT_SLUG` and `DEMO_RESET_SECRET` configured only on the server, `POST /api/projects/[projectId]/demo/reset` using `{ "confirmed": true, "idempotencyKey": "<unique-key>" }`. Confirm the 24-item/26-edge baseline, retirement of extras, a one-step generation advance, and preservation of the reset operation in the closing generation.
-7. Confirm current history is clean for the new generation, `includeArchived=true` retains the apply/undo/reset trail, an identical reset replay is stable, an immediate distinct reset is rate-limited, and a non-demo/wrong-project request is denied.
-8. Record exact non-secret HTTP/browser results here and in `docs/codex-log.md`; until then this browser procedure remains pending.
+## Manual release procedure
 
-## Impact review UI verification gate
+Use only the synthetic Regional Climate Action Summit 2026 workspace and an operator-created owner/admin account. Keep credentials in untracked local or deployment configuration. Never capture cookies, authorization headers, secret values, raw provider output, or private data.
 
-The judge-facing workflow is implemented on `andres/04-impact-ui`. These checks apply to the complete branch diff; the authenticated live-data procedure remains separate because this worktree has no public Supabase configuration, authenticated demo session, service-role key, or OpenAI key.
+### 1. Authentication and tenancy
 
-- [x] `npm run lint` under Node 22
-- [x] `npm run typecheck` under Node 22
-- [x] `npm run test:run` under Node 22 (231 tests across 39 files)
-- [x] `npm run build` under Node 22
-- [x] `git diff --check`
-- [ ] `npm run test:e2e` when an authenticated Playwright environment is available
-- [x] Static contract review confirms the UI calls only the existing analyze, apply, history, and undo routes.
-- [x] Component coverage locks source validation/double-submit behavior and safe action selection/human-input exclusion.
+- [ ] In a private/incognito window, anonymous access to `/app` redirects to login or otherwise fails closed.
+- [ ] A valid owner/admin can sign in and sees only the configured synthetic workspace and project.
+- [ ] Invalid credentials produce a useful, non-sensitive error.
+- [ ] A viewer can read permitted records but cannot create/edit records, dependencies, approvals, undo, or reset.
+- [ ] Logout ends the browser session and a protected-route refresh remains denied.
 
-The final command gate used the checksum-verified official Node 22.23.1/npm 10.9.8 distribution because the desktop runtime supplied only Node 24 without npm. The production build required network access solely for the existing `next/font` Geist downloads.
+### 2. Project views and deterministic graph
 
-### Full-screen functional QA procedure
+- [ ] The project header visibly identifies the workspace as synthetic.
+- [ ] Project counts, seeded records, statuses, owners, dates, risks, and dependency sections agree with the database seed.
+- [ ] The event-date, speaker, catering, programme-lock, and briefing-pack relationships are discoverable without relying on color.
+- [ ] “Depends on” and “affects” wording agrees with the documented prerequisite-to-dependent edge direction.
+- [ ] The required event → speaker confirmation → programme lock → briefing pack path is shown in order.
+- [ ] Loading, empty, not-found, authorization, validation, conflict, and general error states remain clear and non-disclosing.
 
-Use only the configured synthetic demo project and an operator-created owner/admin account. Do not paste or record credentials. Capture network metadata only; never capture authorization headers, cookies, raw provider metadata, or environment values.
+### 3. Evidence and analysis
 
-1. Open `/app` and confirm the workspace is visibly labeled synthetic, the optional four-step demo guide does not block navigation, and no test fixture is presented as an analysis result.
-2. Tab from the skip link through the source form. Confirm every control has a visible focus state and an accessible name: title, source type, author label, occurred-at date/time, source text, seeded-update insertion, and `Analyze change`.
-3. Submit an empty form. Confirm useful inline messages appear, focus moves to the first invalid field, and no analyze request is sent.
-4. Select `Insert seeded demo update`. Confirm it inserts only the exact canonical source sentence from `docs/demo-scenario.md`; it must not insert or display expected candidate, impact, or action results. The occurred-at field stays blank because the canonical source gives a date but no precise time.
-5. Confirm the live character count, 12,000-character guidance, privacy warning, and synthetic-data instruction. Verify the counter itself is not an `aria-live` region.
-6. Submit once and immediately try mouse and keyboard submission again. Confirm exactly one `POST /api/projects/[projectId]/analyze`, a disabled `Analyzing change…` control, and one general pipeline state. The four backend steps may be listed as context but must not advance independently because the API emits no stage events.
-7. On completed analysis, confirm focus moves to `Change review`. Compare immutable source text against the GPT-5.6 inference: changed item, canonical old value, inferred new value, exact evidence excerpt, percentage plus confidence text, ambiguity/warning text, and explicit confirmation requirement.
-8. Confirm direct impacts are depth 1 and indirect impacts are depth greater than 1. Every card must show item status/type/owner/date, severity text, a readable deterministic dependency path, and a separately labeled GPT-generated explanation. Verify valid empty and safe failure states.
-9. In Recovery actions, confirm all pending actions without `requires_human_input` are preselected. No human-input or non-pending action may be preselected. Toggle each checkbox with Space, use `Select all safe actions`, then use `Leave all pending`; confirm no reject request is sent.
-10. Select a human-input action. Confirm an associated response field appears and blank input prevents confirmation. Open `Approve selected`; confirm the dialog names/counts only selected actions, Cancel/Escape returns focus, and confirmation sends exactly the existing `{ selectedActionIds, humanInputs, idempotencyKey }` contract.
-11. If the proposal state is `draft`, confirm approval is disabled with the backend-readiness explanation. Do not bypass this by changing SQL or client state. When Deston supplies a `ready` or `partially_approved` proposal, confirm a partial apply leaves unselected actions pending and focus moves to Applied result.
-12. Confirm Applied result shows operation type/state/actor/time, changed items with before/after values, an audit-history anchor, and safe error/conflict details. Show Undo only for a backend-history `reversible` successful apply with no successful reversal; on a stale-state 409, confirm no partial-success claim appears.
+- [ ] Insert the canonical venue update and confirm no expected analysis result is prefilled or presented as a live response.
+- [ ] Submit blank and oversized source input and confirm inline validation, focus on the first invalid control, and no analysis request.
+- [ ] Submit the valid update once, immediately attempt a second submission, and confirm only one analyze request begins.
+- [ ] If live analysis is slow, keep the loading state honest; do not substitute a fixture while labeling it as GPT output.
+- [ ] On success, confirm the exact immutable source, inferred `event_date` change from `2026-09-12` to `2026-09-26`, confidence, ambiguity/review signals, and confirmation requirement.
+- [ ] Confirm model refusal, timeout, duplicate, and safe failure messages expose no prompt, provider detail, SQL detail, or secret.
 
-### Responsive and accessibility review
+### 4. Proposal and approval
 
-At each viewport, confirm `document.documentElement.scrollWidth <= window.innerWidth`, no card/dialog/control is clipped, paths wrap readably, native checkbox selection works, and meaningful completion/errors are announced without character-count or selection-chatter spam.
+- [ ] Pending actions that do not require human input are selected by default; human-input and non-pending actions are not.
+- [ ] Keyboard users can toggle each action and use “Select all safe actions” and “Leave all pending.”
+- [ ] A human-input action cannot be confirmed with a blank response.
+- [ ] The approval dialog summarizes only selected actions; Cancel and Escape return focus to the trigger.
+- [ ] The browser sends only selected action IDs, matching human responses, and an idempotency key through the existing contract.
+- [ ] Unselected actions remain pending and no unsupported reject request is sent.
 
-- [x] Mobile: 375 × 812
-- [x] Tablet: 768 × 1024
-- [x] Desktop: 1440 × 900
-- [x] Approval dialog initial focus, Cancel, and trigger focus return
-- [ ] Focus moves to Change review after analysis and Applied result after apply/undo refresh
-- [x] Confidence, severity, operation, and proposal states all include text; none rely on color alone
-- [x] Reduced-motion rules remove spinner animation and smooth scrolling
+### 5. History, undo, and reset
 
-Local browser evidence on 2026-07-18 used a temporary route with an unavoidable on-screen label stating that its records were synthetic fixtures and that no AI or backend call was made. The route was removed before the final diff. All three widths matched their requested viewport, reported no horizontal document overflow or out-of-viewport controls, and produced no console error after the deterministic date-format correction. Seed insertion, blank human-input prevention, dialog contents, initial Cancel focus, and trigger-focus return passed. Confirm/apply and undo were intentionally not clicked.
+- [ ] Applied results show operation type/state, actor, time, changed records, and before/after values from server history.
+- [ ] Undo appears only for a successful, reversible apply with no successful reversal.
+- [ ] Successful undo creates a linked compensating operation and preserves the original history.
+- [ ] A stale-state undo conflict produces no partial-success claim.
+- [ ] Reset requires explicit confirmation, applies only to the configured demo project, and leaves archived generations available through bounded history.
 
-### Known backend-state gate for Deston
+## Responsive and accessibility evidence
 
-Fresh completed analyses currently persist `action_proposals.state = 'draft'`, while the existing apply RPC accepts only `ready` or `partially_approved`, and no current application route promotes a proposal. The UI truthfully gates `Approve selected` on those backend states. This branch does not modify SQL, RLS, analysis prompts/model code, graph traversal, or mutation logic.
+### Verified fixture-only review
 
-## Product behavior
+The checks below were completed on 2026-07-18 against a temporary, clearly labeled synthetic local preview. That preview stated that no AI or backend call was made and was removed before the final diff. This verifies component layout and selected interactions only; it does **not** verify an authenticated application, real seed reads, production behavior, or a live model response.
 
-- [ ] Original evidence remains visible and unchanged.
-- [ ] Candidate extraction is labeled as model output and can be corrected or rejected.
-- [ ] Direct and downstream impacts are produced by deterministic traversal.
-- [ ] Every impact shows an evidence reference and dependency path.
-- [ ] Proposals remain inert before explicit human approval.
-- [ ] Sensitive actions can remain unapproved while other actions proceed.
-- [ ] Applied operations identify the approver and reversible before-state.
-- [ ] Undo creates a traceable compensating operation.
-- [ ] Demo reset affects only the configured synthetic project.
+- [x] 375 × 812: no horizontal document overflow or out-of-viewport controls.
+- [x] 768 × 1024: no horizontal document overflow or out-of-viewport controls.
+- [x] 1440 × 900: no horizontal document overflow or out-of-viewport controls.
+- [x] Native checkbox operation, seeded-source insertion, blank human-input prevention, approval-dialog contents, initial Cancel focus, and trigger-focus return.
+- [x] Confidence, severity, proposal, and operation states include text and do not rely on color alone.
+- [x] Reduced-motion styles remove spinner animation and smooth scrolling.
 
-## Security
+### Pending authenticated and production review
 
-- [ ] No secret appears in source, logs, screenshots, client bundles, fixtures, or Git history.
-- [ ] Service-role and OpenAI keys are referenced only by server-only code.
-- [ ] RLS and server authorization tests cover cross-project access.
-- [ ] Model output is schema-validated and never directly mutates data.
-- [ ] Stale versions, repeated requests, and partial failures fail safely.
+- [ ] At 375 × 812, 768 × 1024, and 1440 × 900, verify the real authenticated route has no horizontal overflow, clipped dialog, clipped control, or unreadable dependency path.
+- [ ] Navigate the complete journey with keyboard only, beginning at the skip link; confirm visible focus, logical order, accessible names, and no keyboard trap.
+- [ ] Confirm one `h1`, logical heading order, landmarks, labels/instructions, meaningful status text, and explained disabled actions on each route.
+- [ ] Confirm analysis completion moves focus to Change review and apply/undo refresh moves focus to the result.
+- [ ] Confirm errors and completed operations are announced without character-count or selection-change chatter.
+- [ ] Run a production incognito test for landing, login, protected routing, source submission, review, approval gating, history, logout, and safe refresh behavior.
 
-### Prompt 5 reviewer evidence
+## Deployment and submission checks
 
-- [x] Anonymous Auth identities fail closed in both application guards and linked RLS verification.
-- [x] Cross-workspace item owners and cross-project dependency endpoints are rejected by database constraints.
-- [x] Request and feature modules cannot import the privileged client; user/privileged clients are nominally distinct.
-- [x] Refreshed session cookies and cache-safety headers are preserved by tested response paths.
-- [x] A rollback-wrapped linked item edit, stale retry, dependency create/remove, and post-rollback read completed without retained test data.
-- [ ] Real browser login and UI mutation flow with an operator-created Auth user.
+- [ ] A human supplies and verifies the final production URL in a private/incognito browser.
+- [ ] Deployment environment contains every required variable name, with secret values server-only and absent from the client bundle, logs, screenshots, and repository.
+- [ ] The deployment platform enforces an upstream request-body limit in addition to application checks.
+- [ ] The public repository is accessible without team credentials and contains the intended MIT license.
+- [ ] README setup, migration, seed, demo/test path, screenshots, architecture, claims, and commands match the final artifact.
+- [ ] Devpost copy and the video describe only the verified artifact and use “Work and Productivity” as the track.
+- [ ] The public video has voiceover, runs no longer than three minutes, and never presents a fixture as a live model response.
+- [ ] The primary `/feedback` Session ID and all URLs, account-path instructions, team members, and deadline placeholders are replaced.
+- [ ] Final repository, deployment, video, Devpost, and Session ID links are tested without a team-authenticated browser session.
+- [ ] Record the final submitted commit and stop repository, deployment, Devpost, and video edits at the stated deadline.
 
-### Prompt 7 implementation evidence (code review, not command results)
+## Unresolved issues
 
-- [x] The request and source schemas are strict and bounded; unsupported keys, source types, depths, and oversized request bodies fail closed.
-- [x] Contributor authorization and one-project context loading happen before the model boundary.
-- [x] The server-only Responses adapter sets `store: false`, low reasoning, no tools, bounded output, a 30-second timeout per logical call, and at most one SDK retry per call.
-- [x] Prompts treat source/input as untrusted data and cannot grant tools, IDs, fields, or action types.
-- [x] Strict parsing is followed by ID, field, enum, date, owner, evidence-span, current-value, version, confidence, and impact-coverage validation.
-- [x] Pure deterministic traversal, not GPT, produces the downstream paths supplied to proposal drafting.
-- [x] The first persistence phase stores evidence and a duplicate/rate/revision claim; final derived writes are an all-or-nothing inert transaction.
-- [x] Proposal actions are persisted pending and the analysis path contains no project-item mutation.
-- [x] Prompt-injection, tenant-isolation, replay/spend, stale-state, partial-write, secret-boundary, and model-mutation threats have implementation controls documented in `docs/security-review.md`.
-- [x] Prompt 7 has a forward-only containment/rollback procedure that preserves evidence and treats stuck processing claims as an operator-reconciliation state.
-- [x] Complete Prompt 7 repository tests and linked SQL checks pass.
+| Severity | Issue | Owner | Required resolution or honest workaround |
+| --- | --- | --- | --- |
+| Critical | Fresh successful analysis persists the recovery proposal as `draft`, while apply accepts only `ready` or `partially_approved`; no application route promotes the draft. | Deston | Add and verify a reviewed server-owned transition before claiming the complete live flow. Until then, demonstrate evidence and impact review only, keep approval disabled, and state that apply/undo is separately database-verified but not connected to a fresh browser analysis. Do not alter SQL or client state as a demo shortcut. |
+| High | No funded live GPT-5.6 request has been recorded in the available environment. | Deston / Shared | Run exactly one safe synthetic analysis with deployment configuration, record only safe metadata, and retain the raw evidence/model separation. Tests and fixtures may explain the contract but must not be labeled as a live response. |
+| High | No authenticated end-to-end browser or production incognito pass has been recorded; no production URL or test-account path was supplied for this session. | Shared | Supply the production URL and operator-managed account path, then complete the manual release procedure. There is no documentation-only substitute for this gate. |
+| High | The candidate GitHub repository URL was reachable anonymously and labeled public, but its signed-out default page reported “This repository is empty”; public access to the intended commit is therefore not verified. | Shared | After this branch is pushed and reviewed, ensure the final commit is reachable from the public default branch or submission URL, then retest from a signed-out browser. Do not infer judge access from local remote-tracking refs. |
+| High | Final repository/video/Devpost URLs, team-member names, deadline, and primary `/feedback` Session ID are not supplied. | Shared | Replace every placeholder in `docs/submission-checklist.md`, README, and submission copy; test public access before submitting. |
+| Medium | Public status copy is inconsistent with runtime configuration: the landing page says the protected workspace is “connected” even when Supabase variables are absent, while the login page says evidence extraction, recovery actions, mutations, and undo are “still being built” although those contracts and the review UI are implemented with separate verification gaps. | Andres | Update both messages on a UX branch before recording, or avoid those status sentences in submission media. Do not overcorrect them into an end-to-end claim until live QA passes. |
+| Medium | A missing or dishonest `Content-Length` is bounded only after `Request.text()` reads the body. | Deston | Configure and verify a deployment-level request-body limit; retain the application validation as a second boundary. |
+| Medium | A failure while recording terminal analysis failure can leave a `processing` claim that the current duplicate path cannot resume. | Deston | Define operator reconciliation and route-containment handling; preserve the immutable evidence and do not rewrite state ad hoc. |
+| Medium | Authenticated Playwright coverage has not been run for the implemented browser workflow. | Andres / Shared | Complete the manual matrix first, then configure a non-secret synthetic E2E environment and run `npm run test:e2e` when available. |
 
-## Accessibility and responsive review
+## Claim rule
 
-- [ ] Keyboard navigation and visible focus work throughout.
-- [ ] The document has one clear `h1`, logical headings, landmarks, and a skip link.
-- [ ] Status is conveyed with text, not color alone.
-- [ ] Disabled and unavailable actions explain why.
-- [ ] Layouts work at approximately 375, 768, and 1440 pixels without page overflow.
-- [ ] Reduced-motion preferences are respected.
-
-## Demo claims
-
-- [ ] Synthetic data is visibly labeled.
-- [ ] No unverified feature is described as working.
-- [ ] Submission copy and video match the verified build.
+Submission language may claim implemented and scoped automated/database verification where recorded above. It must describe live GPT-5.6 analysis, fresh-analysis approval, authenticated browser operation, production responsiveness/accessibility, and production readiness as unverified until their boxes are checked with non-secret evidence.

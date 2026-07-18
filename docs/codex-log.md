@@ -92,3 +92,38 @@
 - Browser QA caught and resolved a server/client locale mismatch in date labels by making display locale and timezone explicit; the clean rerun produced no browser console error.
 - The review URL now pins the exact analysis request returned by fresh, processing, or duplicate API responses, preventing an older duplicate result from being mislabeled while a different newer request is displayed.
 - Final verification used the checksum-matched official Node 22.23.1/npm 10.9.8 toolchain: lint, typecheck, 231 tests across 39 files, the production build, and `git diff --check` passed. The build fetched only the already-configured Geist font assets.
+
+## Significant Codex work packages at a glance
+
+This index summarizes the implementation sessions above for submission reviewers. The detailed entries remain the source of truth; none of these summaries is a private transcript or a claim of unrecorded browser behavior.
+
+| Work package | Specific Codex contribution | Important decision or boundary | Recorded verification scope |
+| --- | --- | --- | --- |
+| Repository and architecture foundation | Scaffolded the typed Next.js application, test tooling, product/architecture/security documentation, CI, and environment-name contract. | Adopt Node 22, React Server Components by default, standalone operation, and a strict server/client secret boundary. | Initial lint, typecheck, smoke test, build, and diff evidence. |
+| Database, RLS, and synthetic demo | Implemented and reviewed migrations, tenant integrity, least-privilege policies, deterministic seed data, and rollback-wrapped SQL checks. | Use one credential-free synthetic workspace with 24 canonical records and 26 explicit edges; database/RLS remains the access source of truth. | Linked migration, RLS, seed, schema-lint, advisor, and no-retained-row evidence. |
+| Authentication and typed data access | Added request-scoped auth, safe redirects/errors, bounded repositories, typed project reads, and protected route states. | User sessions handle normal access; privileged clients remain server-only and are initialized only after user-scoped checks. | Automated auth/repository tests; live browser login remained pending. |
+| Project records and dependency engine | Added bounded item/dependency contracts and a pure traversal engine with explainable paths and defensive bounds. | Stored edges point from a dependent item to its upstream prerequisite; traversal follows the reverse adjacency to downstream dependents. TypeScript, not GPT, computes reachability. | Unit/integration and rollback-wrapped linked mutation/graph evidence. |
+| GPT-5.6 analysis boundary | Built strict server-only extraction and recovery-drafting adapters, postvalidation, immutable evidence claims, duplicate/rate controls, and inert proposal persistence. | GPT may interpret and draft, but receives no tools and never authorizes, traverses, approves, or mutates. | Automated refusal/malformed/timeout/injection/no-mutation tests plus linked SQL; no funded live request. |
+| Approval, audit, undo, and reset | Added allowlisted selective apply, ordered append-only audit, idempotency, compensating undo, and history-preserving named-demo reset contracts. | Every mutation is human-selected and revalidated; reset restores a pinned synthetic baseline without erasing archived history. | Linked rollback-wrapped apply/history/undo/reset RPC evidence; authenticated HTTP/browser flow pending. |
+| Impact-review UX | Implemented evidence/source separation, deterministic path presentation, selectable recovery cards, approval confirmation, history/undo result states, and accessible responsive patterns. | The interface reflects backend truth, including disabling approval for a `draft` proposal instead of bypassing the server contract. | Component tests and clearly labeled fixture-only viewport review; no authenticated production pass. |
+
+## 2026-07-18 — QA and Build Week submission evidence pass
+
+- Worked only on the documentation/submission branch and made no database, authorization, OpenAI, operation, environment, package, or deployment-secret change.
+- Audited the product, architecture, demo, security, QA, implementation log, package scripts, environment-name example, migration evidence, application routes, and impact-review components before updating claims.
+- Reorganized `docs/qa-checklist.md` so checked items identify their exact historical or fixture-only scope, while current-branch commands, live GPT-5.6, authenticated browser, responsive production, accessibility, and production-incognito checks remain pending until actually run.
+- Recorded the critical integration gap: fresh analysis persists a `draft` proposal, apply accepts only `ready` or `partially_approved`, and no current route performs the transition. Documentation must not claim a fresh analysis can proceed through approval and undo until Deston resolves and verifies that server-owned state change.
+- Added `docs/submission-checklist.md` with public-access, README, deployment, sample-path, video/voiceover, Codex, GPT-5.6, team, deadline, no-post-deadline-edit, and human placeholder checks.
+- No production URL, operator-managed demo/test-account path, funded live model result, authenticated production session, or incognito production result was supplied for this session. No test fixture is treated as a live model response.
+- Ran the real public `/` and `/login` routes locally at 1280 pixels wide. The landing page had one `h1`, a skip link, semantic workflow headings, and no horizontal overflow; the login page had one `h1`, visible Email and Password labels, a skip link, and no horizontal overflow. `/app` stopped at fail-closed public Supabase environment validation because the required names were absent, so no authenticated route behavior is claimed.
+- Built the optimized production application, served it locally, and captured two public-route screenshots for README use. They show the landing message and workflow principles only, not authenticated project data, fixture output, or a live GPT-5.6 response.
+- Checked the candidate GitHub URL without a signed-in session. It was labeled public but its default page reported an empty repository, so final public commit access remains a submission blocker despite local remote-tracking refs.
+- Recorded the public-copy mismatch rather than silently treating it as submission evidence: the landing route reports a connected workspace without configuration, while the login route still describes already implemented contracts as being built. Both need a later UX copy correction without overstating the unverified end-to-end flow.
+- Completed the final branch gate with Node 22.23.1 and npm 10.9.8: lint and typecheck passed, 231 tests across 39 files passed, the Next.js production build passed, and `git diff --check` passed. The diff remained limited to documentation and two current-build README screenshot assets.
+- No Session ID is invented and no private Codex transcript is committed.
+
+## Primary `/feedback` evidence
+
+Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
+
+Deston or the submission owner must replace this placeholder only after running `/feedback` in the primary Codex task. Commit the identifier only, never a private transcript, credential, or unrelated session record.
