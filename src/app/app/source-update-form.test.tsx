@@ -162,6 +162,7 @@ describe("SourceUpdateForm", () => {
 
   it("locks a pending request against double submission", async () => {
     const user = userEvent.setup();
+    const onFinished = vi.fn();
     let resolveFetch: ((response: Response) => void) | undefined;
     const fetchMock = vi.fn(
       () =>
@@ -173,7 +174,7 @@ describe("SourceUpdateForm", () => {
     const { container } = render(
       <SourceUpdateForm
         canAnalyze
-        onAnalysisFinished={vi.fn()}
+        onAnalysisFinished={onFinished}
         projectId={projectId}
       />,
     );
@@ -198,11 +199,68 @@ describe("SourceUpdateForm", () => {
           analysisRequestId: "e7387514-03d0-48ee-a0e1-c183af721100",
           sourceDocumentId: "e7387514-03d0-48ee-a0e1-c183af721101",
         }),
-        { status: 202, headers: { "content-type": "application/json" } },
+        {
+          status: 202,
+          headers: {
+            "content-type": "application/json",
+            "retry-after": "117",
+          },
+        },
       ),
     );
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Analyze change" })).toBeEnabled(),
+    );
+    expect(onFinished).toHaveBeenCalledWith({
+      kind: "processing",
+      analysisRequestId: "e7387514-03d0-48ee-a0e1-c183af721100",
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /wait 117 seconds, then submit this exact source again/i,
+    );
+  });
+
+  it("refreshes a reconciled failed analysis while retaining the safe error", async () => {
+    const user = userEvent.setup();
+    const onFinished = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "duplicate",
+              message:
+                "This project update already has a failed analysis at this project version.",
+            },
+            analysisRequestId: "e7387514-03d0-48ee-a0e1-c183af721100",
+            sourceDocumentId: "e7387514-03d0-48ee-a0e1-c183af721101",
+          }),
+          { status: 409, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(
+      <SourceUpdateForm
+        canAnalyze
+        onAnalysisFinished={onFinished}
+        projectId={projectId}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Source title"), "Venue note");
+    await user.type(screen.getByLabelText("Author label"), "Venue team");
+    await user.type(screen.getByLabelText("Source text"), "The event moved.");
+    await user.click(screen.getByRole("button", { name: "Analyze change" }));
+
+    await waitFor(() =>
+      expect(onFinished).toHaveBeenCalledWith({
+        kind: "failed",
+        analysisRequestId: "e7387514-03d0-48ee-a0e1-c183af721100",
+      }),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /already has a failed analysis/i,
     );
   });
 });

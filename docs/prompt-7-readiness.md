@@ -44,7 +44,7 @@ Login, application authorization, bounded context reads, and ordinary project op
 
 Raw evidence remains unchanged. Duplicate identity uses SHA-256 of NFC-normalized source text after line-ending normalization, per-line edge trimming, horizontal whitespace collapse, and outer trimming.
 
-The unique key is project/workspace + project revision + normalized source hash. A duplicate `processing` key returns the existing claim with a retry hint, a duplicate success returns its existing derived IDs, and a duplicate failure returns a safe conflict. No duplicate state starts another model call. Transaction advisory locks serialize the shared source key and actor rate check. The small-demo policy allows at most five new claims per actor and project in a rolling ten-minute window.
+The unique key is project/workspace + project revision + normalized source hash. A duplicate `processing` key returns the existing claim with the remaining portion of its immutable three-minute lease. The browser instructs the user to resubmit the exact update after that delay; the first exact replay after expiry atomically terminalizes the same request as failed without another model call. A success transition at or after expiry is rejected and its derived inserts roll back. A duplicate success returns its existing derived IDs, and a duplicate failure returns a safe conflict. Transaction advisory locks serialize the shared source key and actor rate check. The small-demo policy allows at most five new claims per actor and project in a rolling ten-minute window.
 
 ## Implemented model boundary
 

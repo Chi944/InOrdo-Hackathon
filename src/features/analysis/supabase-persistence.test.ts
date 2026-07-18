@@ -151,6 +151,74 @@ describe("Supabase analysis persistence", () => {
     ).rejects.toMatchObject({ code: "rate_limited" });
   });
 
+  it("preserves the bounded retry hint for an active processing lease", async () => {
+    const rpc = executor({
+      data: {
+        status: "duplicate",
+        analysis_request_id: requestId,
+        source_document_id: sourceDocumentId,
+        state: "processing",
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: 117,
+      },
+      error: null,
+    });
+
+    await expect(
+      createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        modelName: "gpt-5.6-luna",
+        source: {
+          title: "Update",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Changed date",
+        },
+      }),
+    ).resolves.toMatchObject({
+      kind: "duplicate",
+      state: "processing",
+      retryAfterSeconds: 117,
+    });
+  });
+
+  it("fails closed when a duplicate retry hint contradicts its state", async () => {
+    const rpc = executor({
+      data: {
+        status: "duplicate",
+        analysis_request_id: requestId,
+        source_document_id: sourceDocumentId,
+        state: "processing",
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: null,
+      },
+      error: null,
+    });
+
+    await expect(
+      createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        modelName: "gpt-5.6-luna",
+        source: {
+          title: "Update",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Changed date",
+        },
+      }),
+    ).rejects.toMatchObject({ code: "persistence" });
+  });
+
   it("serializes only validated inert completion data", async () => {
     const rpc = executor({
       data: {

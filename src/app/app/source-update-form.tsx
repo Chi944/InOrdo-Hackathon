@@ -39,6 +39,10 @@ export type AnalysisSubmitResult =
   | {
       kind: "processing";
       analysisRequestId: string;
+    }
+  | {
+      kind: "failed";
+      analysisRequestId: string;
     };
 
 type SourceUpdateFormProps = {
@@ -206,8 +210,12 @@ export function SourceUpdateForm({
         }),
       });
       const body = (await response.json().catch(() => null)) as unknown;
+      const analysisRequestId = responseId(body, "analysisRequestId");
 
       if (!response.ok) {
+        if (response.status === 409 && analysisRequestId) {
+          onAnalysisFinished({ kind: "failed", analysisRequestId });
+        }
         throw new Error(
           safeResponseMessage(
             body,
@@ -218,14 +226,19 @@ export function SourceUpdateForm({
         );
       }
 
-      const analysisRequestId = responseId(body, "analysisRequestId");
       if (!analysisRequestId) {
         throw new Error("The analysis response was incomplete. Refresh before retrying.");
       }
 
       if (response.status === 202) {
+        const retryHeader = response.headers.get("retry-after");
+        const retryValue = Number(retryHeader);
+        const retryAfterSeconds =
+          Number.isInteger(retryValue) && retryValue >= 1 && retryValue <= 180
+            ? retryValue
+            : 180;
         setNotice(
-          "This exact source is already being analyzed. Refresh the review shortly; no second model request was started.",
+          `This exact source is already being analyzed. Wait ${retryAfterSeconds} seconds, then submit this exact source again to reconcile its status. No second model request was started.`,
         );
         onAnalysisFinished({ kind: "processing", analysisRequestId });
       } else {

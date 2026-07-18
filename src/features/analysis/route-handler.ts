@@ -89,7 +89,10 @@ function duplicateResponse(
 ) {
   if (result.state === "processing") {
     const responseHeaders = safeHeaders(headers);
-    responseHeaders.set("retry-after", "3");
+    responseHeaders.set(
+      "retry-after",
+      String(result.retryAfterSeconds),
+    );
     return Response.json(
       {
         status: "processing",

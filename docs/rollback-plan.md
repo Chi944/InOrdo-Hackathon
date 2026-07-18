@@ -67,7 +67,7 @@ Redeploying Prompt 5 removes the analysis HTTP route while retaining project-ite
 - Never delete `source_documents`, `analysis_requests`, `change_events`, `impact_runs`, `impact_items`, `action_proposals`, or `proposal_actions` to make a retry possible.
 - Succeeded analyses remain inert pending review. Reject them through the future authorized review workflow if they are unsuitable; do not mutate their evidence, paths, or model metadata.
 - Failed claims are terminal for the same project revision and normalized source hash. Do not alter the hash, revision, state, or source text to bypass duplicate protection.
-- A `processing` claim can remain if the provider path or terminal failure transition was interrupted. Keep the route contained, inspect only safe state/metadata, and ship a separately reviewed forward repair. The current duplicate path returns the existing processing state and does not resume or terminalize it. Do not issue an ad hoc direct table update.
+- A `processing` claim has an immutable three-minute lease. An exact POST replay during the lease returns the bounded remaining delay; the first exact replay after expiry locks and terminalizes that same row as failed without starting a model call or deleting evidence. A success transition at or after expiry is rejected and rolls back its derived writes. This reconciliation is demand-driven: a page refresh alone does not invoke it, so follow the UI instruction to resubmit the exact source after the delay. Do not issue an ad hoc direct table update.
 - Because evidence/claim creation commits before model work, a provider failure can legitimately leave a source document plus failed claim without derived rows. That is the intended auditable state, not partial derived corruption.
 
 ### Database correction
@@ -89,7 +89,7 @@ Before restoring analysis traffic, require all of the following:
 
 - Node 22 lint, typecheck, unit tests, production build, and `git diff --check` pass on the exact artifact;
 - linked migration ledger, generated types, schema lint, RLS/grant/constraint SQL checks, and security advisors are clean for the exact forward migration;
-- duplicate processing/success/failure behavior, rate limiting, stale project revision, refusal, malformed output, timeout, transient retry, and terminal failure recording are verified;
+- duplicate active/expired/success/failure behavior, lease retry guidance, expired-success rollback, rate limiting, stale project revision, refusal, malformed output, timeout, and terminal failure recording are verified;
 - a synthetic test proves the analysis path creates no project-item mutation and all proposal actions remain pending;
 - when funded credentials and safe synthetic input are available, exactly one controlled live request confirms both bounded logical model calls and records only safe metadata; and
 - browser/UI verification is completed if the analysis form or pending-review surface is part of the deployment.

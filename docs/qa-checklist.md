@@ -1,5 +1,18 @@
 # QA checklist
 
+## Prompt 13 expired-analysis-claim repair (`deston/09-analysis-claim-recovery`)
+
+- [x] Read-only full-repository reviewer pass identified one genuine submission blocker: an interrupted analysis claim could return `processing` forever on exact retries.
+- [x] TDD coverage proves active duplicates carry the bounded database retry window, expired duplicates never call either model stage, failed reconciliation refreshes the review pane, contradictory retry states fail closed, and the route preserves `Retry-After`.
+- [x] Forward migration `20260719113000_expire_stale_analysis_claims.sql` assigns an immutable three-minute lease, reconciles the same expired row to a terminal failure, and fences late success so all derived writes roll back.
+- [x] Three independent focused re-reviews found no remaining security, migration, concurrency, type, UX, or test blocker after the existing-row backfill and late-completion findings were fixed.
+- [x] Linked dry run/apply and ledger alignment through `20260719113000`; generated TypeScript matches the linked schema after line-ending normalization.
+- [x] Linked public/private schema lint and security advisors reported no findings. Performance advisors reported only informational unused-index notices expected on the small dataset.
+- [x] Rollback-wrapped `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql` passed. The analysis suite covers active-delay response, fixed lease assignment, expired direct-completion rollback, one-time terminal reconciliation, stable replay IDs/state, preserved evidence, late-worker rejection, and private helper privileges. A follow-up query found zero retained lease-verifier sources or requests.
+- [x] Node 22.23.1 clean install, lint, typecheck, 305 Vitest tests across 54 files, one Chromium demo journey, production build, zero production dependency vulnerabilities, and `git diff --check` passed.
+
+The production alias was deployed from clean `main` before this final-review repair. Because this branch changes both schema and application behavior, the exact merged `main` SHA must be redeployed and publicly rechecked after the reviewed PR merges. The intentionally absent `OPENAI_API_KEY`, operator-provisioned Auth account, funded GPT-5.6 smoke, and authenticated browser journey remain human-owned release evidence; none is inferred from this gate.
+
 ## Prompt 12 production-readiness gate (`deston/08-production-readiness`)
 
 This section is intentionally unchecked until each command or live step is run on the settled branch/deployment. The exact operator commands and evidence limits are in [`docs/deployment-runbook.md`](deployment-runbook.md).
@@ -333,7 +346,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 - [x] The first persistence phase stores evidence and a duplicate/rate/revision claim; final derived writes are an all-or-nothing inert transaction.
 - [x] Proposal actions are persisted pending and the analysis path contains no project-item mutation.
 - [x] Prompt-injection, tenant-isolation, replay/spend, stale-state, partial-write, secret-boundary, and model-mutation threats have implementation controls documented in `docs/security-review.md`.
-- [x] Prompt 7 has a forward-only containment/rollback procedure that preserves evidence and treats stuck processing claims as an operator-reconciliation state.
+- [x] Prompt 7 has a forward-only containment/rollback procedure that preserves evidence and reconciles an interrupted processing claim through its fixed lease and an exact POST replay.
 - [x] Complete Prompt 7 repository tests and linked SQL checks pass.
 
 ## Accessibility and responsive review

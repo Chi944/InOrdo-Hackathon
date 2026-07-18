@@ -246,6 +246,7 @@ describe("project analysis service", () => {
       changeEventId: "2aece803-d4d7-45c3-aab8-5e0e75231501",
       impactRunId: "57a7c6b7-a3bd-4c2e-8153-219010df1502",
       proposalId: "5bf63e7d-c8db-4c2d-a3cc-20107cb91503",
+      retryAfterSeconds: null,
     });
     const service = createProjectAnalysisService({
       client: {} as ServerSupabaseClient,
@@ -260,6 +261,36 @@ describe("project analysis service", () => {
     expect(deps.model.extractChange).not.toHaveBeenCalled();
     expect(deps.model.draftProposal).not.toHaveBeenCalled();
     expect(deps.persistence.complete).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { state: "processing" as const, retryAfterSeconds: 120 },
+    { state: "failed" as const, retryAfterSeconds: null },
+  ])("does not call the model for a duplicate $state request", async (duplicate) => {
+    const deps = dependencies();
+    deps.persistence.begin.mockResolvedValueOnce({
+      kind: "duplicate",
+      requestId,
+      sourceDocumentId,
+      changeEventId: null,
+      impactRunId: null,
+      proposalId: null,
+      ...duplicate,
+    });
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+    });
+
+    await expect(service.analyze(projectId, request)).resolves.toMatchObject({
+      kind: "duplicate",
+      state: duplicate.state,
+      requestId,
+    });
+    expect(deps.model.extractChange).not.toHaveBeenCalled();
+    expect(deps.model.draftProposal).not.toHaveBeenCalled();
+    expect(deps.persistence.complete).not.toHaveBeenCalled();
+    expect(deps.persistence.fail).not.toHaveBeenCalled();
   });
 
   it("fails closed before proposal drafting when extraction evidence is invalid", async () => {

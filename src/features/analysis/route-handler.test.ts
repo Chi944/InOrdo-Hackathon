@@ -137,6 +137,7 @@ describe("analysis POST handler", () => {
       changeEventId: null,
       impactRunId: null,
       proposalId: null,
+      retryAfterSeconds: 117,
     }));
     const response = await handleAnalyzeProjectPost({
       request: request(JSON.stringify(validBody)),
@@ -145,7 +146,7 @@ describe("analysis POST handler", () => {
     });
 
     expect(response.status).toBe(202);
-    expect(response.headers.get("retry-after")).toBe("3");
+    expect(response.headers.get("retry-after")).toBe("117");
     const body = await response.json();
     expect(body).toMatchObject({
       status: "processing",

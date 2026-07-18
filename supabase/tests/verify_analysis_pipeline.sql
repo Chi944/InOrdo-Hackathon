@@ -204,6 +204,11 @@ begin
     private.source_normalized_sha256('Anonymous must not analyze.'),
     true
   );
+  perform pg_catalog.set_config(
+    'inordo.prompt7_expired_hash',
+    private.source_normalized_sha256('Lease expiry verification.'),
+    true
+  );
   for rate_index in 1..4 loop
     perform pg_catalog.set_config(
       'inordo.prompt7_rate_hash_' || rate_index::text,
@@ -299,6 +304,36 @@ begin
   ) then
     raise exception 'service_role lacks begin_project_analysis execution';
   end if;
+  if has_function_privilege(
+       'anon',
+       'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
+       'EXECUTE'
+     ) or has_function_privilege(
+       'authenticated',
+       'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
+       'EXECUTE'
+     ) or not has_function_privilege(
+       'service_role',
+       'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
+       'EXECUTE'
+     ) then
+    raise exception 'analysis lease reconciliation privileges are unsafe';
+  end if;
+  if has_function_privilege(
+       'anon',
+       'private.assign_analysis_request_lease()',
+       'EXECUTE'
+     ) or has_function_privilege(
+       'authenticated',
+       'private.assign_analysis_request_lease()',
+       'EXECUTE'
+     ) or has_function_privilege(
+       'service_role',
+       'private.assign_analysis_request_lease()',
+       'EXECUTE'
+     ) then
+    raise exception 'analysis lease trigger function is directly executable';
+  end if;
 end;
 $$;
 
@@ -334,6 +369,14 @@ begin
   if begin_result ->> 'status' <> 'claimed'
      or begin_result ->> 'state' <> 'processing' then
     raise exception 'analysis claim failed: %', begin_result;
+  end if;
+  if not exists (
+    select 1
+    from public.analysis_requests as request
+    where request.id = (begin_result ->> 'analysis_request_id')::uuid
+      and request.lease_expires_at = request.created_at + interval '3 minutes'
+  ) then
+    raise exception 'analysis claim did not receive the fixed three-minute lease';
   end if;
   perform pg_catalog.set_config(
     'inordo.prompt7_request_id',
@@ -516,8 +559,7 @@ begin
     normalized_content_sha256,
     model_name,
     state,
-    requested_by,
-    created_at
+    requested_by
   ) values (
     '10000000-0000-4000-8000-000000000001'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
@@ -526,8 +568,7 @@ begin
     pg_catalog.repeat('a', 64),
     'gpt-5.6-luna',
     'processing'::public.analysis_request_state,
-    '00000000-0000-4000-8000-000000000102'::uuid,
-    pg_catalog.statement_timestamp() - interval '1 day'
+    '00000000-0000-4000-8000-000000000102'::uuid
   )
   returning id into anomalous_request_id;
 
@@ -652,8 +693,9 @@ do $$
 declare
   rate_index integer;
   begin_result jsonb;
+  duplicate_result jsonb;
 begin
-  for rate_index in 1..3 loop
+  for rate_index in 1..2 loop
     perform pg_catalog.set_config(
       'request.jwt.claims', '{"role":"service_role"}', true
     );
@@ -675,6 +717,33 @@ begin
     if begin_result ->> 'status' <> 'claimed' then
       raise exception 'rate setup claim failed: %', begin_result;
     end if;
+    if rate_index = 1 then
+      perform pg_catalog.set_config(
+        'request.jwt.claims', '{"role":"service_role"}', true
+      );
+      duplicate_result := public.begin_project_analysis(
+        '00000000-0000-4000-8000-000000000102'::uuid,
+        '20000000-0000-4000-8000-000000000001'::uuid,
+        pg_catalog.current_setting('inordo.prompt7_revision'),
+        pg_catalog.format('Prompt 7 rate verification %s', rate_index),
+        'manual_note',
+        'SQL verifier',
+        pg_catalog.format('Rate verification %s.', rate_index),
+        pg_catalog.current_setting(
+          'inordo.prompt7_rate_hash_' || rate_index::text
+        ),
+        null,
+        null,
+        'gpt-5.6-luna'
+      );
+      if duplicate_result ->> 'status' <> 'duplicate'
+         or duplicate_result ->> 'state' <> 'processing'
+         or (duplicate_result ->> 'retry_after_seconds')::integer
+           not between 1 and 180 then
+        raise exception 'active lease replay was not safely suppressed: %',
+          duplicate_result;
+      end if;
+    end if;
   end loop;
 
   perform pg_catalog.set_config(
@@ -684,11 +753,11 @@ begin
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
-    'Prompt 7 rate verification 4',
+    'Prompt 7 rate verification 3',
     'manual_note',
     'SQL verifier',
-    'Rate verification 4.',
-    pg_catalog.current_setting('inordo.prompt7_rate_hash_4'),
+    'Rate verification 3.',
+    pg_catalog.current_setting('inordo.prompt7_rate_hash_3'),
     null,
     null,
     'gpt-5.6-luna'
@@ -697,6 +766,201 @@ begin
      or (begin_result ->> 'retry_after_seconds')::integer not between 1 and 600 then
     raise exception 'rate limit did not fail closed: %', begin_result;
   end if;
+end;
+$$;
+
+-- An exact replay lazily reconciles a deliberately expired fixture once. The
+-- immutable source remains, no derived record appears, and a late worker can
+-- no longer complete the terminal request.
+do $$
+declare
+  expired_created_at timestamptz := pg_catalog.clock_timestamp()
+    - interval '4 minutes';
+  expired_hash text := pg_catalog.current_setting(
+    'inordo.prompt7_expired_hash'
+  );
+  expired_request_id uuid;
+  expired_source_id uuid;
+  expired_completion_result jsonb;
+  first_replay jsonb;
+  second_replay jsonb;
+begin
+  insert into public.source_documents (
+    workspace_id,
+    project_id,
+    title,
+    source_kind,
+    raw_text,
+    captured_by,
+    source_author,
+    normalized_content_sha256,
+    created_at
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    'Expired analysis lease verification',
+    'manual_note',
+    'Lease expiry verification.',
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    'SQL verifier',
+    expired_hash,
+    expired_created_at
+  ) returning id into expired_source_id;
+
+  insert into public.analysis_requests (
+    workspace_id,
+    project_id,
+    source_document_id,
+    project_revision,
+    normalized_content_sha256,
+    model_name,
+    requested_by,
+    created_at
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    expired_source_id,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    expired_hash,
+    'gpt-5.6-luna',
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    expired_created_at
+  ) returning id into expired_request_id;
+
+  if not exists (
+    select 1
+    from public.analysis_requests as request
+    where request.id = expired_request_id
+      and request.lease_expires_at = expired_created_at + interval '3 minutes'
+  ) then
+    raise exception 'expired fixture lease was not assigned from creation time';
+  end if;
+
+  expired_completion_result := pg_catalog.jsonb_set(
+    pg_catalog.jsonb_set(
+      pg_catalog.jsonb_set(
+        pg_catalog.current_setting('inordo.prompt7_result')::jsonb,
+        '{change,evidence_text}',
+        pg_catalog.to_jsonb('Lease'::text)
+      ),
+      '{change,evidence_start_offset}',
+      '0'::jsonb
+    ),
+    '{change,evidence_end_offset}',
+    '5'::jsonb
+  );
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  begin
+    perform public.complete_project_analysis(
+      '00000000-0000-4000-8000-000000000102'::uuid,
+      expired_request_id,
+      pg_catalog.current_setting('inordo.prompt7_revision'),
+      expired_completion_result
+    );
+    raise exception 'expired processing claim completed without reconciliation';
+  exception
+    when object_not_in_prerequisite_state then null;
+  end;
+
+  if not exists (
+    select 1
+    from public.analysis_requests as request
+    where request.id = expired_request_id
+      and request.state = 'processing'::public.analysis_request_state
+      and request.change_event_id is null
+      and request.impact_run_id is null
+      and request.proposal_id is null
+  ) or exists (
+    select 1
+    from public.change_events as event
+    where event.source_document_id = expired_source_id
+  ) then
+    raise exception 'expired completion did not roll back every derived write';
+  end if;
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  first_replay := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Expired analysis lease verification',
+    'manual_note',
+    'SQL verifier',
+    'Lease expiry verification.',
+    expired_hash,
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  second_replay := public.begin_project_analysis(
+    '00000000-0000-4000-8000-000000000102'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.prompt7_revision'),
+    'Expired analysis lease verification',
+    'manual_note',
+    'SQL verifier',
+    'Lease expiry verification.',
+    expired_hash,
+    null,
+    null,
+    'gpt-5.6-luna'
+  );
+
+  if first_replay ->> 'status' <> 'duplicate'
+     or first_replay ->> 'state' <> 'failed'
+     or first_replay ->> 'analysis_request_id' <> expired_request_id::text
+     or first_replay ->> 'source_document_id' <> expired_source_id::text
+     or second_replay is distinct from first_replay then
+    raise exception 'expired claim reconciliation was not stable: %, %',
+      first_replay,
+      second_replay;
+  end if;
+
+  if not exists (
+    select 1
+    from public.analysis_requests as request
+    where request.id = expired_request_id
+      and request.state = 'failed'::public.analysis_request_state
+      and request.failure_stage = 'persistence'
+      and request.failure_code = 'analysis_cancelled'
+      and request.failure_provider_request_id is null
+      and request.finished_at is not null
+      and request.change_event_id is null
+      and request.impact_run_id is null
+      and request.proposal_id is null
+      and request.result_metadata is null
+  ) or not exists (
+    select 1
+    from public.source_documents as source
+    where source.id = expired_source_id
+      and source.raw_text = 'Lease expiry verification.'
+  ) then
+    raise exception 'expired claim did not fail closed while preserving evidence';
+  end if;
+
+  perform pg_catalog.set_config(
+    'request.jwt.claims', '{"role":"service_role"}', true
+  );
+  begin
+    perform public.complete_project_analysis(
+      '00000000-0000-4000-8000-000000000102'::uuid,
+      expired_request_id,
+      pg_catalog.current_setting('inordo.prompt7_revision'),
+      '{}'::jsonb
+    );
+    raise exception 'late analysis completion unexpectedly overwrote failure';
+  exception
+    when object_not_in_prerequisite_state then null;
+  end;
 end;
 $$;
 

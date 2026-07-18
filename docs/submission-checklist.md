@@ -15,7 +15,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 - [ ] Confirm `https://github.com/Chi944/InOrdo-Hackathon` opens without a team-authenticated GitHub session and exposes the intended final commit.
 - [ ] Confirm the public repository includes the MIT license and no secret, credential, environment value, private data, or private transcript.
-- [ ] Confirm `<PRODUCTION_URL>` opens in a private/incognito window and points to the final submitted commit.
+- [ ] Confirm `https://inordo-hackathon.vercel.app` opens in a private/incognito window and points to the final submitted commit.
 - [ ] Confirm the README renders correctly on the public repository, including Mermaid, screenshots/GIFs, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [ ] Capture a final protected-workspace screenshot or short GIF only after authenticated production QA; label synthetic data and do not present a fixture as live GPT-5.6 output.
@@ -75,7 +75,7 @@ Replace every submission token below before publishing. Search with `rg -n '<(PR
 | Placeholder | Human-supplied value | Verification |
 | --- | --- | --- |
 | Public repository | `https://github.com/Chi944/InOrdo-Hackathon` | Open signed out and confirm the final intended commit and README are visible. |
-| `<PRODUCTION_URL>` | Final deployed application URL. | Open incognito and run the production checklist. |
+| `https://inordo-hackathon.vercel.app` | Final deployed application URL. | Open incognito and run the production checklist. |
 | `<DEPLOYMENT_PLATFORM_OR_PROJECT>` | Confirmed hosting platform/project description, without secret identifiers. | Compare with the actual deployed project. |
 | `<DEVPOST_URL>` | Final public Devpost entry. | Open signed out after submission. |
 | `<PUBLIC_YOUTUBE_VIDEO_URL>` | Public voiceover video URL, duration at most 3:00. | Play signed out and compare against the final build. |

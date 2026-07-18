@@ -3,7 +3,7 @@
 ## Submission details
 
 - **Track:** Work and Productivity
-- **Deployed application:** `<PRODUCTION_URL>`
+- **Deployed application:** `https://inordo-hackathon.vercel.app`
 - **Public repository:** `https://github.com/Chi944/InOrdo-Hackathon`
 - **Public demo video:** `<PUBLIC_YOUTUBE_VIDEO_URL>`
 - **Devpost submission:** `<DEVPOST_URL>`

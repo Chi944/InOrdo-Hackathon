@@ -43,21 +43,29 @@ import {
 } from "@/lib/auth/guards";
 import type { ServerSupabaseClient } from "@/lib/supabase/server";
 
+type DuplicateAnalysisResultBase = {
+  kind: "duplicate";
+  requestId: string;
+  sourceDocumentId: string;
+  changeEventId: string | null;
+  impactRunId: string | null;
+  proposalId: string | null;
+};
+
 export type BeginAnalysisResult =
   | {
       kind: "claimed";
       requestId: string;
       sourceDocumentId: string;
     }
-  | {
-      kind: "duplicate";
-      state: "processing" | "succeeded" | "failed";
-      requestId: string;
-      sourceDocumentId: string;
-      changeEventId: string | null;
-      impactRunId: string | null;
-      proposalId: string | null;
-    };
+  | (DuplicateAnalysisResultBase & {
+      state: "processing";
+      retryAfterSeconds: number;
+    })
+  | (DuplicateAnalysisResultBase & {
+      state: "succeeded" | "failed";
+      retryAfterSeconds: null;
+    });
 
 export type CompleteAnalysisInput = {
   actorId: string;
@@ -360,8 +368,8 @@ export function createProjectAnalysisService({
             providerRequestId,
           });
         } catch {
-          // Preserve the original safe failure. The processing claim remains a
-          // visible signal for operator reconciliation if failure recording fails.
+          // Preserve the original safe failure. An exact replay after the fixed
+          // lease can terminalize this claim if failure recording was interrupted.
         }
         throw safeError;
       }

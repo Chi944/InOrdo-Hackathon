@@ -112,7 +112,7 @@ This integration is implemented and covered by injected-adapter tests. A funded 
 | Extract one candidate field change from supplied evidence. | Authentication, tenant authorization, and RLS-scoped access. |
 | Quote evidence and surface confidence, ambiguity, and warnings. | Request limits, canonical-value checks, schemas, and fail-closed validation. |
 | Draft bounded recovery actions from validated context. | Explicit dependency traversal, cycle handling, shortest paths, and maximum depth. |
-| Annotate application-computed impacts with severity and explanations. | Project revisions, source hashes, duplicate claims, rate limits, and idempotency. |
+| Annotate application-computed impacts with severity and explanations. | Project revisions, source hashes, fixed claim leases, duplicate reconciliation, rate limits, and idempotency. |
 | Return structured data to the server-only adapter. | Proposal state, human approval, mutations, ordered history, undo, and demo reset. |
 
 The model has no tools and no direct database path. It does not choose graph reach, authorize a user, approve an action, or mutate a project record.
@@ -233,6 +233,8 @@ npx --no-install supabase db reset
 
 `db reset` is destructive. Use it only for the local or explicitly disposable demo database. For a new isolated hosted demo, review `supabase/seed.sql` and apply it through the team's approved Supabase workflow; never seed a shared customer database. The seed creates fictional profiles and workspace data but no Auth password. Follow [`docs/demo-user-setup.md`](docs/demo-user-setup.md) to provision access outside source control.
 
+Analysis claims have an immutable three-minute database lease. An active exact duplicate returns `202` with `Retry-After`; submit that exact update again after the displayed delay to reconcile an interrupted claim. Expiry never starts another model attempt: the same request becomes a safe terminal failure, while a late success and all of its derived writes are rejected atomically.
+
 ## Run, test, and build commands
 
 | Command | Purpose |
@@ -258,10 +260,10 @@ The exact synthetic source text and expected dependency path are documented in [
 
 ## Deployment
 
-- Production URL: **`<PRODUCTION_URL>`**
+- Production URL: **[inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app)**
 - Hosting target: **Vercel Hobby, manual Deston CLI deployment to `chi944s-projects/inordo-hackathon`**
 
-No production URL has been recorded yet. The release uses a single Deston-operated Vercel project with no automatic Git deployment. Preserve commit authorship, deploy only a clean reviewed `main` whose `HEAD` exactly equals `origin/main`, and confirm the current Vercel Hobby terms still permit this small non-commercial hackathon demo. Do not add analytics, paid monitoring, a custom domain, workers, scheduled jobs, Railway, or another hosting path for P0.
+The production alias serves the manually deployed Deston-operated Vercel project with no automatic Git deployment. Preserve commit authorship, deploy only a clean reviewed `main` whose `HEAD` exactly equals `origin/main`, and confirm the current Vercel Hobby terms still permit this small non-commercial hackathon demo. Do not add analytics, paid monitoring, a custom domain, workers, scheduled jobs, Railway, or another hosting path for P0.
 
 The exact login, link, Preview, production, environment-name, Supabase redirect, smoke, SHA-recording, and rollback commands are in [`docs/deployment-runbook.md`](docs/deployment-runbook.md). The required production command is `npx vercel --prod` after a clean status and the complete Node 22 gate. `/api/health` is a no-spend configuration readiness check: while `OPENAI_API_KEY` is intentionally absent, it must return `503 not_ready` and live analysis remains unavailable; after Deston adds the key through Vercel's hidden prompt and redeploys, require `200 ready` before a funded smoke.
 
@@ -297,7 +299,7 @@ InOrdo is available under the [MIT License](LICENSE). Copyright is held by the I
 
 - Track: **Work and Productivity**
 - Repository: **[github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon)** — confirm the final submitted commit from a signed-out browser before submission.
-- Production application: **`<PRODUCTION_URL>`**
+- Production application: **[inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app)**
 - Public video (maximum three minutes): **`<PUBLIC_YOUTUBE_VIDEO_URL>`**
 - Devpost entry: **`<DEVPOST_URL>`**
 - Team members and roles: **`<TEAM_MEMBER_NAMES_AND_ROLES>`**

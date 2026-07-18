@@ -158,6 +158,7 @@ export type Database = {
           finished_at: string | null
           id: string
           impact_run_id: string | null
+          lease_expires_at: string
           model_name: string
           normalized_content_sha256: string
           project_id: string
@@ -179,6 +180,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           impact_run_id?: string | null
+          lease_expires_at?: string
           model_name: string
           normalized_content_sha256: string
           project_id: string
@@ -200,6 +202,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           impact_run_id?: string | null
+          lease_expires_at?: string
           model_name?: string
           normalized_content_sha256?: string
           project_id?: string

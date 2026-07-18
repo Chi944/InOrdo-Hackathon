@@ -137,6 +137,16 @@
 - `OPENAI_API_KEY` remains intentionally absent. The runbook requires deployed health to remain `503 not_ready` and analysis to remain unavailable until Deston adds it through the deployment secret store, redeploys, and records a safe `200 ready` check.
 - The Vercel deployment, funded model call, hosted Auth configuration, authenticated production smoke, and final responsive/accessibility evidence remain pending at this checkpoint. No environment value, secret, credential, private transcript, or provider payload was printed or recorded.
 
+## 2026-07-19 — Prompt 13 final review and expired-claim repair
+
+- Reviewed the complete clean `main` repository with security, correctness, testing, migration, deployment, API, performance, and maintainability lenses. The only submission-blocking defect was an interrupted analysis request whose exact duplicate could remain `processing` indefinitely; advisory lower-priority findings were kept out of the focused repair.
+- Replaced the unsafe reclaim draft with one fixed, nonrenewable three-minute database lease. Active exact duplicates return the remaining delay, while the first exact POST after expiry locks and terminalizes the same request without renewing it, deleting evidence, or starting another model call.
+- Strengthened the analysis transition guard so a success at or after expiry aborts and rolls back every derived insert. Independent review caught and fixed both the populated-database backfill trigger conflict and the initial missing late-completion fence before the linked migration was applied.
+- Updated the browser contract to preserve the database `Retry-After` value, instruct the user to resubmit the exact source after that delay, and refresh the failed review record while keeping the safe conflict alert. Duplicate state types now enforce a non-null retry only for `processing`.
+- Applied forward migration `20260719113000_expire_stale_analysis_claims` to the confirmed linked project. The migration ledger and generated types match; public/private lint and security advisors are clean; informational unused-index notices are unchanged. All three rollback-wrapped SQL suites passed, including expired direct-completion rollback and evidence-preserving reconciliation, and no lease-verifier row remained.
+- The complete Node 22.23.1 gate passed: clean `npm ci`, lint, typecheck, 305 Vitest tests across 54 files, one Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks.
+- The earlier Prompt 12 release deployed clean `main` to `https://inordo-hackathon.vercel.app` and configured hosted Auth redirects plus the six non-OpenAI production names. This repair still requires its own reviewed merge and exact-SHA redeploy. `OPENAI_API_KEY`, a demo Auth account, one funded GPT-5.6 request, and the authenticated production journey remain explicitly unverified; no secret value or private transcript was recorded.
+
 ## Primary `/feedback` evidence
 
 Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`

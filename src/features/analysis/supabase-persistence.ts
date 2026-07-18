@@ -307,14 +307,27 @@ export function createSupabaseAnalysisPersistence(
         };
       }
       if (!parsed.data.state) throw persistenceError();
-      return {
-        kind: "duplicate",
-        state: parsed.data.state,
+      const duplicateBase = {
+        kind: "duplicate" as const,
         requestId: parsed.data.analysis_request_id,
         sourceDocumentId: parsed.data.source_document_id,
         changeEventId: parsed.data.change_event_id,
         impactRunId: parsed.data.impact_run_id,
         proposalId: parsed.data.proposal_id,
+      };
+      if (parsed.data.state === "processing") {
+        if (parsed.data.retry_after_seconds === null) throw persistenceError();
+        return {
+          ...duplicateBase,
+          state: parsed.data.state,
+          retryAfterSeconds: parsed.data.retry_after_seconds,
+        };
+      }
+      if (parsed.data.retry_after_seconds !== null) throw persistenceError();
+      return {
+        ...duplicateBase,
+        state: parsed.data.state,
+        retryAfterSeconds: null,
       };
     },
 
