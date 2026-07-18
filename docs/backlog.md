@@ -4,12 +4,15 @@
 
 - [x] Establish the Node 22, npm, TypeScript, Next.js, Tailwind, Vitest, and Supabase CLI foundation.
 - [x] Publish an honest, accessible landing shell.
-- [ ] Define the Supabase schema, constraints, seed fixture, and RLS policies.
-- [ ] Add typed Supabase browser/server clients and authentication boundary.
-- [ ] Implement evidence intake and immutable provenance.
-- [ ] Implement server-only GPT-5.6 extraction with Zod validation.
-- [ ] Implement deterministic dependency traversal with cycle protection and path explanations.
-- [ ] Implement recovery proposal drafting and per-action approval state.
+- [x] Define, apply, and verify the Supabase schema, constraints, seed fixture, RLS policies, and generated TypeScript types.
+- [x] Complete and automatically verify typed Supabase browser/server clients, request refresh, email/password login, and the authentication boundary.
+- [x] Complete and automatically verify role-aware authorization helpers, bounded typed repositories, and protected real-data pages.
+- [x] Implement validated native project-item and dependency operations with optimistic concurrency and reliable server refresh.
+- [x] Implement bounded evidence intake, immutable provenance, source hashing, and duplicate/rate claims.
+- [x] Implement server-only two-stage GPT-5.6 Luna analysis with strict structured output and application postvalidation.
+- [x] Implement deterministic dependency traversal with cycle protection, stable shortest paths, and path explanations.
+- [x] Implement recovery proposal drafting and atomic persistence of pending per-action review state.
+- [ ] Wire the analysis route and pending-review records into the project UI without weakening the server contract.
 - [ ] Implement authorized, idempotent, reversible internal operations.
 - [ ] Implement operation history, undo, and isolated demo reset.
 - [ ] Build and verify the end-to-end demo workspace.
