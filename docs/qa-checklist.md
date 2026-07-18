@@ -1,5 +1,18 @@
 # QA checklist
 
+## Project views branch gate (`andres/03-project-views`)
+
+These checks are pending until the complete branch diff is settled. Earlier checked gates below are historical evidence for their named implementation slices, not evidence for this branch.
+
+- [x] `npm run lint` under Node 22
+- [x] `npm run typecheck` under Node 22
+- [x] `npm run test:run` under Node 22 (236 tests across 40 files)
+- [x] `npm run build` under Node 22
+- [x] `git diff --check`
+- [x] Public landing-shell browser review at 375, 768, and 1440 pixel viewport widths with no horizontal overflow
+- [ ] Authenticated project-view browser review at 375, 768, and 1440 pixel viewport widths; this clean worktree has no public Supabase configuration or operator-created login
+- [ ] `npm run test:e2e`; Playwright starts successfully, but the repository currently contains no end-to-end test files
+
 ## Last completed automated gate (Prompt 5)
 
 - [x] `npm run lint`
@@ -70,6 +83,64 @@ The linked SQL/RPC procedure above is complete. The following end-to-end procedu
 6. With `DEMO_PROJECT_SLUG` and `DEMO_RESET_SECRET` configured only on the server, `POST /api/projects/[projectId]/demo/reset` using `{ "confirmed": true, "idempotencyKey": "<unique-key>" }`. Confirm the 24-item/26-edge baseline, retirement of extras, a one-step generation advance, and preservation of the reset operation in the closing generation.
 7. Confirm current history is clean for the new generation, `includeArchived=true` retains the apply/undo/reset trail, an identical reset replay is stable, an immediate distinct reset is rate-limited, and a non-demo/wrong-project request is denied.
 8. Record exact non-secret HTTP/browser results here and in `docs/codex-log.md`; until then this browser procedure remains pending.
+
+## Project items and dependencies manual procedure
+
+Use an operator-created Auth account in the isolated synthetic **Regional Climate Action Summit 2026** project. Keep credentials in untracked configuration. Perform mutation checks as an owner, admin, or member; repeat the read-only portions as a viewer. Do not use or capture private customer data.
+
+### 1. Navigation, provenance, and loading states
+
+- [ ] Open `/app` and confirm the project navigation exposes Overview, Items, Decisions, Risks, and Dependencies with a visible current-page state and a working skip link.
+- [ ] Confirm the overview and guided callout label the workspace as synthetic, use titles and links from current server-loaded records, and do not show fake customer claims.
+- [ ] Confirm the seed note says the canonical seed has no sponsor record or sponsor relationship; search Items and Dependencies for `sponsor` and verify the UI does not fabricate one.
+- [ ] Throttle or pause a page request, then navigate between project routes and confirm a useful loading state appears without exposing a stale editable copy as canonical state.
+
+### 2. Project-item list, filters, and cards
+
+- [ ] Open `/app/items`. Confirm every visible row at 1440 pixels includes key/title, type, status, priority, assignee, due date, and a detail link; compare at least `EVT-01`, `DEC-01`, `TSK-01`, `TSK-06`, `TSK-07`, `TSK-09`, and `ART-05` with their server-loaded detail pages.
+- [ ] Enter `summit` in Search items, then independently filter by type `Event`, status `Not started`, priority `Critical`, and a real assignee. Confirm the live result count and records update for each filter and for a combined filter.
+- [ ] Choose a combination with no matches. Confirm the empty result names the filter problem, offers Reset filters, and returns to the full server result after reset.
+- [ ] At 375 and 768 pixels, confirm the table becomes labeled cards containing the same type/status/priority/assignee/due-date meaning, long titles wrap or truncate safely, and the page has no horizontal overflow.
+- [ ] Verify status and priority remain understandable in grayscale or with color disabled because visible text and symbols carry the meaning.
+
+### 3. Item detail and edit
+
+- [ ] Open `EVT-01 — Regional Climate Action Summit 2026`. Confirm breadcrumbs return to Overview and Items; detail fields reflect the current server state; and the page separates **Depends on** upstream records from downstream records under **Affects**.
+- [ ] Follow one item link in each relationship section, then use Manage relationships. Confirm the selected item is preserved in `/app/dependencies?item=<item-id>`.
+- [ ] As a contributor, open Edit item using only the keyboard. Confirm focus enters the dialog, every field has a label, Escape and Close dismiss it, and focus returns to Edit item.
+- [ ] Change a reversible, non-demo-critical field on a temporary QA item and save. Confirm pending text prevents repeat submission, a success result is announced, refreshed detail shows the new value/version, and the list reflects the saved server state.
+- [ ] Open the same item in two tabs at the same version. Save a change in tab A, then submit a different edit from stale tab B. Confirm tab B announces an explicit conflict, does not overwrite tab A, and a refresh shows the current server value.
+- [ ] Submit an invalid edit, such as a blank title. Confirm the dialog retains useful context, the validation error is announced, and no item/version change is visible after refresh.
+
+### 4. Create-item states
+
+- [ ] From `/app/items`, open Create item by keyboard. Confirm the initial field receives focus, all required/optional fields are labeled, Escape and Cancel close the dialog, and focus returns to Create item.
+- [ ] Submit an empty form and confirm accessible browser/server validation prevents creation and communicates the missing required value.
+- [ ] Create a clearly synthetic task titled `QA — temporary relationship check`, using a valid QA item key, an existing seeded assignee, and an unambiguous future due date. Confirm the pending state, announced success, and refreshed list/detail use the submitted key plus the server-owned version rather than a client-only placeholder.
+- [ ] As a viewer, confirm create/edit controls are absent or explicitly read-only while item and relationship information remains available.
+
+### 5. Decisions and risks
+
+- [ ] Open `/app/decisions`. Confirm only decision records are presented, including `DEC-01 — Approve venue contract`, with decision status and recorded rationale or an honest “not recorded” message; follow its item link and return to the project.
+- [ ] Open `/app/risks`. Confirm only open risk/blocker records are emphasized, each shows status and available risk context, and completed/cancelled records are not presented as open.
+- [ ] Compare at least one focused card with its item detail. Confirm both are projections of the same current record and do not diverge after an edit and refresh.
+
+### 6. Dependency direction, add, and remove
+
+- [ ] Open `/app/dependencies`, select `EVT-01`, and read the direction help aloud: the dependent item (`from_item_id`) depends on the upstream prerequisite/context (`to_item_id`). Confirm every relationship card is a complete text sentence and exposes its type and rationale without requiring arrow or color interpretation.
+- [ ] Select `TSK-01 — Confirm keynote speakers`. Confirm **Depends on** lists its upstream event and **Affects** lists the downstream programme lock; follow those links and confirm their item-detail relationship sections reverse the perspective correctly.
+- [ ] Open Add relationship by keyboard. Confirm focus enters the dialog, Tab/Shift+Tab remain inside, Escape closes it, and focus returns to Add relationship.
+- [ ] Add an edge in which `QA — temporary relationship check` is the dependent item and `DEC-01 — Approve venue contract` is the upstream prerequisite. Confirm the direction preview says the QA item depends on the venue decision, success is announced, and the edge appears under the QA item's **Depends on** and the decision's **Affects** sections after refresh.
+- [ ] Attempt a duplicate or otherwise invalid relationship and confirm an error is announced with no duplicate edge. Confirm the upstream selector cannot choose the same item as the dependent.
+- [ ] Remove the QA relationship. Confirm a labeled confirmation dialog appears, then confirm the pending/success states, persistent result announcement, refreshed absence from both directions, and no unrelated edge changes. Leave canonical seeded relationships intact.
+
+### 7. Guided demo and responsive accessibility
+
+- [ ] On `/app` and `/app/items`, follow callout links for the summit event, venue decision, speaker confirmation, media advisory/campaign work, print signage, volunteers, approval/readiness, and runbook where present in server state.
+- [ ] Dismiss the guided-demo callout. Confirm it disappears without blocking navigation, moving the page unexpectedly, or hiding the synthetic-data label elsewhere.
+- [ ] At 375, 768, and 1440 pixels, inspect `/app`, `/app/items`, one item detail, `/app/decisions`, `/app/risks`, and `/app/dependencies`. Confirm headings remain logical, controls and text fit, dialogs stay within the viewport, touch targets remain usable, and `document.documentElement.scrollWidth` does not exceed `clientWidth`.
+- [ ] Traverse every route and interactive control using Tab, Shift+Tab, Enter/Space, and Escape. Confirm focus is always visible, control names are announced, filter/result changes use status announcements, errors use alerts, and no keyboard trap occurs outside an open modal.
+- [ ] After mutation review, use the approved synthetic demo reset procedure if configured and confirm the 24-item/26-edge baseline is restored. If reset is unavailable, record the temporary QA item as deliberate synthetic test state for the owner to reconcile.
 
 ## Product behavior
 
