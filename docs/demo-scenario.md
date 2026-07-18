@@ -23,7 +23,7 @@ A fictional eight-person team is planning the Regional Climate Action Summit 202
 ## Expected demonstration
 
 1. Show the preserved evidence and candidate change side by side.
-2. Confirm the extraction before computing impact.
+2. Review the extraction as needing human confirmation. Deterministic impacts are already computed by application code at this stage, and no project mutation has occurred.
 3. Show direct impacts such as speaker confirmation and catering.
 4. Show a multi-hop path from event date to speaker confirmation to programme lock to briefing pack.
 5. Review recovery actions individually.

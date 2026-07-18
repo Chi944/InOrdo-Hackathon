@@ -86,7 +86,7 @@
 - Derived guided-demo destinations from real seeded records covering the summit event, venue decision, speakers, campaign/media, printing, volunteers, approval/readiness, and runbook. The current canonical seed has no sponsor record or relationship; the UI states that gap and does not invent one.
 - Added component tests for item filters/forms and dependency direction/forms, plus exact manual review steps in `docs/qa-checklist.md` for data integrity, stale-version conflict handling, keyboard behavior, and 375/768/1440 pixel layouts.
 - Documented the project-view route and data boundary in `docs/architecture.md`. No SQL, RLS, authorization, OpenAI integration, operation logic, backend contract, graph direction, or deterministic traversal behavior was changed.
-- Ran the settled branch gate under Node 22: lint, typecheck, 236 tests across 40 files, the production build, and `git diff --check` passed. Browser review found no public landing-shell overflow at 375, 768, or 1440 pixels. Authenticated project-route review remains pending because this clean worktree has no public Supabase configuration or operator-created login; the Playwright script was also attempted and reported that the repository has no end-to-end test files.
+- Ran the settled branch gate under Node 22: lint, typecheck, 236 tests across 40 files, the production build, and `git diff --check` passed. Browser review found no public landing-shell overflow at 375, 768, or 1440 pixels. Authenticated project-route review remained pending because that worktree had no public Supabase configuration or operator-created login; at that historical branch gate, the Playwright script also reported that no end-to-end test files existed yet.
 
 ## 2026-07-18 — Evidence-backed impact review interface
 
@@ -98,13 +98,13 @@
 - Added keyboard-native selectable recovery cards. Pending non-human-input actions are selected by default; human-input and non-pending actions never are. Unselected actions remain pending, and the UI does not invent a reject endpoint.
 - Added an accessible approval dialog that summarizes only selected actions and sends only the existing apply request shape. Added applied-operation summaries, changed-item before/after values, history linking, safe conflict display, focus management, and an undo control gated by backend history reversibility plus absence of a successful reversal.
 - Added a subtle four-step synthetic demo guide, responsive card layouts, textual confidence/severity/state labels, reduced-motion-safe loading, scoped `aria-live` completion/error messages, and focused component coverage for source submission and selection logic.
-- Contract review identified a backend-state gate: analysis completion persists proposals as `draft`, while apply accepts `ready` or `partially_approved`, and no promotion route exists. The UI displays this state and disables approval rather than changing Deston-owned mutation or persistence logic.
+- Contract review identified the then-existing backend-state gate: analysis completion persisted proposals as `draft`, while apply accepted `ready` or `partially_approved`. The UI failed closed rather than changing Deston-owned persistence logic; Prompt 10 subsequently added and verified the narrow database-owned readiness transition.
 - The worktree had no `.env.local` and no required public Supabase, OpenAI, or privileged environment names, so no authenticated live analysis or operation call was attempted. Responsive UI checks at 375 × 812, 768 × 1024, and 1440 × 900 used a clearly labeled synthetic local preview only, found no horizontal overflow or out-of-viewport controls, and exercised seed insertion, human-input validation, confirmation contents, and focus return without sending apply or undo. The preview route was removed before final verification; the authenticated browser procedure remains pending.
 - Browser QA caught and resolved a server/client locale mismatch in date labels by making display locale and timezone explicit; the clean rerun produced no browser console error.
 - The review URL now pins the exact analysis request returned by fresh, processing, or duplicate API responses, preventing an older duplicate result from being mislabeled while a different newer request is displayed.
 - Final verification used the checksum-matched official Node 22.23.1/npm 10.9.8 toolchain: lint, typecheck, 231 tests across 39 files, the production build, and `git diff --check` passed. The build fetched only the already-configured Geist font assets.
 
-## 2026-07-19 â€” Integrated P0 hardening and demo-journey verification
+## 2026-07-19 — Integrated P0 hardening and demo-journey verification
 
 - Integrated the completed Deston and Andres P0 branches in dependency order, preserving the existing project-view design and leaving later Prompt 11 work outside this branch.
 - Added a database-owned readiness transition that promotes only an exactly linked, current-generation, successfully completed proposal with one-to-eight pending, unattributed actions and no operation. Direct authenticated review writes remain revoked, and readiness performs no project mutation.
@@ -115,3 +115,17 @@
 - Completed the final Node 22.23.1/npm 10.9.8 gate: fresh `npm ci`, lint, typecheck, 270 Vitest tests across 48 files, one Playwright Chromium test, production build, zero production dependency vulnerabilities, and staged/unstaged diff checks passed without a lockfile change.
 - Responsive browser inspection at 375, 768, and 1440 pixels found no horizontal overflow, clipped controls, or console errors in the guarded core-demo journey.
 - The authenticated live Supabase/OpenAI production smoke remains pending because all seven required deployment environment names were absent from the process. No secret, environment value, private transcript, cookie, or raw provider/database payload was read or logged.
+
+## 2026-07-19 — QA and Build Week submission evidence integration
+
+- Integrated Andres’s Prompt 11 documentation commit onto the newer Prompt 10 baseline without rewriting the original authorship or accepting stale implementation claims from its older base.
+- Added two optimized-production public-route screenshots, a detailed Build Week submission checklist, expanded Devpost copy, and a 2:45 voiceover storyboard with safe fallback shots for every unverified live-service step.
+- Reconciled the README, QA checklist, submission copy, and video plan with the completed proposal-readiness migration, dedicated protected record routes, guarded Chromium demo journey, reset control, current 270-test baseline, and public repository URL.
+- Preserved the distinction between automated/linked evidence and the still-pending funded GPT-5.6 request, authenticated production browser journey, incognito verification, final video, Devpost entry, demo-account handoff, team/deadline details, and primary `/feedback` Session ID.
+- No database, authorization, OpenAI, operation, environment, package, or deployment-secret change was made during this documentation integration. No private transcript or fabricated Session ID was added.
+
+## Primary `/feedback` evidence
+
+Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
+
+Replace this placeholder only after running `/feedback` in the primary Codex task. Commit the identifier only—never a private transcript, credential, or unrelated session record.

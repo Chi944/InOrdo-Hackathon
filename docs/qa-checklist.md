@@ -1,5 +1,18 @@
 # QA checklist
 
+## Prompt 11 submission integration gate (`codex/andres-05-integration`)
+
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run test:run`
+- [x] `npm run test:e2e`
+- [x] `npm run build`
+- [x] `npm audit --omit=dev`
+- [x] `git diff --check`
+- [x] Confirm the resolved patch changes only the nine intended README/documentation/screenshot paths and preserves Andres’s original commit authorship.
+
+Exact integration evidence on 2026-07-19 used Node 22.23.1 and npm 10.9.8. ESLint and TypeScript completed without errors; Vitest passed 270 tests across 48 files; the guarded Chromium core-demo journey passed; the Next.js 16.2.10 production build completed; and the production dependency audit reported zero vulnerabilities. Both screenshots were visually inspected and contain only the public, clearly labeled illustrative landing content—no authenticated data, credential, or live-model claim. The final whitespace check is recorded immediately before the integration commit.
+
 ## Prompt 10 integrated P0 gate (`deston/07-integration-deploy`)
 
 This is the current release evidence section. Earlier prompt/branch sections below remain historical records and must not be read as proof for the integrated artifact.
@@ -56,7 +69,7 @@ These checks are pending until the complete branch diff is settled. Earlier chec
 - [x] `git diff --check`
 - [x] Public landing-shell browser review at 375, 768, and 1440 pixel viewport widths with no horizontal overflow
 - [ ] Authenticated project-view browser review at 375, 768, and 1440 pixel viewport widths; this clean worktree has no public Supabase configuration or operator-created login
-- [ ] `npm run test:e2e`; Playwright starts successfully, but the repository currently contains no end-to-end test files
+- [ ] `npm run test:e2e`; at this historical project-views branch gate, Playwright started successfully but no end-to-end test files existed yet
 
 ## Last completed automated gate (Prompt 5)
 
@@ -216,7 +229,7 @@ Use only the configured synthetic demo project and an operator-created owner/adm
 8. Confirm direct impacts are depth 1 and indirect impacts are depth greater than 1. Every card must show item status/type/owner/date, severity text, a readable deterministic dependency path, and a separately labeled GPT-generated explanation. Verify valid empty and safe failure states.
 9. In Recovery actions, confirm all pending actions without `requires_human_input` are preselected. No human-input or non-pending action may be preselected. Toggle each checkbox with Space, use `Select all safe actions`, then use `Leave all pending`; confirm no reject request is sent.
 10. Select a human-input action. Confirm an associated response field appears and blank input prevents confirmation. Open `Approve selected`; confirm the dialog names/counts only selected actions, Cancel/Escape returns focus, and confirmation sends exactly the existing `{ selectedActionIds, humanInputs, idempotencyKey }` contract.
-11. If the proposal state is `draft`, confirm approval is disabled with the backend-readiness explanation. Do not bypass this by changing SQL or client state. When Deston supplies a `ready` or `partially_approved` proposal, confirm a partial apply leaves unselected actions pending and focus moves to Applied result.
+11. Confirm a fully finalized eligible analysis reaches `ready`; if any proposal remains `draft` or otherwise ineligible, confirm approval stays disabled with the backend-readiness explanation. Do not bypass this by changing SQL or client state. For a `ready` or `partially_approved` proposal, confirm a partial apply leaves unselected actions pending and focus moves to Applied result.
 12. Confirm Applied result shows operation type/state/actor/time, changed items with before/after values, an audit-history anchor, and safe error/conflict details. Show Undo only for a backend-history `reversible` successful apply with no successful reversal; on a stale-state 409, confirm no partial-success claim appears.
 
 ### Responsive and accessibility review
@@ -294,3 +307,31 @@ Successful analysis completion now promotes only an eligible, exactly linked cur
 - [ ] Synthetic data is visibly labeled.
 - [ ] No unverified feature is described as working.
 - [ ] Submission copy and video match the verified build.
+
+## Build Week submission release checks
+
+- [ ] Confirm `https://github.com/Chi944/InOrdo-Hackathon` opens signed out and exposes the final submitted `main` commit, README, screenshots, and MIT license.
+- [ ] Confirm the production URL opens in a private/incognito browser and identifies the exact deployed commit.
+- [ ] Confirm every required deployment variable name is configured, with server-only values absent from the browser bundle, logs, screenshots, and repository.
+- [ ] Confirm the production platform enforces an upstream request-body limit in addition to application validation.
+- [ ] Run exactly one funded synthetic GPT-5.6 analysis and record safe metadata only; do not record a key, prompt, raw provider output, or source body.
+- [ ] Complete the authenticated production smoke path above as owner/admin and repeat read-only/denial checks as viewer and nonmember where feasible.
+- [ ] Verify the real authenticated route at approximately 375, 768, and 1440 pixels, including keyboard order, visible focus, accessible names, status announcements, and no horizontal overflow.
+- [ ] Confirm Devpost copy and the public voiceover video describe only the verified artifact, use the Work and Productivity track, and never present a fixture as live model output.
+- [ ] Replace the production, demo-access, Devpost, video, team, deadline, and primary `/feedback` placeholders in the submission materials.
+- [ ] Test the repository, production, video, Devpost, and demo-access links without a team-authenticated browser session.
+- [ ] Record the final submitted commit externally and stop repository, deployment, Devpost, and video edits at the official deadline.
+
+## Open release issues
+
+| Severity | Issue | Owner | Required resolution or honest fallback |
+| --- | --- | --- | --- |
+| High | No funded live GPT-5.6 request has been recorded in the available environment. | Deston / Shared | Run one safe synthetic analysis after deployment configuration, recording only non-secret metadata. If unavailable, keep all public copy explicit that the live provider call remains unverified. |
+| High | No authenticated production/incognito browser pass or final production URL has been recorded. | Shared | Deploy the reviewed commit, provision the operator-managed synthetic account out of band, and complete the live smoke matrix. There is no documentation-only substitute. |
+| High | Final production/demo-access/Devpost/video URLs, team roles, official deadline, and primary `/feedback` Session ID are not supplied. | Shared | Replace each submission placeholder from its authoritative human/external source and verify every public link before submission. |
+| Medium | Deployment-level request limits, runtime budgets, secret rotation, and stuck-analysis reconciliation require platform configuration and an operator runbook. | Deston | Complete Prompt 12 production-readiness configuration and document the exact containment and rollback sequence. |
+| Medium | Authenticated Playwright does not cover live Supabase/Auth/OpenAI. | Andres / Shared | Use the guarded journey only as UI/contract evidence; complete the real production browser matrix before making live-service claims. |
+
+## Submission claim rule
+
+Submission language may claim implemented behavior and the scoped automated, linked-database, and guarded-browser verification recorded above. It must describe live GPT-5.6 behavior, authenticated production operation, production responsiveness/accessibility, and final public-asset access as unverified until their checks are completed with current, non-secret evidence.
