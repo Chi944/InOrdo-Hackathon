@@ -297,7 +297,9 @@ export function RecoveryActionReview({
   const backendReady =
     proposal.state === "ready" || proposal.state === "partially_approved";
   const proposalClosed = !backendReady && proposal.state !== "draft";
-  const selectedActions = selectedActionsInOrder(proposal.actions, selectedIds);
+  const selectedActions = backendReady
+    ? selectedActionsInOrder(proposal.actions, selectedIds)
+    : [];
   const pendingActions = proposal.actions.filter((action) => action.state === "pending");
   const invalidHumanActions = selectedActions.filter(
     (action) =>
@@ -560,7 +562,11 @@ export function RecoveryActionReview({
             {proposal.actions.map((action) => (
               <ActionCard
                 action={action}
-                checked={action.state === "pending" && selectedIds.has(action.id)}
+                checked={
+                  backendReady &&
+                  action.state === "pending" &&
+                  selectedIds.has(action.id)
+                }
                 disabled={applying || !canApprove || proposalClosed}
                 humanResponse={humanResponses[action.id] ?? ""}
                 key={action.id}

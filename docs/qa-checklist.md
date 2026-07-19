@@ -68,6 +68,15 @@ The deployed Prompt 13 artifact remains the recorded production release; this is
 
 PR #9 merged normally as `d581b0a9d736bd12046a4314e15b359ec8fd8205`; that exact clean `main` SHA was deployed as Vercel production deployment `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` and the public signed-out routes were rechecked. PR #11 later merged hardening as `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` and that exact SHA passed Preview inspection, but it is not yet the production artifact. The intentionally absent `OPENAI_API_KEY`, operator-provisioned Auth account, funded GPT-5.6 smoke, and authenticated browser journey remain human-owned release evidence.
 
+## Prompt 13 evidence-integrity bridge (`deston/13-evidence-integrity`)
+
+- [x] Forward migration `20260719120000_preserve_analysis_provenance_and_supersede_stale_proposals.sql` preserves a canonical normalized-input provider claim while recording append-only source-capture provenance in `analysis_request_sources`.
+- [x] Focused SQL coverage verifies exact replay preserves one canonical claim while retaining capture cardinality, the same capture supports a fresh claim after a revision change, and current live proposals close after any project-item or dependency mutation; historic live proposals are conservatively closed rather than reopened.
+- [x] Local migration replay passed; database lint passed; rollback-wrapped `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql` passed; and the focused verifier passed after correction.
+- [x] Exact Windows local focused-verifier command: `Get-Content supabase/tests/verify_prompt13_evidence_integrity.sql -Raw | docker exec -i supabase_db_InOrdo-Hackathon psql -X -q -v ON_ERROR_STOP=1 -U postgres -d postgres`.
+
+These are local database checks plus the generated database-type update and a focused closed-proposal UI regression. They do not claim a linked/remote migration, browser journey, provider call, or production deployment.
+
 ## Prompt 12 production-readiness gate (`deston/08-production-readiness`)
 
 This section records each command or live step individually. Checked items have settled-branch/deployment evidence; unchecked items remain pending. The exact operator commands and evidence limits are in [`docs/deployment-runbook.md`](deployment-runbook.md).

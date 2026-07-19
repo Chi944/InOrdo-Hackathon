@@ -408,4 +408,27 @@ describe("recovery action selection", () => {
       expect(checkbox).toBeDisabled();
     }
   });
+
+  it("keeps a superseded proposal visible but makes every action non-approvable", () => {
+    render(
+      <RecoveryActionReview
+        canApprove
+        onApplied={vi.fn()}
+        projectId={projectId}
+        proposal={{ ...proposal, state: "superseded" }}
+      />,
+    );
+
+    expect(screen.getByText("Proposal is superseded")).toBeVisible();
+    expect(screen.getByText(/closed proposal state/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Approve selected" })).toBeDisabled();
+    for (const action of actions) {
+      expect(
+        screen.getByRole("checkbox", { name: `Select ${action.title}` }),
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("checkbox", { name: `Select ${action.title}` }),
+      ).not.toBeChecked();
+    }
+  });
 });

@@ -148,6 +148,45 @@ export type Database = {
           },
         ]
       }
+      analysis_request_sources: {
+        Row: {
+          analysis_request_id: string
+          created_at: string
+          project_id: string
+          source_document_id: string
+          workspace_id: string
+        }
+        Insert: {
+          analysis_request_id: string
+          created_at?: string
+          project_id: string
+          source_document_id: string
+          workspace_id: string
+        }
+        Update: {
+          analysis_request_id?: string
+          created_at?: string
+          project_id?: string
+          source_document_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_request_sources_request_fk"
+            columns: ["workspace_id", "project_id", "analysis_request_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_requests"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+          {
+            foreignKeyName: "analysis_request_sources_source_fk"
+            columns: ["workspace_id", "project_id", "source_document_id"]
+            isOneToOne: false
+            referencedRelation: "source_documents"
+            referencedColumns: ["workspace_id", "project_id", "id"]
+          },
+        ]
+      }
       analysis_requests: {
         Row: {
           change_event_id: string | null

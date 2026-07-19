@@ -239,6 +239,8 @@ npx --no-install supabase db reset
 
 Analysis claims have an immutable three-minute database lease. An active exact duplicate returns `202` with `Retry-After`; submit that exact update again after the displayed delay to reconcile an interrupted claim. Expiry never starts another model attempt: the same request becomes a safe terminal failure, while a late success and all of its derived writes are rejected atomically.
 
+The Prompt 13 evidence-integrity bridge keeps one canonical revision/hash analysis claim for provider-spend control while retaining append-only links to every attributable source capture. Exact replays preserve claim/link cardinality, while the same capture can support a fresh claim after the project revision changes. Ready proposals close when any project item or dependency changes; historic live proposals are conservatively closed rather than reopened. On Windows, run the focused verifier against the started local stack after a reset with `Get-Content supabase/tests/verify_prompt13_evidence_integrity.sql -Raw | docker exec -i supabase_db_InOrdo-Hackathon psql -X -q -v ON_ERROR_STOP=1 -U postgres -d postgres`.
+
 ## Run, test, and build commands
 
 | Command | Purpose |
