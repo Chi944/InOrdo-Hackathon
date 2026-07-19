@@ -149,7 +149,7 @@
 
 ## 2026-07-19 — Final release evidence
 
-- Started the documentation-only Prompt 14 branch from the exact reviewed/deployed application SHA and left application behavior unchanged.
+- Started the Prompt 14 evidence branch from the exact reviewed/deployed application SHA, then merged current `main` normally to reconcile the completed release-boundary hardening without rewriting authorship.
 - Added `docs/release-evidence.md` with the release/deployment identity, actual route and implementation matrix, GPT-5.6 and deterministic-graph boundaries, approval/undo/reset rules, linked verification, public smoke results, known limitations, and Devpost placeholder audit.
 - Reconciled stale release documentation with the merged expired-claim repair, exact production deployment, configured non-OpenAI names and Auth URLs, disabled provider retries, and remaining credentialed/human gates.
 - Kept the funded model call, demo Auth account, authenticated production workflow, responsive/accessibility review, public assets, team/deadline details, and primary `/feedback` Session ID visibly pending rather than manufacturing evidence.
@@ -158,6 +158,7 @@
 - Refreshed the ignored local environment from the six non-OpenAI Vercel Production names, excluded the pre-existing local OpenAI entry without reading it, and proved through the local health boundary that only `OPENAI_API_KEY` remains intentionally missing. The complete clean-install, unit, Chromium, build, audit, and diff gates passed again without exposing a value.
 - Replaced the submission-deadline placeholder with the official Devpost deadline, July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT), while leaving all genuinely human-supplied submission fields unresolved.
 - Verified the public repository, default branch, README, MIT license, and deployed SHA through unauthenticated endpoints. A filename/count-only scan of the current tree and all 27 reachable commits found no credential-format match or unexpected tracked environment path, without printing candidate content.
+- After reconciling current `main`, reran the complete Node 22.23.1/npm 10.9.8 gate: clean install, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, optimized-build public/guard/health smoke, and final whitespace verification. A fresh public audit found `main` at `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`; a filename/count-only current-tree and reachable-history scan again found no credential-format match or unexpected tracked environment path.
 
 ## Codex work-package commit index
 
@@ -177,7 +178,18 @@ The implementation entries above correspond to these Git commits. Merge commits 
 | Submission documentation package | [`ef151de`](https://github.com/Chi944/InOrdo-Hackathon/commit/ef151de503b92e5c33f7db454c143f3066287c18) |
 | Production readiness | [`335e213`](https://github.com/Chi944/InOrdo-Hackathon/commit/335e2139e165480d7e07afc49fbef57e6c8e90b3) |
 | Expired-claim repair | [`af808dd`](https://github.com/Chi944/InOrdo-Hackathon/commit/af808dd4a0677070f32259621c79f55799fa5603) |
-| Final reviewed/deployed application release | [`d581b0a9`](https://github.com/Chi944/InOrdo-Hackathon/commit/d581b0a9d736bd12046a4314e15b359ec8fd8205) |
+| Current production application release | [`d581b0a9`](https://github.com/Chi944/InOrdo-Hackathon/commit/d581b0a9d736bd12046a4314e15b359ec8fd8205) |
+| Release-boundary hardening | [`efff09c`](https://github.com/Chi944/InOrdo-Hackathon/commit/efff09c471d1336edf401085f8eaf5842189ab90) |
+| Current merged application `main` and Preview release | [`72a6fc5`](https://github.com/Chi944/InOrdo-Hackathon/commit/72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c) |
+
+## 2026-07-19 — Release-boundary hardening and local configuration repair
+
+- Replaced whole-body parsing in the analysis and operation handlers with one streaming byte reader. It counts cumulative encoded bytes, cancels immediately above the 24,000/32,000-byte cap, handles absent or dishonest length headers, rejects invalid UTF-8 safely, and returns only bounded public errors before orchestration.
+- Made deployment readiness and runtime construction share strict environment parsing: remote Supabase URLs require HTTPS, HTTP is limited to exact loopback development hosts, embedded URL credentials and surrounding padding fail closed, and non-model values must be exactly nonblank.
+- Added an executable Git-revert planner that validates the exact commit and selected merge parent, proves the target belongs to synchronized `main`, uses that parent for both migration inventory and `git revert -m`, and rejects roots, octopus merges, disconnected commits, and invalid mainlines. Explicit ordinary/merge branches avoid the macOS Bash 3.2 empty-array `set -u` failure.
+- Used red/green regressions and two focused independent re-reviews to resolve the unsafe remote-HTTP, disconnected-target, and Bash-compatibility findings. The settled Node 22.23.1/npm 10.9.8 gate completed a clean install without lockfile drift, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, a production build, and a zero-vulnerability production audit.
+- Replaced the six authorized non-OpenAI Vercel Production values as sensitive entries without displaying them. Created the ignored Windows `.env.local` through a temporary Development-only CLI handoff, then removed every temporary cloud entry. The rebuilt local server returned public/login success, the exact signed-out app redirect, and the expected no-store `503 not_ready` state naming only the intentionally absent `OPENAI_API_KEY`.
+- PR #11 passed CI and merged normally as `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`. Preview deployment `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD` is `READY` for that exact SHA: authenticated deployment access returned `200` for `/` and `/login`, no-store `503` for readiness, and fail-closed `/app` behavior because Preview intentionally has no Supabase configuration; anonymous requests correctly remained behind Vercel deployment protection. Production still serves `d581b0a9d736bd12046a4314e15b359ec8fd8205` pending Deston's explicit confirmation that current Vercel Hobby terms permit this demo. No OpenAI key, Auth credential, environment value, provider payload, or private transcript was displayed, logged, or committed; Claude cross-model review remains paused.
 
 ## Primary `/feedback` evidence
 

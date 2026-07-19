@@ -6,15 +6,19 @@ This document records the factual release state produced by the final merged app
 
 | Field | Recorded value |
 | --- | --- |
-| Reviewed and deployed application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` |
-| Release merge | PR [#9](https://github.com/Chi944/InOrdo-Hackathon/pull/9), merged normally into `main` |
+| Current production application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` |
+| Production release merge | PR [#9](https://github.com/Chi944/InOrdo-Hackathon/pull/9), merged normally into `main` |
 | Production alias | [inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app) |
 | Immutable deployment | `inordo-hackathon-e9t278oun-chi944s-projects.vercel.app` |
 | Vercel deployment ID | `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` |
-| Vercel release metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the application SHA above |
+| Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
+| Current merged application `main` SHA | `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` |
+| Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
+| Exact-SHA Preview | `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD`; `inordo-hackathon-3w91bc8k0-chi944s-projects.vercel.app` |
+| Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` equal to the current merged SHA above, ref `main` |
 | Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; migrations aligned through `20260719113000` |
 
-The Prompt 14 documentation commit is deliberately not used as the application release SHA: it changes documentation only and cannot truthfully embed its own future merge commit ID. Record the final repository SHA externally after the documentation PR merges; keep the deployed application SHA separate and explicit.
+Prompt 14 started as a documentation-only branch at the production SHA, then merged current `main` normally to reconcile the completed release-boundary hardening. The production and Preview identities remain separate: production still serves `d581b0a9...`; the newer `72a6fc5...` hardening is exact-SHA Preview evidence until Deston completes the explicit Vercel terms gate and production redeploy. Record the final documentation merge SHA externally after this draft PR merges.
 
 ## Implemented feature evidence
 
@@ -31,6 +35,7 @@ The Prompt 14 documentation commit is deliberately not used as the application r
 | Named synthetic demo reset | `src/app/api/projects/[projectId]/demo/reset/route.ts`, `src/app/app/demo-reset-control.tsx` | Role, slug, confirmation, rate, generation, baseline, and replay tests plus linked SQL |
 | Guarded browser journey | `tests/e2e/core-demo.spec.ts`, `src/lib/e2e/` | One Chromium journey over production components with provider/database seams intercepted |
 | Configuration readiness | `src/app/api/health/route.ts`, `src/lib/env/readiness.ts` | Complete/missing configuration tests and public production smoke |
+| Streaming request boundary | `src/lib/http/read-bounded-request-body.ts`, analysis and operation route handlers | Missing/dishonest-length, cumulative-byte, cancellation, UTF-8, and user-safe-error tests |
 
 The guarded browser route is test-only and is not live Supabase, Auth, RLS, or OpenAI evidence.
 
@@ -71,7 +76,7 @@ The operation boundary is implemented in `src/features/operations/`, the apply/h
 
 ## Verification record
 
-The exact merged application SHA passed the following under Node `22.23.1` and npm `10.9.8`:
+The current production application SHA passed the following under Node `22.23.1` and npm `10.9.8`:
 
 - clean `npm ci`;
 - `npm run lint`;
@@ -84,9 +89,9 @@ The exact merged application SHA passed the following under Node `22.23.1` and n
 
 Linked Supabase evidence includes aligned local/remote migrations through `20260719113000`, generated database types matching the hosted schema after line-ending normalization, clean public/private schema lint and security advisors, and passing rollback-wrapped `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql`. The verification transactions retained no test rows.
 
-Prompt 14 branch checks are recorded in `docs/qa-checklist.md`; they validate the documentation-only patch without replacing the application release evidence above.
+The current merged hardening SHA `72a6fc5...` separately passed a clean Node `22.23.1` gate: lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks. Its exact-SHA Preview inspection is recorded below; this does not turn it into production evidence.
 
-On the documentation branch, Node `22.23.1` and npm `10.9.8` completed `npm run lint`, `npm run typecheck`, all 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build. The final whitespace check is recorded immediately before commit.
+Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck, 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build. After merging current `main`, Node `22.23.1` and npm `10.9.8` completed a fresh `npm ci`, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, and a zero-vulnerability production dependency audit. Final staged/unstaged whitespace checks are recorded in `docs/qa-checklist.md` immediately before the merge-resolution commit.
 
 ## Production smoke recorded 2026-07-19
 
@@ -100,16 +105,31 @@ On the documentation branch, Node `22.23.1` and npm `10.9.8` completed `npm run 
 
 The six non-OpenAI production variable names are configured and hosted Supabase Auth URLs include the production host and documented local/Preview redirects. Values are intentionally not recorded here. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
 
+## Hardening Preview smoke recorded 2026-07-19
+
+| Check | Result |
+| --- | --- |
+| Deployment identity | `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD`, `READY`, exact `72a6fc5...` SHA on `main` |
+| Anonymous access | Redirects to Vercel SSO; deployment protection was not weakened |
+| Authenticated deployment access `/` and `/login` | `200` |
+| Authenticated deployment access `/api/health` | Expected no-store `503 not_ready` |
+| Authenticated deployment access `/app` | Fails closed because Preview intentionally has no Supabase variables |
+
+This is deployment-identity and fail-closed configuration evidence, not a public Preview pass or a live Auth/OpenAI workflow. The six sensitive non-OpenAI values remain Production-only.
+
 ## Known limitations and human-owned gates
 
 - No operator-provisioned demo Auth account has completed a production login/session/logout run.
 - No funded live GPT-5.6 request has been verified.
+- Production still serves the Prompt 13 SHA; release-boundary hardening requires Deston's explicit confirmation that current Vercel Hobby terms permit the demo before it is redeployed.
+- The exact hardening Preview is protected by Vercel SSO and intentionally lacks Supabase configuration; neither state should be weakened merely to manufacture a public Preview claim.
 - The complete authenticated production evidence -> impact -> selective apply -> history -> undo -> reset journey is pending.
 - Viewer/nonmember/cross-project denial has linked and automated coverage but still needs the final deployed-browser check.
 - Production responsive, keyboard, focus, announcement, and no-overflow checks at approximately 375, 768, and 1440 pixels are pending.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
 - Vercel Hobby eligibility still requires the operator's current terms review; this repository is not legal advice.
 - The final video, Devpost page, judge access path, team list, and primary Codex `/feedback` Session ID remain human-owned.
+- The hosted live-journey work is tracked in GitHub [issue #4](https://github.com/Chi944/InOrdo-Hackathon/issues/4); automated/guarded evidence does not close it.
 - The [official Devpost schedule](https://openai.devpost.com/details/dates) sets the submission deadline at July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
 
 ## Devpost placeholder audit

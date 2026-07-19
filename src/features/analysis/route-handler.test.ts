@@ -26,6 +26,38 @@ function request(body: string, headers: Record<string, string> = {}) {
   });
 }
 
+function streamingRequest(
+  chunks: readonly Uint8Array[],
+  headers: Record<string, string>,
+  onCancel: () => void,
+) {
+  let index = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      const chunk = chunks[index];
+      index += 1;
+      if (chunk === undefined) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(chunk);
+    },
+    cancel() {
+      onCancel();
+    },
+  });
+  const init: RequestInit & { duplex: "half" } = {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body,
+    duplex: "half",
+  };
+  return new Request(
+    `https://inordo.test/api/projects/${projectId}/analyze`,
+    init,
+  );
+}
+
 const completedResult = {
   kind: "completed" as const,
   requestId: analysisRequestId,
@@ -125,6 +157,55 @@ describe("analysis POST handler", () => {
     expect(
       (await handleAnalyzeProjectPost({ request: actual, projectId, execute })).status,
     ).toBe(413);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["missing", {}],
+    ["dishonest", { "content-length": "2" }],
+  ])(
+    "cancels a %s-length oversized stream before buffering the complete body",
+    async (_description, headers) => {
+      const execute = vi.fn(async () => completedResult);
+      let cancelled = false;
+      const response = await handleAnalyzeProjectPost({
+        request: streamingRequest(
+          [new Uint8Array(12_000), new Uint8Array(12_001), new Uint8Array(8)],
+          headers,
+          () => {
+            cancelled = true;
+          },
+        ),
+        projectId,
+        execute,
+      });
+
+      expect(response.status).toBe(413);
+      expect(cancelled).toBe(true);
+      expect(execute).not.toHaveBeenCalled();
+    },
+  );
+
+  it("enforces the stream limit in encoded bytes for multibyte input", async () => {
+    const execute = vi.fn(async () => completedResult);
+    let cancelled = false;
+    const encoded = new TextEncoder().encode(`{"text":"${"é".repeat(12_001)}"}`);
+    expect(encoded.byteLength).toBeGreaterThan(24_000);
+
+    const response = await handleAnalyzeProjectPost({
+      request: streamingRequest(
+        [encoded, new Uint8Array(8)],
+        {},
+        () => {
+          cancelled = true;
+        },
+      ),
+      projectId,
+      execute,
+    });
+
+    expect(response.status).toBe(413);
+    expect(cancelled).toBe(true);
     expect(execute).not.toHaveBeenCalled();
   });
 

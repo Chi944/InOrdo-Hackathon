@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   EnvironmentConfigurationError,
+  exactNonBlankEnvironmentValueSchema,
   publicEnvSchema,
 } from "@/lib/env/public";
 
@@ -14,28 +15,28 @@ const openAIModelSchema = z
   .default("gpt-5.6-luna");
 
 export const serverEnvSchema = publicEnvSchema.extend({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  OPENAI_API_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: exactNonBlankEnvironmentValueSchema,
+  OPENAI_API_KEY: exactNonBlankEnvironmentValueSchema,
   OPENAI_MODEL: openAIModelSchema,
-  DEMO_PROJECT_SLUG: z.string().min(1),
-  DEMO_RESET_SECRET: z.string().min(1),
+  DEMO_PROJECT_SLUG: exactNonBlankEnvironmentValueSchema,
+  DEMO_RESET_SECRET: exactNonBlankEnvironmentValueSchema,
 });
 
 const privilegedEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: publicEnvSchema.shape.NEXT_PUBLIC_SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: exactNonBlankEnvironmentValueSchema,
 });
 
 const demoEnvSchema = z.object({
-  DEMO_PROJECT_SLUG: z.string().min(1),
+  DEMO_PROJECT_SLUG: exactNonBlankEnvironmentValueSchema,
 });
 
 const demoResetEnvSchema = demoEnvSchema.extend({
-  DEMO_RESET_SECRET: z.string().min(1),
+  DEMO_RESET_SECRET: exactNonBlankEnvironmentValueSchema,
 });
 
 export const openAIEnvSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1),
+  OPENAI_API_KEY: exactNonBlankEnvironmentValueSchema,
   OPENAI_MODEL: openAIModelSchema,
 });
 

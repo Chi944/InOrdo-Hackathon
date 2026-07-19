@@ -1,6 +1,12 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { evaluateDeploymentReadiness } from "@/lib/env/readiness";
+import {
+  evaluateDeploymentReadiness,
+  readinessVariableNames,
+} from "@/lib/env/readiness";
 
 const validEnvironment = {
   NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
@@ -13,6 +19,18 @@ const validEnvironment = {
 };
 
 describe("deployment readiness", () => {
+  it("keeps the documented environment-name contract in sync", () => {
+    const documentedNames = readFileSync(
+      resolve(process.cwd(), ".env.example"),
+      "utf8",
+    )
+      .split(/\r?\n/)
+      .filter((line) => /^[A-Z0-9_]+=/.test(line))
+      .map((line) => line.split("=", 1)[0]);
+
+    expect(documentedNames).toEqual(readinessVariableNames);
+  });
+
   it("reports ready when every required setting is valid", () => {
     expect(evaluateDeploymentReadiness(validEnvironment)).toEqual({
       status: "ready",
@@ -41,6 +59,62 @@ describe("deployment readiness", () => {
     ).toEqual({
       status: "not_ready",
       invalidVariables: ["OPENAI_MODEL"],
+    });
+  });
+
+  it.each([
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL",
+    "DEMO_PROJECT_SLUG",
+    "DEMO_RESET_SECRET",
+  ] as const)("rejects a whitespace-only %s", (name) => {
+    expect(
+      evaluateDeploymentReadiness({
+        ...validEnvironment,
+        [name]: "   ",
+      }),
+    ).toEqual({
+      status: "not_ready",
+      invalidVariables: [name],
+    });
+  });
+
+  it.each([
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "OPENAI_API_KEY",
+    "DEMO_PROJECT_SLUG",
+    "DEMO_RESET_SECRET",
+  ] as const)("rejects surrounding whitespace in %s", (name) => {
+    expect(
+      evaluateDeploymentReadiness({
+        ...validEnvironment,
+        [name]: ` ${validEnvironment[name]} `,
+      }),
+    ).toEqual({
+      status: "not_ready",
+      invalidVariables: [name],
+    });
+  });
+
+  it.each([
+    "ftp://example.supabase.co",
+    "javascript:alert(1)",
+    "http://example.supabase.co",
+    "https://username@example.supabase.co",
+    "https://username:password@example.supabase.co",
+    " https://example.supabase.co",
+  ])("rejects an unsafe or padded Supabase URL: %s", (url) => {
+    expect(
+      evaluateDeploymentReadiness({
+        ...validEnvironment,
+        NEXT_PUBLIC_SUPABASE_URL: url,
+      }),
+    ).toEqual({
+      status: "not_ready",
+      invalidVariables: ["NEXT_PUBLIC_SUPABASE_URL"],
     });
   });
 

@@ -6,10 +6,12 @@ This guide gives Deston on Windows and Andres on macOS the same repeatable local
 
 - Use Node.js 22.x. Confirm with `node --version` before installing dependencies.
 - Never commit, paste, screenshot, or send `.env.local`, passwords, API keys, cookies, service-role values, or reset secrets.
-- Each teammate should receive access to the Vercel and Supabase projects through the provider account controls. Do not transfer `.env.local` through chat, email, or Git.
+- Each teammate should receive access to the Vercel and Supabase projects through the provider account controls. Share server-only values, when necessary, only through an approved secret manager with access logging; do not transfer `.env.local` through chat, email, Git, screenshots, or terminal output.
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are browser-configured values. Every other configured name is server-only.
 - Until `OPENAI_API_KEY` is intentionally added, `/api/health` must return generic `503 not_ready`; this is expected and live analysis must remain unclaimed.
 - Use only the fictional Regional Climate Action Summit workspace and the operator-provisioned demo Auth account.
+
+Populate only these six non-OpenAI names for the current local fail-closed setup: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Leave `OPENAI_API_KEY` blank. A Vercel CLI-managed `VERCEL_OIDC_TOKEN`, if present, is also a secret: do not inspect, copy, document, or commit it.
 
 ## Deston: Windows setup
 
@@ -32,17 +34,20 @@ git pull --ff-only origin main
 npm ci
 ```
 
-Link the checked-out repository to the existing Vercel project and pull its Production configuration into the ignored local file:
+Link the checkout to the existing Vercel project and confirm the Production variable **names and scopes**. Production entries are sensitive and cannot be recovered by `vercel env pull`, so do not treat that command as secret distribution:
 
 ```powershell
 npx vercel login
 npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
-npx vercel env pull .env.local --environment=production --yes
-git check-ignore .env.local
+npx vercel env ls production
+if (-not (Test-Path -LiteralPath .env.local)) {
+    Copy-Item -LiteralPath .env.example -Destination .env.local
+}
+git check-ignore -q .env.local
 git status --short
 ```
 
-`git check-ignore` should print `.env.local`; `git status --short` should not list it. On an existing machine, first remove any obsolete local `OPENAI_API_KEY` entry through a private editor if OpenAI is intentionally disabled. Never echo or paste its value into a terminal command.
+Deston's existing machine already has the six authorized non-OpenAI values in the ignored `.env.local`; `OPENAI_API_KEY` is intentionally blank. On a fresh Windows machine, populate those six names through a private editor from the authorized Supabase/provider source or approved secret manager. `git check-ignore -q` must exit successfully and `git status --short` must not list the file. Never use `Get-Content`, `type`, `echo`, or a shell argument to inspect or set a value.
 
 ## Andres: macOS setup
 
@@ -65,17 +70,20 @@ git pull --ff-only origin main
 npm ci
 ```
 
-After Andres has been granted project access in Vercel, link and pull the same Production configuration without sharing a file or value out of band:
+After Andres has been granted project access, link the same Vercel project and confirm the Production variable names/scopes. Sensitive Production entries are write-only through Vercel and `vercel env pull` cannot recover them:
 
 ```bash
 npx vercel login
 npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
-npx vercel env pull .env.local --environment=production --yes
-git check-ignore .env.local
+npx vercel env ls production
+if [ ! -e .env.local ]; then
+  cp .env.example .env.local
+fi
+git check-ignore -q .env.local
 git status --short
 ```
 
-If the Vercel link or pull is denied, Deston should add Andres to the provider project. Do not work around access control by sending the environment file.
+Andres should populate the same six non-OpenAI names through a private editor from his authorized Supabase/provider access or an approved secret manager, leaving `OPENAI_API_KEY` blank until the funded live test is authorized. If provider access is denied, Deston should grant Andres the appropriate project role. Do not work around access control by sending the environment file or pasting a service-role/reset value into chat. Do not temporarily demote Production secrets into Preview or Development merely to make them pullable.
 
 ## Confirm the hosted Supabase link
 

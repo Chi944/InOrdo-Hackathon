@@ -194,11 +194,12 @@ npx vercel inspect <PRODUCTION_DEPLOYMENT_URL>
 
 Recheck `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected read/write route after rollback. A Vercel rollback changes the served artifact; it does not reverse an applied database migration or user operation. Keep the database ledger forward-only and use the domain compensation/containment procedures in `docs/rollback-plan.md`.
 
-If the last known-good deployment is unavailable or the defect requires a source correction, use the following fail-closed preparation in one Bash, Git Bash, or macOS shell. It resolves the exact commit, requires clean synchronized `main`, reads the linked migration ledger, and automatically chooses the safe path. It never places a credential in an argument or file:
+If the last known-good deployment is unavailable or the defect requires a source correction, use the following fail-closed preparation in one Bash, Git Bash, or macOS shell. It resolves the exact commit, requires clean synchronized `main`, rejects roots and octopus merges, requires an explicit reviewed mainline for a two-parent merge, reads the linked migration ledger, and automatically chooses the safe path. It never places a credential in an argument or file:
 
 ```bash
 set -euo pipefail
 FAULTY_COMMIT_SHA="<FULL_FAULTY_COMMIT_SHA>"
+REVERT_MAINLINE=""
 REVERT_BRANCH="deston/revert-production-issue"
 
 git switch main
@@ -208,16 +209,31 @@ git status --short
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
 test "$(git rev-parse --verify HEAD)" = \
   "$(git rev-parse --verify origin/main)"
-FAULTY_COMMIT_SHA="$(git rev-parse --verify "${FAULTY_COMMIT_SHA}^{commit}")"
+REVERT_PLAN="$(
+  node scripts/revert-plan.mjs "$FAULTY_COMMIT_SHA" "$REVERT_MAINLINE"
+)"
+IFS=$'\t' read -r \
+  FAULTY_COMMIT_SHA FAULTY_DIFF_BASE RESOLVED_MAINLINE <<< "$REVERT_PLAN"
+test -n "$FAULTY_COMMIT_SHA"
+test -n "$FAULTY_DIFF_BASE"
 git show --stat --oneline "$FAULTY_COMMIT_SHA"
+case "$RESOLVED_MAINLINE" in
+  none) ;;
+  1|2) ;;
+  *)
+    printf '%s\n' \
+      'STOP: the tested revert planner returned an unexpected mainline.' >&2
+    exit 5
+    ;;
+esac
 
 npm ci
 LEDGER_JSON="$(
   npx --no-install supabase --output-format json migration list --linked
 )"
 TARGET_MIGRATION_PATHS="$(
-  git diff-tree -m --root --no-commit-id --name-only -r \
-    "$FAULTY_COMMIT_SHA" -- supabase/migrations | sort -u
+  git diff --name-only "$FAULTY_DIFF_BASE" "$FAULTY_COMMIT_SHA" \
+    -- supabase/migrations | sort -u
 )"
 APPLIED_MIGRATION_PATHS="$(
   LEDGER_JSON="$LEDGER_JSON" \
@@ -231,9 +247,17 @@ printf 'target migrations:\n%s\napplied target migrations:\n%s\n' \
 git switch -c "$REVERT_BRANCH"
 test "$(git branch --show-current)" = "$REVERT_BRANCH"
 if [ -z "$APPLIED_MIGRATION_PATHS" ]; then
-  git revert --no-edit "$FAULTY_COMMIT_SHA"
+  if [ "$RESOLVED_MAINLINE" = "none" ]; then
+    git revert --no-edit "$FAULTY_COMMIT_SHA"
+  else
+    git revert --no-edit -m "$RESOLVED_MAINLINE" "$FAULTY_COMMIT_SHA"
+  fi
 else
-  git revert --no-commit "$FAULTY_COMMIT_SHA"
+  if [ "$RESOLVED_MAINLINE" = "none" ]; then
+    git revert --no-commit "$FAULTY_COMMIT_SHA"
+  else
+    git revert --no-commit -m "$RESOLVED_MAINLINE" "$FAULTY_COMMIT_SHA"
+  fi
   git restore --source=HEAD --staged --worktree -- supabase/migrations
   test -z "$(git diff --cached --name-only -- supabase/migrations)"
   test -z "$(git diff --name-only -- supabase/migrations)"
@@ -244,6 +268,8 @@ else
   exit 2
 fi
 ```
+
+Before a merge revert, inspect `git show --no-patch --pretty=raw "$FAULTY_COMMIT_SHA"` and choose the parent whose tree should be treated as the retained mainline. GitHub pull-request merge commits normally use parent `1`, but the operator must verify the actual parent order rather than assume it. `scripts/revert-plan.mjs` resolves and validates the commit plus parent, proves the target belongs to the synchronized current `main` history, and has disposable-Git-history tests covering ordinary commits, both parents of a two-parent merge, missing/invalid mainlines, roots, octopus merges, and a disconnected commit. The same selected parent is used both to inventory migration changes and by `git revert -m`, so the migration guard cannot compare one parent while reverting against another. Root, octopus, and disconnected-history targets exit `5` for a separate reviewed plan. The explicit ordinary/merge command branches avoid empty-array expansion and remain compatible with the macOS system Bash 3.2 used by the documented shell procedure.
 
 The repository pins Supabase CLI `2.109.1`; `--no-install` makes this guard use that reviewed binary instead of resolving a moving latest version. The CLI's JSON flag is the global `--output-format json` option and therefore appears before `migration list`; the similarly named legacy `--output json` option renders a table and must not be substituted. An unexpected ledger envelope/row exits `4` and performs no revert. Exit `0` means the target had no applied migration and the whole-commit revert was committed. Exit `2` intentionally leaves only the non-migration revert staged on the named branch. For that path, confirm that the prior application behavior is compatible with the current forward schema. Abort the revert and keep the affected route contained if compatibility is uncertain. If database behavior must change, create a new migration with `npx --no-install supabase migration new <repair_name>`, edit it, verify it, and stage that exact new path. Never edit, remove, restore to an older version, or untrack an applied migration. Then commit a truthful repair:
 

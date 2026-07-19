@@ -40,6 +40,15 @@ describe("OpenAI environment validation", () => {
       "OPENAI_API_KEY",
     );
   });
+
+  it.each(["   ", "\t", " test-only-key", "test-only-key "])(
+    "rejects a blank or padded OpenAI key",
+    (key) => {
+      expect(() => parseOpenAIEnv({ OPENAI_API_KEY: key })).toThrow(
+        "OPENAI_API_KEY",
+      );
+    },
+  );
 });
 
 describe("demo reset environment validation", () => {
@@ -59,5 +68,20 @@ describe("demo reset environment validation", () => {
         DEMO_RESET_SECRET: "",
       }),
     ).toThrow("DEMO_RESET_SECRET");
+  });
+
+  it.each([
+    ["DEMO_PROJECT_SLUG", "   "],
+    ["DEMO_PROJECT_SLUG", " inordo-build-week-demo"],
+    ["DEMO_RESET_SECRET", "\t"],
+    ["DEMO_RESET_SECRET", "test-only-reset-value "],
+  ] as const)("rejects an invalid %s value", (name, value) => {
+    expect(() =>
+      parseDemoResetEnv({
+        DEMO_PROJECT_SLUG: "inordo-build-week-demo",
+        DEMO_RESET_SECRET: "test-only-reset-value",
+        [name]: value,
+      }),
+    ).toThrow(name);
   });
 });

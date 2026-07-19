@@ -12,6 +12,7 @@ import {
 } from "@/features/analysis/request-schemas";
 import type { ProjectAnalysisServiceResult } from "@/features/analysis/service";
 import { AuthorizationError } from "@/lib/auth/errors";
+import { readBoundedRequestBody } from "@/lib/http/read-bounded-request-body";
 
 const projectIdSchema = z.uuid({ error: "Project ID must be a valid UUID." });
 
@@ -159,34 +160,23 @@ export async function handleAnalyzeProjectPost({
     );
   }
 
-  const declaredLength = request.headers.get("content-length");
-  if (
-    declaredLength !== null &&
-    Number.isFinite(Number(declaredLength)) &&
-    Number(declaredLength) > maximumAnalysisRequestBytes
-  ) {
+  const bodyResult = await readBoundedRequestBody(
+    request,
+    maximumAnalysisRequestBytes,
+  );
+  if (!bodyResult.ok && bodyResult.reason === "payload_too_large") {
     return analysisErrorResponse(
       new AnalysisError("payload_too_large"),
       responseHeaders,
     );
   }
-
-  let rawBody: string;
-  try {
-    rawBody = await request.text();
-  } catch {
+  if (!bodyResult.ok) {
     return analysisErrorResponse(new AnalysisError("validation"), responseHeaders);
-  }
-  if (new TextEncoder().encode(rawBody).byteLength > maximumAnalysisRequestBytes) {
-    return analysisErrorResponse(
-      new AnalysisError("payload_too_large"),
-      responseHeaders,
-    );
   }
 
   let json: unknown;
   try {
-    json = JSON.parse(rawBody) as unknown;
+    json = JSON.parse(bodyResult.text) as unknown;
   } catch {
     return analysisErrorResponse(new AnalysisError("validation"), responseHeaders);
   }
