@@ -1,5 +1,15 @@
 # QA checklist
 
+## Approval reversibility copy repair (`deston/11-approval-reversibility-copy`)
+
+- [x] A test-first regression distinguishes conditionally undo-eligible field updates from nonreversible create-item and confirmation actions.
+- [x] Default and **Select all safe actions** behavior includes only pending `update_item` actions without a human-input requirement; nonreversible actions require explicit individual selection.
+- [x] Every action card states either **Undo may be available** or **Cannot be undone** and no longer uses the ambiguous per-action **Safe default** label.
+- [x] Final confirmation warns that selecting any nonreversible action makes the entire operation ineligible for undo and requires a separate reviewed forward recovery action.
+- [x] Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, production build, and zero-vulnerability production audit passed.
+- [x] Focused independent review found and then verified the fix for the original unsafe bulk-selection contradiction; the settled diff has no remaining review blocker.
+- [ ] PR CI, normal merge, exact merged-SHA verification, and reconciliation into final release evidence.
+
 ## Release-boundary hardening (`deston/10-release-boundary-hardening`)
 
 - [x] TDD regressions cover cumulative encoded request bytes across individually sub-limit chunks, missing/dishonest `Content-Length`, cancellation, multibyte UTF-8, remote plaintext and credential-bearing Supabase URLs, exact loopback development URLs, and disposable ordinary/merge/root/octopus/disconnected Git histories.

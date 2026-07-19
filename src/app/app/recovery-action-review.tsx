@@ -22,7 +22,9 @@ export function defaultSelectedActionIds(actions: RecoveryAction[]) {
   return actions
     .filter(
       (action) =>
-        action.state === "pending" && !action.requiresHumanInput,
+        action.state === "pending" &&
+        !action.requiresHumanInput &&
+        action.actionType === "update_item",
     )
     .sort((left, right) => left.ordinal - right.ordinal)
     .map((action) => action.id);
@@ -71,6 +73,10 @@ function confidenceLabel(confidence: number | null) {
 
 function humanize(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function actionMayBeUndoEligible(action: RecoveryAction) {
+  return action.actionType === "update_item";
 }
 
 function readResponseMessage(body: unknown, fallback: string) {
@@ -179,10 +185,21 @@ function ActionCard({
                   Needs human input
                 </span>
               ) : (
-                <span className="border border-green-700/30 bg-green-50 px-2 py-1 text-green-800">
-                  Safe default
+                <span className="border border-rule bg-paper px-2 py-1 text-muted">
+                  No extra input
                 </span>
               )}
+              <span
+                className={
+                  actionMayBeUndoEligible(action)
+                    ? "border border-rule bg-paper px-2 py-1 text-muted"
+                    : "border border-caution/40 bg-caution-soft px-2 py-1 text-[#7a3907]"
+                }
+              >
+                {actionMayBeUndoEligible(action)
+                  ? "Undo may be available"
+                  : "Cannot be undone"}
+              </span>
             </div>
           </div>
 
@@ -286,6 +303,9 @@ export function RecoveryActionReview({
     (action) =>
       action.requiresHumanInput && !humanResponses[action.id]?.trim(),
   );
+  const nonreversibleSelectedActions = selectedActions.filter(
+    (action) => !actionMayBeUndoEligible(action),
+  );
 
   function setChecked(action: RecoveryAction, checked: boolean) {
     setSelectedIds((current) => {
@@ -308,7 +328,7 @@ export function RecoveryActionReview({
   function selectAllSafe() {
     setSelectedIds(new Set(defaultSelectedActionIds(proposal.actions)));
     setSelectionNotice(
-      "All pending actions without a human-input requirement are selected. Human-input actions remain unselected.",
+      "All pending update actions without a human-input requirement are selected. Nonreversible and human-input actions remain unselected.",
     );
     setApplyError(null);
     setSuccess(null);
@@ -671,7 +691,12 @@ export function RecoveryActionReview({
           </ol>
           <div className="mt-5 flex gap-3 border-l-2 border-caution bg-caution-soft px-4 py-3 text-sm leading-6 text-ink">
             <AlertTriangle aria-hidden="true" className="mt-1 size-4 shrink-0 text-caution" />
-            <p>Project state and permissions are rechecked by the backend. A conflict applies nothing.</p>
+            <p>
+              Project state and permissions are rechecked by the backend. A
+              conflict applies nothing. {nonreversibleSelectedActions.length > 0
+                ? `The entire operation cannot be undone because ${nonreversibleSelectedActions.length} selected ${nonreversibleSelectedActions.length === 1 ? "action is" : "actions are"} nonreversible. Recovery requires a separate reviewed forward action.`
+                : "Undo remains conditional on every recorded after-state still matching."}
+            </p>
           </div>
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button

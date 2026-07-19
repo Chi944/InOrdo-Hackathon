@@ -156,6 +156,14 @@
 - Replaced the six authorized non-OpenAI Vercel Production values as sensitive entries without displaying them. Created the ignored Windows `.env.local` through a temporary Development-only CLI handoff, then removed every temporary cloud entry. The rebuilt local server returned public/login success, the exact signed-out app redirect, and the expected no-store `503 not_ready` state naming only the intentionally absent `OPENAI_API_KEY`.
 - This hardening remains branch implementation evidence until its PR passes CI, merges normally, and the exact merged SHA is inspected in Preview/production evidence. No OpenAI key, Auth credential, environment value, provider payload, or private transcript was displayed, logged, or committed; Claude cross-model review remains paused.
 
+## 2026-07-19 — Approval reversibility copy repair
+
+- A final release-gate audit found that the review UI labeled no-human-input actions as “Safe default” and bulk-selected nonreversible create-item actions without explaining that one such action makes the entire operation ineligible for undo.
+- Test-first regressions now keep default and bulk safe selection to pending field updates without a human-input requirement. Create-item and confirmation actions remain individually selectable, are visibly marked **Cannot be undone**, and cause the final dialog to require a separately reviewed forward recovery action.
+- An independent focused review identified the remaining bulk-selection contradiction; after the selection boundary was tightened, its re-review found no blocker and independently passed the focused Node 22 component suite.
+- The settled branch passed a fresh Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, the production build, and a zero-vulnerability production dependency audit. This automated evidence does not replace the still-pending authenticated production workflow.
+- No database migration, provider value, credential, deployment, or remote configuration changed during this repair.
+
 ## Primary `/feedback` evidence
 
 Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
