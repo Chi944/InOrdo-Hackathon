@@ -25,6 +25,16 @@
 
 The deployed Prompt 13 artifact remains the recorded production release; this is not evidence that live analysis is operational or that the newer hardening is serving production. The OpenAI key, operator Auth account, funded model request, authenticated production workflow, production redeploy, and final responsive/accessibility pass remain human-owned.
 
+## Approval reversibility copy repair (`deston/11-approval-reversibility-copy`)
+
+- [x] A test-first regression distinguishes conditionally undo-eligible field updates from nonreversible create-item and confirmation actions.
+- [x] Default and **Select all safe actions** behavior includes only pending `update_item` actions without a human-input requirement; nonreversible actions require explicit individual selection.
+- [x] Every action card states either **Undo may be available** or **Cannot be undone** and no longer uses the ambiguous per-action **Safe default** label.
+- [x] Final confirmation warns that selecting any nonreversible action makes the entire operation ineligible for undo and requires a separate reviewed forward recovery action.
+- [x] Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, production build, and zero-vulnerability production audit passed.
+- [x] Focused independent review found and then verified the fix for the original unsafe bulk-selection contradiction; the settled diff has no remaining review blocker.
+- [x] Commit `90ac845f90e0f6c0eb60e40eef958cc7baafe369` passed PR #12 CI and merged normally into `main` as `debe2be4a20dc0f8f75eb3e67d17cca118d868f0`; reconciliation into this final-evidence branch preserves the reviewed implementation and its original authorship.
+
 ## Release-boundary hardening (`deston/10-release-boundary-hardening`)
 
 - [x] TDD regressions cover cumulative encoded request bytes across individually sub-limit chunks, missing/dishonest `Content-Length`, cancellation, multibyte UTF-8, remote plaintext and credential-bearing Supabase URLs, exact loopback development URLs, and disposable ordinary/merge/root/octopus/disconnected Git histories.

@@ -144,7 +144,7 @@ Result: the implementation has explicit approval, authorization, transaction, au
 - [ ] Treat the 60-second reset limit and server configuration gate as P0 controls, not reauthentication or general abuse prevention. When reset is enabled, a compromised owner/admin session can request it; deployment session security, monitoring, alerts, and rapid route containment remain required.
 - [ ] Treat the service-role key as high impact despite narrow adapters. Rotate it and contain all privileged routes if exposure is suspected; never place a replacement value or private audit payload in Git, tickets, chat, screenshots, or command output.
 - [ ] An unexpected database exception rolls back the entire operation atomically and returns a generic error, but may roll back before a failed operation header can persist. Treat a route error with no terminal operation as an incident/reconciliation state; verify project state is unchanged and never fabricate audit history.
-- [ ] Confirm product copy clearly marks create-task, create-risk, and confirmation operations as nonreversible. Recovery for them requires a new reviewed forward action, not an implied undo.
+- [x] Product copy marks create-task, create-risk, and confirmation actions as nonreversible, removes the misleading per-action “Safe default” label, and warns that selecting any such action makes the entire operation ineligible for undo. Recovery requires a separate reviewed forward action, not an implied undo.
 
 The unchecked items remain release/demo gates. This review contains no secret value. It claims the exact Node, linked migration/type/lint/advisor, and rollback-wrapped SQL/RPC evidence recorded above; the authenticated HTTP/browser workflow remains unclaimed.
 

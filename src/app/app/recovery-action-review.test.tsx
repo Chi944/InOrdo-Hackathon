@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -101,11 +108,8 @@ afterEach(() => {
 });
 
 describe("recovery action selection", () => {
-  it("defaults to pending safe actions and always excludes human-input or non-pending actions", () => {
-    expect(defaultSelectedActionIds(actions)).toEqual([
-      actions[0].id,
-      actions[1].id,
-    ]);
+  it("defaults to pending undo-eligible actions and excludes nonreversible, human-input, or non-pending actions", () => {
+    expect(defaultSelectedActionIds(actions)).toEqual([actions[0].id]);
     expect(
       selectedActionsInOrder(actions, new Set([actions[2].id, actions[0].id])),
     ).toEqual([actions[0], actions[2]]);
@@ -124,7 +128,7 @@ describe("recovery action selection", () => {
     ).toBeChecked();
     expect(
       screen.getByRole("checkbox", { name: `Select ${actions[1].title}` }),
-    ).toBeChecked();
+    ).not.toBeChecked();
     expect(
       screen.getByRole("checkbox", { name: `Select ${actions[2].title}` }),
     ).not.toBeChecked();
@@ -132,6 +136,50 @@ describe("recovery action selection", () => {
       screen.getByRole("checkbox", { name: `Select ${actions[3].title}` }),
     ).toBeDisabled();
     expect(screen.getByText(/unchecked actions remain pending/i)).toBeVisible();
+  });
+
+  it("marks nonreversible actions and warns before applying them", async () => {
+    const user = userEvent.setup();
+    render(
+      <RecoveryActionReview
+        canApprove
+        onApplied={vi.fn()}
+        projectId={projectId}
+        proposal={proposal}
+      />,
+    );
+
+    const updateCard = screen
+      .getByRole("checkbox", { name: `Select ${actions[0].title}` })
+      .closest("article");
+    const createCard = screen
+      .getByRole("checkbox", { name: `Select ${actions[1].title}` })
+      .closest("article");
+    const confirmationCard = screen
+      .getByRole("checkbox", { name: `Select ${actions[2].title}` })
+      .closest("article");
+
+    expect(updateCard).not.toBeNull();
+    expect(createCard).not.toBeNull();
+    expect(confirmationCard).not.toBeNull();
+    expect(within(updateCard as HTMLElement).getByText("Undo may be available")).toBeVisible();
+    expect(within(createCard as HTMLElement).getByText("Cannot be undone")).toBeVisible();
+    expect(
+      within(confirmationCard as HTMLElement).getByText("Cannot be undone"),
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole("checkbox", { name: `Select ${actions[1].title}` }),
+    );
+    await user.click(screen.getByRole("button", { name: "Approve selected" }));
+
+    const dialog = screen.getByRole("dialog", {
+      name: /approve 2 selected actions/i,
+    });
+    expect(dialog).toHaveTextContent(
+      /entire operation cannot be undone because 1 selected action is nonreversible/i,
+    );
+    expect(dialog).toHaveTextContent(/separate reviewed forward action/i);
   });
 
   it("supports keyboard selection, leaves actions pending locally, and summarizes before apply", async () => {
@@ -168,11 +216,11 @@ describe("recovery action selection", () => {
     await user.click(screen.getByRole("button", { name: "Approve selected" }));
 
     const dialog = screen.getByRole("dialog", {
-      name: /approve 2 selected actions/i,
+      name: /approve 1 selected action/i,
     });
     expect(dialog).toBeVisible();
     expect(dialog).toHaveTextContent(actions[0].title);
-    expect(dialog).toHaveTextContent(actions[1].title);
+    expect(dialog).not.toHaveTextContent(actions[1].title);
     expect(dialog).not.toHaveTextContent(actions[2].title);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
@@ -203,9 +251,6 @@ describe("recovery action selection", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("checkbox", { name: `Select ${actions[1].title}` }),
-    );
     await user.click(
       screen.getByRole("checkbox", { name: `Select ${actions[2].title}` }),
     );
