@@ -160,6 +160,14 @@
 - Verified the public repository, default branch, README, MIT license, and deployed SHA through unauthenticated endpoints. A filename/count-only scan of the current tree and all 27 reachable commits found no credential-format match or unexpected tracked environment path, without printing candidate content.
 - After reconciling current `main`, reran the complete Node 22.23.1/npm 10.9.8 gate: clean install, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, optimized-build public/guard/health smoke, and final whitespace verification. A fresh public audit found `main` at `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`; a filename/count-only current-tree and reachable-history scan again found no credential-format match or unexpected tracked environment path.
 
+## 2026-07-19 — Prompt 13 evidence-integrity bridge
+
+- Added forward migration `20260719120000_preserve_analysis_provenance_and_supersede_stale_proposals`: one normalized current-generation analysis request remains the canonical provider-spend claim, while immutable `analysis_request_sources` retains every attributable source capture linked to that claim.
+- Exact replay retains the canonical claim and its source-link cardinality; distinct captures with the same normalized input remain append-only provenance rather than additional model claims. Rate-limited requests retain neither a claim nor orphan provenance.
+- Ready/partially approved proposals now supersede after any current-generation project item or dependency mutation. Historic live proposals were closed conservatively because no trustworthy context snapshot exists. Applied operations and history were not rewritten.
+- Local migration replay, database lint, rollback-wrapped `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql`, plus the focused `verify_prompt13_evidence_integrity.sql` verifier passed after correction. No linked/remote migration, provider call, browser, or production claim is made here.
+- The exact branch also passed Node 22.23.1/npm 10.9.8 lint, typecheck, 360 Vitest tests across 55 files, the production build, whitespace verification, generated-type comparison, and a clean local-public-schema migration diff.
+
 ## Codex work-package commit index
 
 The implementation entries above correspond to these Git commits. Merge commits are omitted except for the final reviewed release identity.

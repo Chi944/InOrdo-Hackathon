@@ -96,6 +96,12 @@ Before restoring analysis traffic, require all of the following:
 
 If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.
 
+## Prompt 13 evidence-integrity rollback
+
+`20260719120000_preserve_analysis_provenance_and_supersede_stale_proposals` is forward-only. Do not delete provenance links, collapse captures into a single source row, recreate historical live proposals, or edit an applied migration/ledger row.
+
+If the bridge or invalidation logic is suspect, contain the analyze and apply routes first. Record only safe IDs, generations, states, migration version, and timestamps. Preserve `analysis_requests` as the canonical provider-spend claim and `analysis_request_sources` as append-only provenance; a corrective migration must retain exact replay/cardinality and cross-revision linkage behavior. Keep superseded historic/live proposals closed and require fresh analysis rather than reopening them against changed project-record or graph state. Ship a narrowly reviewed forward migration, then rerun local migration replay, lint, the baseline SQL suites, and the focused evidence-integrity verifier before reopening writes.
+
 ## Prompt 9 operation rollback
 
 Prompt 9 introduces privileged apply, undo, history, and reset routes plus forward schema for canonical request fingerprints, ordered audit items, workflow generations, generation-scoped evidence, active-key retirement, and a private deterministic demo baseline. Its rollback objective is to stop new mutations, use audited compensation only when safe, and preserve every evidence/audit generation. It is never a request to erase an operation, decrement a version/generation, or rewrite shared Git/database history.
