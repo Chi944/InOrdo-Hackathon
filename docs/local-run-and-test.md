@@ -1,17 +1,19 @@
 # Local run and test guide
 
-This guide gives Deston on Windows and Andres on macOS the same repeatable local workflow. It uses the hosted InOrdo Supabase project and the manually linked Vercel project; Docker is not required unless someone intentionally starts a disposable local Supabase stack.
+This guide gives Deston on Windows and Andres on macOS repeatable, role-appropriate workflows. It uses the hosted InOrdo Supabase project and the manually linked Vercel project; Docker is not required unless someone intentionally starts a disposable local Supabase stack.
 
 ## Shared safety rules
 
 - Use Node.js 22.x. Confirm with `node --version` before installing dependencies.
 - Never commit, paste, screenshot, or send `.env.local`, passwords, API keys, cookies, service-role values, or reset secrets.
-- Each teammate should receive access to the Vercel and Supabase projects through the provider account controls. Share server-only values, when necessary, only through an approved secret manager with access logging; do not transfer `.env.local` through chat, email, Git, screenshots, or terminal output.
+- Grant only the provider access required for the assigned work. Deston owns privileged database, deployment, reset, and model configuration. Andres's normal interface QA does not require a service-role key, reset secret, OpenAI key, or Vercel Production-secret access.
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are browser-configured values. Every other configured name is server-only.
 - Until `OPENAI_API_KEY` is intentionally added, `/api/health` must return generic `503 not_ready`; this is expected and live analysis must remain unclaimed.
 - Use only the fictional Regional Climate Action Summit workspace and the operator-provisioned demo Auth account.
 
-Populate only these six non-OpenAI names for the current local fail-closed setup: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Leave `OPENAI_API_KEY` blank. A Vercel CLI-managed `VERCEL_OIDC_TOKEN`, if present, is also a secret: do not inspect, copy, document, or commit it.
+Deston's privileged local fail-closed setup uses these six non-OpenAI names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Leave `OPENAI_API_KEY` blank. Andres should prefer the deployed production application for authenticated interface QA. When local Auth/UI inspection is necessary, he needs only the two browser-safe `NEXT_PUBLIC_` values and his own operator-provisioned demo account; server-only fields remain blank.
+
+A Vercel CLI-managed `VERCEL_OIDC_TOKEN`, if present, is also a secret: do not inspect, copy, document, or commit it. If Andres is later assigned a specific privileged local operation, the project owner must approve the narrow access and deliver each required server value through the approved secret manager; never grant the full secret set merely for environment parity.
 
 ## Deston: Windows setup
 
@@ -70,12 +72,9 @@ git pull --ff-only origin main
 npm ci
 ```
 
-After Andres has been granted project access, link the same Vercel project and confirm the Production variable names/scopes. Sensitive Production entries are write-only through Vercel and `vercel env pull` cannot recover them:
+For routine interface work, Andres does not need to link Vercel or list Production variables. Prefer the deployed production URL for the final authenticated QA. For an optional local Auth/UI pass, create the ignored local file and populate only the two browser-safe Supabase names through an authorized project source:
 
 ```bash
-npx vercel login
-npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
-npx vercel env ls production
 if [ ! -e .env.local ]; then
   cp .env.example .env.local
 fi
@@ -83,11 +82,11 @@ git check-ignore -q .env.local
 git status --short
 ```
 
-Andres should populate the same six non-OpenAI names through a private editor from his authorized Supabase/provider access or an approved secret manager, leaving `OPENAI_API_KEY` blank until the funded live test is authorized. If provider access is denied, Deston should grant Andres the appropriate project role. Do not work around access control by sending the environment file or pasting a service-role/reset value into chat. Do not temporarily demote Production secrets into Preview or Development merely to make them pullable.
+Populate `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` only. Leave `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET` blank. Do not send Andres Deston's `.env.local`, service-role/reset values, or OpenAI credential, and do not temporarily demote Production secrets into Preview or Development merely to make them pullable.
 
 ## Confirm the hosted Supabase link
 
-This is read-only verification. It does not push or reset the database:
+This is Deston's read-only release verification. Andres should run it only if he is explicitly assigned database review and receives the corresponding provider role. It does not push or reset the database:
 
 ```bash
 npx --no-install supabase login
@@ -111,7 +110,7 @@ Open `http://localhost:3000`. Before OpenAI is configured, verify:
 - `/login` renders the email/password form;
 - signed-out `/app` redirects to `/login?next=%2Fapp`;
 - `/api/health` returns generic `503 not_ready`; and
-- the server log names only `OPENAI_API_KEY` as missing and never logs a value.
+- the server log never exposes a value. Deston's six-name setup should identify only `OPENAI_API_KEY` as missing; Andres's public-only setup may identify the intentionally absent server-only names from the fixed allowlist.
 
 Stop the development server with `Ctrl+C`.
 

@@ -180,7 +180,9 @@ The implementation entries above correspond to these Git commits. Merge commits 
 | Expired-claim repair | [`af808dd`](https://github.com/Chi944/InOrdo-Hackathon/commit/af808dd4a0677070f32259621c79f55799fa5603) |
 | Current production application release | [`d581b0a9`](https://github.com/Chi944/InOrdo-Hackathon/commit/d581b0a9d736bd12046a4314e15b359ec8fd8205) |
 | Release-boundary hardening | [`efff09c`](https://github.com/Chi944/InOrdo-Hackathon/commit/efff09c471d1336edf401085f8eaf5842189ab90) |
-| Current merged application `main` and Preview release | [`72a6fc5`](https://github.com/Chi944/InOrdo-Hackathon/commit/72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c) |
+| Hardening merge and Preview release | [`72a6fc5`](https://github.com/Chi944/InOrdo-Hackathon/commit/72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c) |
+| Approval reversibility copy repair | [`90ac845`](https://github.com/Chi944/InOrdo-Hackathon/commit/90ac845f90e0f6c0eb60e40eef958cc7baafe369) |
+| Current merged application `main` | [`debe2be4`](https://github.com/Chi944/InOrdo-Hackathon/commit/debe2be4a20dc0f8f75eb3e67d17cca118d868f0) |
 
 ## 2026-07-19 — Release-boundary hardening and local configuration repair
 
@@ -198,6 +200,17 @@ The implementation entries above correspond to these Git commits. Merge commits 
 - An independent focused review identified the remaining bulk-selection contradiction; after the selection boundary was tightened, its re-review found no blocker and independently passed the focused Node 22 component suite.
 - The settled branch passed a fresh Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, the production build, and a zero-vulnerability production dependency audit. This automated evidence does not replace the still-pending authenticated production workflow.
 - No database migration, provider value, credential, deployment, or remote configuration changed during this repair.
+
+## 2026-07-19 — Final release-gate reconciliation
+
+- PR #12 passed GitHub CI and merged normally as `debe2be4a20dc0f8f75eb3e67d17cca118d868f0`; the Prompt 14 branch then merged current `main` normally without rewriting the reviewed repair.
+- The Vercel project runtime default was aligned from Node `24.x` to the repository-required Node `22.x` through the supported project-setting API. Existing Production and Preview artifacts already reported Node `22.x`; no deployment, environment value, alias, or Git connection changed.
+- Rechecked the manual Vercel project with Git deployment disconnected, Production holding exactly the six non-OpenAI names, and Preview/Development holding none. The public production routes remain healthy in their intentionally fail-closed state while `OPENAI_API_KEY` is absent.
+- A fresh signed-out audit found the public repository's `main` at `debe2be4a20dc0f8f75eb3e67d17cca118d868f0`, README and MIT license returning `200`, production `/` and `/login` returning `200`, signed-out `/app` returning the exact bounded `307` login redirect, and health returning expected no-store `503`.
+- Rechecked the linked Supabase project as active and migration-aligned through `20260719113000`; the security advisor reports no finding and performance advice remains limited to expected unused-index information on the small synthetic dataset.
+- Corrected the macOS handoff to least privilege: Andres's normal interface QA uses the deployed application or only the two browser-safe Supabase values locally. Service-role, reset, OpenAI, and Vercel Production-secret access remain Deston-owned unless a specific privileged task is separately approved.
+- The exact reconciled branch passed fresh Node 22.23.1/npm 10.9.8 install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, zero production dependency vulnerabilities, and local-link/whitespace checks. The lockfile remained byte-identical, `.env.local` remained ignored, and filename/count-only scans found no unexpected tracked environment path or credential-format match in the working tree or all 34 reachable commits.
+- The Vercel Hobby eligibility decision, OpenAI key, demo Auth accounts, funded model call, authenticated production workflow, production responsive/accessibility pass, final public assets, team details, license attribution, and `/feedback` identifier remain human-owned gates.
 
 ## Primary `/feedback` evidence
 

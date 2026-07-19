@@ -12,13 +12,15 @@ This document records the factual release state produced by the final merged app
 | Immutable deployment | `inordo-hackathon-e9t278oun-chi944s-projects.vercel.app` |
 | Vercel deployment ID | `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` |
 | Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
-| Current merged application `main` SHA | `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` |
+| Current merged application `main` SHA | `debe2be4a20dc0f8f75eb3e67d17cca118d868f0` |
 | Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
+| Approval-copy safety merge | PR [#12](https://github.com/Chi944/InOrdo-Hackathon/pull/12), merged normally into `main` |
 | Exact-SHA Preview | `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD`; `inordo-hackathon-3w91bc8k0-chi944s-projects.vercel.app` |
-| Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` equal to the current merged SHA above, ref `main` |
+| Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
+| Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
 | Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; migrations aligned through `20260719113000` |
 
-Prompt 14 started as a documentation-only branch at the production SHA, then merged current `main` normally to reconcile the completed release-boundary hardening. The production and Preview identities remain separate: production still serves `d581b0a9...`; the newer `72a6fc5...` hardening is exact-SHA Preview evidence until Deston completes the explicit Vercel terms gate and production redeploy. Record the final documentation merge SHA externally after this draft PR merges.
+Prompt 14 started as a documentation-only branch at the production SHA, then merged current `main` normally to reconcile the completed release-boundary hardening and approval-copy repair. The production and Preview identities remain separate: production still serves `d581b0a9...`; Preview proves the `72a6fc5...` hardening; current `main` adds the reviewed approval-copy repair at `debe2be4...`. Neither newer SHA is production evidence until Deston completes the explicit Vercel terms gate and production redeploy. Record the final documentation merge SHA externally after this draft PR merges.
 
 ## Implemented feature evidence
 
@@ -71,6 +73,7 @@ The operation boundary is implemented in `src/features/operations/`, the apply/h
 - Selected actions and ordered audit records commit in one transaction or none do.
 - Undo never edits history. It appends one linked compensating operation only when the entire original operation is reversible field updates and every current version/after-state still matches.
 - Created task/risk and confirmation actions are intentionally nonreversible.
+- Default and bulk safe selection includes only pending field updates without required human input. Create-item and confirmation actions require explicit individual selection, are labeled nonreversible, and make the whole mixed operation ineligible for undo.
 - Reset requires owner/admin access, the exact configured synthetic project, explicit confirmation, rate/idempotency controls, and a server-held secret that is never supplied by the browser.
 - Reset advances workflow generation, restores the canonical 24-item/26-edge baseline, retires nonbaseline records, and preserves archived evidence and operations.
 
@@ -91,6 +94,8 @@ Linked Supabase evidence includes aligned local/remote migrations through `20260
 
 The current merged hardening SHA `72a6fc5...` separately passed a clean Node `22.23.1` gate: lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks. Its exact-SHA Preview inspection is recorded below; this does not turn it into production evidence.
 
+The approval-copy repair commit `90ac845...` passed a fresh Node `22.23.1` clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, focused independent re-review, and PR #12 CI before its normal merge as current `main` `debe2be4...`. This closes the product-copy security gate without claiming a credentialed browser run.
+
 Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck, 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build. After merging current `main`, Node `22.23.1` and npm `10.9.8` completed a fresh `npm ci`, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, and a zero-vulnerability production dependency audit. Final staged/unstaged whitespace checks are recorded in `docs/qa-checklist.md` immediately before the merge-resolution commit.
 
 ## Production smoke recorded 2026-07-19
@@ -103,7 +108,7 @@ Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck
 | Signed-out `/app` | `307` to `/login?next=%2Fapp`; no tenant data returned |
 | `/api/health` with intentionally absent `OPENAI_API_KEY` | Expected `503 not_ready`, `Cache-Control: no-store`, generic configuration-only body |
 
-The six non-OpenAI production variable names are configured and hosted Supabase Auth URLs include the production host and documented local/Preview redirects. Values are intentionally not recorded here. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
+The six non-OpenAI production variable names are configured and hosted Supabase Auth URLs include the production host and documented local/Preview redirects. Values are intentionally not recorded here. The Vercel project runtime default was aligned from Node `24.x` to the required Node `22.x`; the existing Production and Preview artifacts already reported Node `22.x`, so this project-setting correction did not redeploy or alter either artifact. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
 
 ## Hardening Preview smoke recorded 2026-07-19
 
@@ -121,7 +126,7 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 
 - No operator-provisioned demo Auth account has completed a production login/session/logout run.
 - No funded live GPT-5.6 request has been verified.
-- Production still serves the Prompt 13 SHA; release-boundary hardening requires Deston's explicit confirmation that current Vercel Hobby terms permit the demo before it is redeployed.
+- Production still serves the Prompt 13 SHA; release-boundary hardening and the approval-copy repair require Deston's explicit confirmation that current Vercel Hobby terms permit the demo before current `main` is redeployed.
 - The exact hardening Preview is protected by Vercel SSO and intentionally lacks Supabase configuration; neither state should be weakened merely to manufacture a public Preview claim.
 - The complete authenticated production evidence -> impact -> selective apply -> history -> undo -> reset journey is pending.
 - Viewer/nonmember/cross-project denial has linked and automated coverage but still needs the final deployed-browser check.

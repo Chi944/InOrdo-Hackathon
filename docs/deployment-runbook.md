@@ -83,7 +83,7 @@ npx vercel project add inordo-hackathon --scope chi944s-projects
 npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
 ```
 
-Run `project add` only when `project ls` confirms that `inordo-hackathon` does not already exist. If it exists, link the existing project instead. Confirm in Vercel Project Settings that no Git repository is connected and automatic Git deployments are disabled. `.vercel/` is local ignored state and must not be committed.
+Run `project add` only when `project ls` confirms that `inordo-hackathon` does not already exist. If it exists, link the existing project instead. Confirm in Vercel Project Settings that no Git repository is connected, automatic Git deployments are disabled, and the project Node.js Version is `22.x`, matching `package.json`. `.vercel/` is local ignored state and must not be committed.
 
 Vercel Hobby may reject a deployment associated with a commit authored by someone who is not allowed on the project. Deston still must not rewrite that author, manufacture a co-author, or amend/cherry-pick solely to change identity. Keep the original authored commits intact. Deploy through Deston's authenticated manual CLI from the accepted integration commit. If Vercel still rejects that exact commit, stop and resolve account/plan access under the current Vercel terms, or create a truthful Deston-authored release commit containing an actual reviewed release change and rerun every gate. Never create an empty attribution workaround.
 

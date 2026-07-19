@@ -22,8 +22,14 @@
 - [x] The reconciled optimized build returned `/` and `/login` `200`, signed-out `/app` `307` to `/login?next=%2Fapp`, and expected no-store `/api/health` `503`; its only readiness log named the intentionally absent `OPENAI_API_KEY`.
 - [x] A fresh unauthenticated audit found the GitHub repository public, public `main` at exact SHA `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, and README plus MIT license reachable with `200` responses.
 - [x] A current-tree/all-reachable-history filename-and-count-only scan found no credential-format match, no unexpected tracked environment path, and only the expected `.env.example`; no candidate content was printed.
+- [x] PR #12 passed CI and merged normally as current public `main` `debe2be4a20dc0f8f75eb3e67d17cca118d868f0`; this branch merged that exact `main` without rewriting the approval-copy repair. A fresh unauthenticated GitHub API/raw audit confirmed that SHA, the public repository/default branch, and `200` responses for README and MIT license.
+- [x] The Vercel project runtime default is now Node `22.x`, matching `package.json` and the already-recorded Node `22.x` Production/Preview artifacts. The supported project-setting update did not trigger a deployment or alter an environment value, alias, or Git connection.
+- [x] Supabase remains `ACTIVE_HEALTHY`, migration-aligned through `20260719113000`, with no security-advisor finding; expected small-dataset unused-index notices remain informational.
+- [x] The Windows/macOS handoff now keeps Andres on a least-privilege UI path: deployed QA or the two browser-safe Supabase values only, with service-role, reset, OpenAI, and Vercel Production-secret access remaining Deston-owned by default.
+- [x] On the exact final reconciliation, Node 22.23.1/npm 10.9.8 completed fresh `npm ci`, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, and a zero-vulnerability production dependency audit.
+- [x] Final lockfile/ignore/credential-boundary checks found the lockfile byte-identical to `HEAD`, `.env.local` ignored, zero unexpected tracked environment paths, and zero credential-format file matches in the working tree or all 34 reachable commits; no candidate content was printed.
 
-The deployed Prompt 13 artifact remains the recorded production release; this is not evidence that live analysis is operational or that the newer hardening is serving production. The OpenAI key, operator Auth account, funded model request, authenticated production workflow, production redeploy, and final responsive/accessibility pass remain human-owned.
+The deployed Prompt 13 artifact remains the recorded production release; this is not evidence that live analysis is operational or that current `main` is serving production. The OpenAI key, operator Auth account, funded model request, authenticated production workflow, production redeploy, and final responsive/accessibility pass remain human-owned.
 
 ## Approval reversibility copy repair (`deston/11-approval-reversibility-copy`)
 
