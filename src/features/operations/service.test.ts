@@ -53,6 +53,44 @@ function dependencies() {
 }
 
 describe("project operations service", () => {
+  it.each([
+    [
+      "apply",
+      (service: ReturnType<typeof createProjectOperationsService>) =>
+        service.applyProposal(projectId, proposalId, {
+          selectedActionIds: [actionId],
+          humanInputs: [],
+          idempotencyKey: "viewer_apply_20260721",
+        }),
+    ],
+    [
+      "undo",
+      (service: ReturnType<typeof createProjectOperationsService>) =>
+        service.undoOperation(projectId, operationId, {
+          idempotencyKey: "viewer_undo_20260721",
+        }),
+    ],
+    [
+      "reset",
+      (service: ReturnType<typeof createProjectOperationsService>) =>
+        service.resetDemo(projectId, {
+          confirmed: true,
+          idempotencyKey: "viewer_reset_20260721",
+        }),
+    ],
+  ])("denies a viewer %s request before initializing or calling the executor", async (_label, invoke) => {
+    const deps = dependencies();
+    deps.authorize.mockRejectedValue(new Error("viewer mutation denied"));
+    const service = createProjectOperationsService(deps);
+
+    await expect(invoke(service)).rejects.toThrow("viewer mutation denied");
+    expect(deps.getExecutor).not.toHaveBeenCalled();
+    expect(deps.getResetConfiguration).not.toHaveBeenCalled();
+    expect(deps.executor.applyProposal).not.toHaveBeenCalled();
+    expect(deps.executor.undoOperation).not.toHaveBeenCalled();
+    expect(deps.executor.resetDemo).not.toHaveBeenCalled();
+  });
+
   it("authorizes before initializing the privileged executor", async () => {
     const deps = dependencies();
     deps.authorize.mockRejectedValueOnce(new Error("authorization stopped"));

@@ -39,6 +39,39 @@ beforeEach(() => {
 });
 
 describe("ProjectItemEditor", () => {
+  it("renders no editor controls or server-action path for a read-only viewer", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectItemEditor
+        canEdit={false}
+        item={{
+          id: "3e14b4a4-421d-4d6d-8a7e-01d5a22e3002",
+          itemKey: "TASK-24",
+          itemType: "task",
+          title: "Confirm keynote speakers",
+          description: "Reconfirm availability.",
+          status: "blocked",
+          priority: "high",
+          ownerId: null,
+          startDate: "2026-07-01",
+          dueDate: "2026-07-18",
+          eventDate: null,
+          version: 7,
+        }}
+        memberOptions={[]}
+        projectId="8d2baf13-b687-4987-83a0-0b1294b0f001"
+        workflowGeneration={4}
+      />,
+    );
+
+    const notice = screen.getByText(/Viewer access is read-only/i);
+    expect(screen.queryByRole("button", { name: "Edit item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Edit TASK-24/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    await user.click(notice);
+    expect(actionMocks.updateProjectItemAction).not.toHaveBeenCalled();
+  });
+
   it("submits generation-fenced edits and rotates the key after a stale conflict", async () => {
     const user = userEvent.setup();
     render(

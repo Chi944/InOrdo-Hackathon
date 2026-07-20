@@ -15,7 +15,10 @@ afterEach(() => {
 });
 
 describe("demo reset control", () => {
-  it("keeps reset unavailable to a read-only viewer", () => {
+  it("keeps reset unavailable to a read-only viewer without sending a request", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
     render(
       <DemoResetControl
         canReset={false}
@@ -30,6 +33,10 @@ describe("demo reset control", () => {
     expect(
       screen.getByText(/only a workspace owner or admin/i),
     ).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: "Reset demo workspace" }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("requires confirmation and sends the strict reset request once", async () => {

@@ -233,7 +233,8 @@ describe("impact workflow undo", () => {
     }
   });
 
-  it("combines viewer role and capability without making an analysis request", () => {
+  it("keeps viewer analysis and undo controls disabled without making a request", async () => {
+    const user = userEvent.setup();
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const { container } = render(
@@ -247,7 +248,18 @@ describe("impact workflow undo", () => {
     );
 
     expect(screen.getByText(/Read-only judge access/i)).toBeVisible();
+    expect(screen.getByLabelText("Source title")).toBeDisabled();
+    expect(screen.getByLabelText("Source type")).toBeDisabled();
+    expect(screen.getByLabelText("Author label")).toBeDisabled();
+    expect(screen.getByLabelText("Occurred at (optional)")).toBeDisabled();
+    expect(screen.getByLabelText("Source text")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Analyze change" })).toBeDisabled();
+    const undo = screen.getByRole("button", {
+      name: `Undo operation ${operationId}`,
+    });
+    expect(undo).toBeVisible();
+    expect(undo).toBeDisabled();
+    await user.click(undo);
     fireEvent.submit(container.querySelector("form") as HTMLFormElement);
     expect(fetchMock).not.toHaveBeenCalled();
   });

@@ -1165,13 +1165,173 @@ begin
 end;
 $$;
 
--- viewer_analysis_denied
+-- Full viewer denial matrix. The snapshot helper is transaction-local and
+-- security-definer so it can include the private recording-grant count while
+-- each denial executes under the same roles and claims as its server contract.
+create function pg_temp.viewer_denial_state()
+returns jsonb
+language sql
+security definer
+set search_path = ''
+as $$
+  select pg_catalog.jsonb_build_object(
+    'item_count', (select pg_catalog.count(*) from public.project_items),
+    'dependency_count',
+      (select pg_catalog.count(*) from public.item_dependencies),
+    'proposal_count', (select pg_catalog.count(*) from public.action_proposals),
+    'operation_count', (select pg_catalog.count(*) from public.operation_logs),
+    'project_generation', (
+      select project.workflow_generation
+      from public.projects as project
+      where project.id = '20000000-0000-4000-8000-000000000001'::uuid
+    ),
+    'source_count', (select pg_catalog.count(*) from public.source_documents),
+    'request_count', (select pg_catalog.count(*) from public.analysis_requests),
+    'recording_grant_count',
+      (select pg_catalog.count(*) from private.analysis_recording_grants)
+  );
+$$;
+
+create function pg_temp.assert_viewer_denial_state(
+  p_expected jsonb,
+  p_case_name text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actual jsonb := pg_temp.viewer_denial_state();
+begin
+  if actual is distinct from p_expected then
+    raise exception '% changed protected state: expected %, got %',
+      p_case_name, p_expected, actual;
+  end if;
+end;
+$$;
+
+select pg_catalog.set_config(
+  'inordo.viewer_denial_state', pg_temp.viewer_denial_state()::text, true
+);
+
+-- Native project-record RPCs execute with the real viewer Auth claims.
+set local role authenticated;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-000000000108',
+  true
+);
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000108","role":"authenticated","is_anonymous":false}',
+  true
+);
+do $$
+declare
+  baseline constant jsonb := pg_catalog.current_setting(
+    'inordo.viewer_denial_state'
+  )::jsonb;
+begin
+  begin
+    perform public.mutate_project_item_create(
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      (select workflow_generation from public.projects
+       where id = '20000000-0000-4000-8000-000000000001'::uuid),
+      'viewer-denial-item-create',
+      pg_catalog.jsonb_build_object(
+        'item_key', 'TST-98', 'item_type', 'task', 'title', 'Denied',
+        'description', null, 'status', 'not_started', 'priority', 'medium',
+        'owner_id', null, 'start_date', null, 'due_date', null,
+        'event_date', null
+      )
+    );
+    raise exception 'viewer item create unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'project mutation authorization failed' then
+      raise exception 'viewer item create returned unexpected error: %', sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'mutate_project_item_create'
+  );
+
+  begin
+    perform public.mutate_project_item_update(
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      '30000000-0000-4000-8000-000000000001'::uuid,
+      1,
+      (select workflow_generation from public.projects
+       where id = '20000000-0000-4000-8000-000000000001'::uuid),
+      'viewer-denial-item-update',
+      '{"title":"Denied"}'::jsonb
+    );
+    raise exception 'viewer item update unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'project mutation authorization failed' then
+      raise exception 'viewer item update returned unexpected error: %', sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'mutate_project_item_update'
+  );
+
+  begin
+    perform public.mutate_project_dependency_create(
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      (select workflow_generation from public.projects
+       where id = '20000000-0000-4000-8000-000000000001'::uuid),
+      'viewer-denial-dependency-create',
+      pg_catalog.jsonb_build_object(
+        'from_item_id', '30000000-0000-4000-8000-000000000002',
+        'to_item_id', '30000000-0000-4000-8000-000000000001',
+        'relationship', 'requires', 'rationale', null
+      )
+    );
+    raise exception 'viewer dependency create unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'project mutation authorization failed' then
+      raise exception 'viewer dependency create returned unexpected error: %',
+        sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'mutate_project_dependency_create'
+  );
+
+  begin
+    perform public.mutate_project_dependency_remove(
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      '40000000-0000-4000-8000-000000000001'::uuid,
+      (select workflow_generation from public.projects
+       where id = '20000000-0000-4000-8000-000000000001'::uuid),
+      'viewer-denial-dependency-remove'
+    );
+    raise exception 'viewer dependency remove unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'project mutation authorization failed' then
+      raise exception 'viewer dependency remove returned unexpected error: %',
+        sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'mutate_project_dependency_remove'
+  );
+end;
+$$;
+reset role;
+
+-- Server-only wrappers authenticate as service_role, then narrow to the real
+-- viewer fixture before executing their internal authorization checks.
 set local role service_role;
 select pg_catalog.set_config(
   'request.jwt.claims', '{"role":"service_role"}', true
 );
 do $$
 declare
+  baseline constant jsonb := pg_catalog.current_setting(
+    'inordo.viewer_denial_state'
+  )::jsonb;
   raw_text constant text := 'Viewer analysis policy verification.';
 begin
   begin
@@ -1184,10 +1344,70 @@ begin
       null, null,
       'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
     );
-    raise exception 'viewer_analysis_denied';
-  exception
-    when insufficient_privilege then null;
+    raise exception 'viewer analysis unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'project not found or access denied' then
+      raise exception 'viewer analysis returned unexpected error: %', sqlerrm;
+    end if;
   end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'begin_project_analysis_with_policy'
+  );
+
+  begin
+    perform public.apply_project_proposal(
+      '00000000-0000-4000-8000-000000000108'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      '91000000-0000-4000-8000-000000000004'::uuid,
+      array['91000000-0000-4000-8000-000000000005'::uuid],
+      '[]'::jsonb,
+      'viewer-denial-proposal-apply'
+    );
+    raise exception 'viewer proposal apply unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'operation authorization failed' then
+      raise exception 'viewer proposal apply returned unexpected error: %',
+        sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'apply_project_proposal'
+  );
+
+  begin
+    perform public.undo_project_operation(
+      '00000000-0000-4000-8000-000000000108'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      '92000000-0000-4000-8000-000000000001'::uuid,
+      'viewer-denial-operation-undo'
+    );
+    raise exception 'viewer operation undo unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'operation authorization failed' then
+      raise exception 'viewer operation undo returned unexpected error: %',
+        sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'undo_project_operation'
+  );
+
+  begin
+    perform public.reset_demo_project(
+      '00000000-0000-4000-8000-000000000108'::uuid,
+      '20000000-0000-4000-8000-000000000001'::uuid,
+      'regional-climate-action-summit-2026',
+      'viewer-denial-demo-reset'
+    );
+    raise exception 'viewer demo reset unexpectedly succeeded';
+  exception when sqlstate '42501' then
+    if sqlerrm <> 'demo reset authorization failed' then
+      raise exception 'viewer demo reset returned unexpected error: %', sqlerrm;
+    end if;
+  end;
+  perform pg_temp.assert_viewer_denial_state(
+    baseline, 'reset_demo_project'
+  );
 end;
 $$;
 reset role;

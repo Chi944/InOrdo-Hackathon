@@ -111,6 +111,74 @@ function operations(
 }
 
 describe("project record operations", () => {
+  it.each([
+    [
+      "create item",
+      (subject: ReturnType<typeof createProjectRecordOperations>) =>
+        subject.createItem({
+          ...mutationGuard,
+          projectId,
+          itemKey: "OPS-13",
+          itemType: "task",
+          title: "Prepare invitations",
+        }),
+    ],
+    [
+      "update item",
+      (subject: ReturnType<typeof createProjectRecordOperations>) =>
+        subject.updateItem({
+          ...mutationGuard,
+          projectId,
+          itemId,
+          expectedVersion: 2,
+          title: "Updated title",
+        }),
+    ],
+    [
+      "create dependency",
+      (subject: ReturnType<typeof createProjectRecordOperations>) =>
+        subject.createDependency({
+          ...mutationGuard,
+          projectId,
+          fromItemId: itemId,
+          toItemId: upstreamId,
+          relationship: "requires",
+        }),
+    ],
+    [
+      "remove dependency",
+      (subject: ReturnType<typeof createProjectRecordOperations>) =>
+        subject.removeDependency({
+          ...mutationGuard,
+          projectId,
+          dependencyId,
+        }),
+    ],
+  ])("denies a viewer %s before initializing or calling persistence", async (_label, invoke) => {
+    const store = makeStore();
+    const getStore = vi.fn(() => store);
+    const authorize = vi.fn<ProjectRecordAuthorizer>(async () => {
+      throw new Error("viewer mutation denied");
+    });
+    const subject = createProjectRecordOperations({
+      client: {} as ServerSupabaseClient,
+      getStore,
+      authorize,
+    });
+
+    await expect(invoke(subject)).rejects.toThrow("viewer mutation denied");
+    expect(authorize).toHaveBeenCalledWith(
+      expect.anything(),
+      projectId,
+      ["owner", "admin", "member"],
+    );
+    expect(getStore).not.toHaveBeenCalled();
+    expect(store.createItem).not.toHaveBeenCalled();
+    expect(store.updateItem).not.toHaveBeenCalled();
+    expect(store.createDependency).not.toHaveBeenCalled();
+    expect(store.removeDependency).not.toHaveBeenCalled();
+  });
+
   it("authorizes list filters with read access before querying", async () => {
     const store = makeStore();
     const authorize = makeAuthorizer();
