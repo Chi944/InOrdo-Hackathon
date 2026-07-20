@@ -15,12 +15,12 @@
 
 </div>
 
-InOrdo gives a team one reviewable path from new evidence to a safe project response. It preserves the source, uses GPT-5.6 for bounded interpretation and drafting, computes dependency reach in deterministic TypeScript, and requires an authorized person to approve each internal action. Applied operations are attributable and reversible only when the recorded contract says they are.
+InOrdo gives a team one reviewable path from new evidence to a safe project response. It preserves the source, uses a bounded server-side model route for interpretation and drafting, computes dependency reach in deterministic TypeScript, and requires an authorized person to approve each internal action. Applied operations are attributable and reversible only when the recorded contract says they are.
 
 > [!IMPORTANT]
 > **The canonical deployment is [inordo.vercel.app](https://inordo.vercel.app).** Vercel project `chi944s-projects/inordo` publicly serves reviewed `main` commit [`dad6b33e8fe99ae134f6949a4c46e8311352691d`](https://github.com/Chi944/InOrdo-Hackathon/commit/dad6b33e8fe99ae134f6949a4c46e8311352691d) through production deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA`. Vercel Authentication remains enabled for Preview deployments only.
 >
-> All seven configuration names are present locally and in Vercel Production, Supabase Auth uses the canonical URL, and the workspace has passed authenticated record, dependency, rollback, and reset smoke tests. Contract migration `20260720190000` is applied and verifies that legacy direct writes are denied while all four guarded RPCs remain available. One bounded production analysis reached the provider boundary and failed closed with `model_unavailable` because the OpenAI organization has no credits. This repository therefore does **not** claim a successful GPT-5.6 result, proposal apply, or undo. See [Release status](#release-status) for the remaining gates.
+> The recorded public Production artifact still serves reviewed `main` SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`. Its original seven-name configuration, Supabase Auth URL, authenticated record/dependency/reset smoke, and contracted mutation RPCs are recorded evidence. One bounded production analysis reached the provider boundary and failed closed with `model_unavailable` because the OpenAI organization had no credits. This repository therefore does **not** claim a successful GPT-5.6 result, proposal apply, or undo. The current branch adds a fail-closed provider policy and judge experience that are not Production evidence until the release plan is completed.
 
 ## Product interface
 
@@ -70,10 +70,10 @@ InOrdo keeps those responsibilities visible and separate:
 ```mermaid
 flowchart LR
     E["Unstructured update"] --> S["Immutable evidence"]
-    S --> X["GPT-5.6 extraction"]
+    S --> X["Bounded model extraction"]
     X --> V["Strict schema and evidence validation"]
     V --> G["Deterministic graph traversal"]
-    G --> D["GPT-5.6 recovery draft"]
+    G --> D["Bounded recovery draft"]
     D --> H["Human selective approval"]
     H --> O["Atomic allowlisted operation"]
     O --> A["Actor-attributed history"]
@@ -87,7 +87,7 @@ flowchart LR
     class H human;
 ```
 
-GPT-5.6 interprets bounded context and drafts options. It has no tools, never traverses the graph, never authorizes a user, and never mutates data. Application and database code own canonical state, authorization, reachability, approval, idempotency, transactions, audit history, undo, and reset.
+The reviewed provider policy supports an exceptional one-use GPT-5.6 recording route, a separately capped Vercel AI Gateway route using the open-weight GPT-OSS model, or a disabled state. A model has no tools, never traverses the graph, never authorizes a user, and never mutates data. Application and database code own canonical state, authorization, reachability, approval, idempotency, transactions, audit history, undo, and reset.
 
 ## What is implemented
 
@@ -97,7 +97,7 @@ The P0 repository includes:
 - native tasks, milestones, decisions, events, risks, and artifacts;
 - item, decision, risk, and dependency views, including item detail and editing;
 - explicit directed dependencies and deterministic direct/downstream impact paths;
-- immutable source intake and server-only two-stage GPT-5.6 integration;
+- immutable source intake and a mode-aware, server-only two-stage model boundary;
 - persisted proposals with one to eight independently reviewable recovery actions;
 - allowlisted, selectively approved internal operations with ordered history;
 - compensating undo for eligible whole field-update operations;
@@ -106,6 +106,15 @@ The P0 repository includes:
 
 This is a Build Week P0, not a production-readiness claim. Live-service and staged-release gaps are listed under [Release status](#release-status) and [Limitations and non-goals](#limitations-and-non-goals).
 
+### Access, input, and provider scope
+
+- **Available evidence input:** typed or pasted project updates, manual notes, meeting minutes, and meeting summaries within the existing text limit.
+- **Not implemented:** file upload, CSV import, URL fetching, voice, email, Slack, Teams, Google Drive, and other connectors. The interface exposes no fake upload or connector control.
+- **Project scope:** the synthetic summit workspace is available. Ordinary project creation, invitations, switching, and provisioning are not implemented; `/app/projects/ordinary` is an informational preview only.
+- **Judge scope:** the dedicated judge account is `viewer` and read-only. It may navigate and inspect saved synthetic records, evidence, paths, proposals, and history, but cannot analyze or mutate data.
+- **Fallback scope:** the optional fallback is open-weight GPT-OSS through a dedicated, capped Vercel AI Gateway. A quota can be exhausted and Gateway service is not guaranteed to remain free forever.
+- **Billing boundary:** a user's ChatGPT subscription cannot authenticate or fund API calls made by this external application. Provider credentials and billing remain deployment/operator responsibilities.
+
 ## Quick start
 
 ### Prerequisites
@@ -113,7 +122,7 @@ This is a Build Week P0, not a production-readiness claim. Live-service and stag
 - Node.js **22.x** and npm.
 - A Supabase project, or Docker Desktop/a compatible container runtime for local Supabase.
 - An operator-created Supabase Auth user mapped to the synthetic workspace for protected-route testing.
-- A funded OpenAI key with access to the configured model only when performing an approved live analysis.
+- A dedicated provider credential only for an approved live-analysis mode: an exact one-use OpenAI recording grant or a separately capped Gateway fallback. Analysis may remain disabled.
 
 ### Install and run
 
@@ -127,25 +136,28 @@ npm run dev
 
 On Windows PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`. Configure the names described below, restart the development server after changing them, then open [http://localhost:3000](http://localhost:3000).
 
-The public landing page can render without private credentials. Protected data requires valid Supabase configuration and a provisioned account; live analysis additionally requires `OPENAI_API_KEY`. Keep `.env.local` ignored, and never paste its values into commands, issues, screenshots, logs, or commits.
+The public landing page can render without private credentials. Protected data requires valid Supabase configuration and a provisioned account. Analysis is disabled unless the strict server policy selects an authorized provider route; the presence of a credential alone is not authorization. Keep `.env.local` ignored, and never paste its values into commands, issues, screenshots, logs, or commits.
 
 For the complete Windows/macOS setup, least-privilege frontend setup, health checks, and authenticated review steps, use [`docs/local-run-and-test.md`](docs/local-run-and-test.md). Do not casually push a hosted database from the quick-start flow; hosted migrations use the exact approval gates in the [deployment runbook](docs/deployment-runbook.md).
 
 ## Configuration
 
-All seven names belong in local `.env.local` and in the appropriate Vercel environment when that capability is needed. Values never belong in this README.
+Configuration names belong in local `.env.local` and the appropriate Vercel environment only when that capability is needed. Values never belong in this README.
 
 | Variable | Exposure | Purpose and rules |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser-safe | Supabase project URL. Vercel embeds `NEXT_PUBLIC_*` values into the client build. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-safe | Anonymous key used with the signed-in session and RLS; it is not a service-role credential. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Narrow privileged persistence after request-scoped user authorization. Never import it into a Client Component. |
-| `OPENAI_API_KEY` | Server only | OpenAI Responses API authentication. It is configured through ignored/provider secret stores and is never exposed to client code or documentation. |
-| `OPENAI_MODEL` | Server only | Model name. The application defaults to `gpt-5.6-luna` only when this variable is omitted; an explicit blank value is invalid. |
+| `OPENAI_API_KEY` | Recording only, server only | Enables only an approved exact recording grant. Remove it immediately after the recording attempt. |
+| `OPENAI_MODEL` | Recording only, server only | Must be exactly `gpt-5.6-luna`; recording never falls back. |
 | `DEMO_PROJECT_SLUG` | Server only | Selects the exact checked-in synthetic project for workspace lookup and protected reset. |
 | `DEMO_RESET_SECRET` | Server only | Server-held reset guard; it is never supplied by browser code. |
+| `ANALYSIS_MODE` | Server only | Exactly `disabled`, `recording`, or `auto`. Absent or invalid values fail closed to disabled. |
+| `AI_GATEWAY_API_KEY` | Auto only, server only | Dedicated Gateway key with a nonrenewing hard quota and automatic top-up disabled. |
+| `AI_GATEWAY_MODEL` | Auto only, server only | Must be exactly `openai/gpt-oss-20b`. |
 
-Only the two `NEXT_PUBLIC_` variables may enter the browser bundle. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET` remain server-side. The application validates names and readiness without printing values.
+Only the two `NEXT_PUBLIC_` variables may enter the browser bundle. Every other configuration name remains server-side. The application validates names and readiness without printing values, and it constructs no provider client until authorization plus the database claim select an exact route.
 
 ## Local development versus Vercel
 
@@ -173,7 +185,7 @@ The Vercel project uses Node.js 22.x and is deployed manually; it is not connect
 | Web | Next.js 16 App Router, React 19, TypeScript, React Server Components |
 | Interface | Tailwind CSS 4, Lucide icons |
 | Data and identity | Supabase Postgres, Auth, RLS, Supabase JS/SSR |
-| Model boundary | OpenAI Responses API, GPT-5.6, OpenAI SDK |
+| Model boundary | One-use GPT-5.6 recording or capped Vercel AI Gateway GPT-OSS, OpenAI SDK-compatible server adapters |
 | Validation | Zod plus canonical-state postvalidation |
 | Quality | Vitest, Testing Library, Playwright, ESLint, TypeScript, SQL assertion suites |
 | Toolchain | Node.js 22, npm |
@@ -202,6 +214,8 @@ The server performs two bounded logical model calls:
 2. **Recovery drafting** receives the validated change plus application-computed impact paths and returns **one to eight** inert recovery actions and annotations.
 
 Both calls use strict Zod-backed structured output, canonical-state postvalidation, evidence-span checks, no tools, `store: false`, a 30-second timeout per call, and no automatic retries. IDs, fields, values, versions, dates, owners, and impact coverage are checked before derived data can persist. OpenAI is never called from a Client Component.
+
+`recording` mode routes only an exact owner-issued, one-use actor/project/source grant to `gpt-5.6-luna`. `auto` mode routes only to `openai/gpt-oss-20b` through a dedicated capped Gateway key and never consumes the OpenAI recording key. `disabled`, invalid configuration, viewer access, exhausted quota, duplicates, and unauthorized requests create no provider call. A provider failure may preserve immutable evidence plus a failed claim, but it creates no proposal or project mutation.
 
 An analysis claim has a fixed, nonrenewable three-minute lease. An active exact duplicate returns `202` with `Retry-After`; replay after expiry terminalizes the same claim instead of spending on a second model attempt. Idempotent completion accepts one owner of the claim, and late provider results plus their derived writes are rejected atomically.
 
@@ -320,13 +334,17 @@ The demo source moves the summit from **12 September 2026** to **26 September 20
 6. confirm only the chosen actions, then inspect actor-attributed history; and
 7. undo an eligible whole field-update operation or run the protected named-demo reset.
 
-The protected workspace also exposes `/app/items`, item detail, `/app/decisions`, `/app/risks`, and `/app/dependencies`. Follow the exact source, expected path, presenter notes, and stop conditions in [`docs/demo-scenario.md`](docs/demo-scenario.md). Account provisioning stays out of source control and is described in [`docs/demo-user-setup.md`](docs/demo-user-setup.md).
+The protected workspace also exposes `/app/projects`, `/app/items`, item detail, `/app/decisions`, `/app/risks`, and `/app/dependencies`. Follow the exact source, expected path, presenter notes, and stop conditions in [`docs/demo-scenario.md`](docs/demo-scenario.md). Ordinary-project provisioning is not implemented; its route is informational. Account provisioning stays out of source control and is described in [`docs/demo-user-setup.md`](docs/demo-user-setup.md).
 
 ## Limitations and non-goals
 
 | Limitation | Practical effect |
 | --- | --- |
 | The OpenAI organization is unfunded. | The key and server path are configured, but the single production attempt failed closed; no successful GPT-5.6 result may be claimed yet. |
+| GPT-OSS fallback has a real cost boundary. | It uses a dedicated capped Vercel AI Gateway key; the quota may be exhausted and service is not guaranteed to remain free forever. |
+| Ordinary workspaces are informational only. | Project creation, invitations, switching, and provisioning are not implemented in this Build Week release. |
+| Judge access is intentionally read-only. | The viewer may inspect the synthetic workspace but cannot analyze, create, edit, apply, undo, reset, remove, or delete. |
+| Evidence input is text-only. | Typed/pasted updates, manual notes, meeting minutes, and summaries are available; files, CSV, URLs, voice, email, and connectors are not. |
 | Authenticated production QA is partial. | Native records, dependencies, rollback, and reset are proven; the funded analysis, proposal apply, history, and undo journey is not. |
 | Supabase leaked-password screening is unavailable on the current Free plan. | Keep the synthetic demo password unique, generated, out of source control, and rotate it if exposure is suspected. |
 | Undo is intentionally narrow. | Only an entirely reversible field-update operation with matching current after-state can be compensated. |
@@ -352,7 +370,8 @@ The current priorities and scale follow-ups live in [`docs/backlog.md`](docs/bac
 | [Product brief](docs/product-brief.md) | Purpose, P0 scope, actors, and acceptance principles. |
 | [Architecture](docs/architecture.md) | Trust boundaries, schemas, graph semantics, model/data contracts, and invariants. |
 | [Local run and test](docs/local-run-and-test.md) | Safe environment setup, local/hosted modes, and role-specific verification. |
-| [Demo user setup](docs/demo-user-setup.md) | Provisioning an Auth user without committing credentials. |
+| [Demo user setup](docs/demo-user-setup.md) | Provisioning separated owner/operator/judge Auth identities without committing credentials. |
+| [Devpost judge handoff](docs/devpost-handoff.md) | Read-only test path, mutually exclusive result copy, private credential rules, and account retirement. |
 | [Demo scenario](docs/demo-scenario.md) | Fictional source, expected paths, presenter flow, and stop conditions. |
 | [Security review](docs/security-review.md) | Threat checklist, completed evidence, and remaining live checks. |
 | [QA checklist](docs/qa-checklist.md) | Automated, SQL, browser, accessibility, and production gates. |
@@ -380,7 +399,7 @@ Codex supported scoped implementation and review across the repository foundatio
 | Track | OpenAI Build Week — **Work and Productivity** |
 | Repository | [github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon) |
 | Production application | [inordo.vercel.app](https://inordo.vercel.app) — public deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA`, SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`; Preview deployments remain protected |
-| Demo access | `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` — supply out of band; never commit a password |
+| Demo access | Follow the non-secret [judge handoff](docs/devpost-handoff.md); enter the actual viewer credential only in Devpost's private fields and never commit a password. |
 | Public video | `<PUBLIC_YOUTUBE_VIDEO_URL>` |
 | Devpost entry | `<DEVPOST_URL>` |
 | Team | `<TEAM_MEMBER_NAMES_AND_ROLES>` |

@@ -16,13 +16,24 @@ InOrdo turns one project update into evidence-backed impacts and recovery action
 
 ## 50-word summary
 
-InOrdo helps small teams respond safely when new evidence changes a project. GPT-5.6 structures the update and drafts recovery actions; deterministic code traces explicit dependencies. Reviewers compare evidence, inspect impact paths, and evaluate actions for selective approval. Application contracts record attributable history and compensating undo when supported and state matches.
+InOrdo helps small teams respond safely when new evidence changes a project. Its one-use GPT-5.6 recording path can structure updates and draft recovery actions; deterministic code traces explicit dependencies. Reviewers inspect evidence and paths before selective approval. Application contracts record attributable history and compensating undo only when supported.
+
+## Judge testing and current availability
+
+- The judge receives a dedicated `viewer` account through Devpost's private credential fields. It is read-only: judges can navigate and inspect saved synthetic records, evidence, deterministic paths, proposals, and operation history but cannot analyze or mutate data.
+- Available input is typed or pasted text: a project update, manual note, meeting minutes, or meeting summary. File upload, CSV import, URL fetching, voice, email, Slack, Teams, Google Drive, and other connectors are not implemented.
+- The synthetic summit is the only provisioned project. The ordinary-project route is an informational preview; ordinary project creation, invitations, switching, and provisioning are not implemented.
+- The reviewed recording path uses one exact GPT-5.6 grant. The optional fallback uses the open-weight GPT-OSS model through a separately capped Vercel AI Gateway; quota may be exhausted and Gateway service is not guaranteed to remain free forever.
+- A ChatGPT subscription cannot authenticate or fund API calls made by this external application. Live paid OpenAI analysis is unavailable to the judge account and cannot consume the team's API budget.
+- Final private testing instructions must use exactly one truthful recording-outcome sentence from `docs/devpost-handoff.md`; test fixtures and readiness checks are not a verified provider result.
 
 ## Detailed Devpost description
 
 A venue moves a summit by two weeks. The obvious record changes, but speaker confirmations, catering, programme deadlines, travel, and briefing materials can all become stale. Small teams usually reconstruct that chain manually, under time pressure, from scattered context.
 
-InOrdo gives that response a reviewable sequence: **evidence → impact → proposal → approval → history and undo**. A reviewer pastes a source update into a synthetic project workspace. The application preserves the raw source, then uses server-side GPT-5.6 structured output to draft one candidate change. Application code validates that draft against canonical project records and traverses explicit dependency edges to determine direct and downstream reach. GPT-5.6 receives those deterministic paths and drafts a bounded set of inert recovery actions.
+InOrdo gives that response a reviewable sequence: **evidence → impact → proposal → approval → history and undo**. A reviewer pastes a source update into a synthetic project workspace. The application preserves the raw source, then uses a bounded server-side model route to draft one candidate change. Application code validates that draft against canonical project records and traverses explicit dependency edges to determine direct and downstream reach. The selected model receives those deterministic paths and drafts a bounded set of inert recovery actions.
+
+The exceptional recording route is fixed to `gpt-5.6-luna` and requires an exact owner-issued, one-use actor/project/source grant. The optional automatic fallback is fixed to the open-weight `openai/gpt-oss-20b` model through a separately capped Vercel AI Gateway key. Recording never falls back, auto never consumes the OpenAI recording key, and disabled or unauthorized requests make no provider call.
 
 The reviewer can compare source fact with model inference, inspect a readable path for every affected record, and choose actions individually. The model has no tools and no mutation authority. Authorized server logic rechecks selected actions and current state before an all-or-nothing operation, records ordered before/after evidence, and can create a compensating undo operation for supported reversible updates.
 
@@ -36,11 +47,11 @@ New evidence can invalidate work several steps downstream. Small teams lose time
 
 ## Solution
 
-InOrdo preserves the update first, separates source fact from model interpretation, and derives impact from explicit project relationships. GPT-5.6 drafts structured interpretation and recovery options; deterministic code owns reachability; a person owns approval. Applied internal changes are attributed and recorded, with compensating undo only when the operation is reversible and current state still matches the recorded result.
+InOrdo preserves the update first, separates source fact from model interpretation, and derives impact from explicit project relationships. In an approved recording, GPT-5.6 drafts structured interpretation and recovery options; deterministic code owns reachability; a person owns approval. Applied internal changes are attributed and recorded, with compensating undo only when the operation is reversible and current state still matches the recorded result.
 
 ## How GPT-5.6 is meaningfully integrated
 
-GPT-5.6 performs two bounded server-side tasks through the OpenAI Responses API:
+When the one-use recording route is authorized, GPT-5.6 performs two bounded server-side tasks through the OpenAI Responses API:
 
 1. extract at most one candidate field change from untrusted evidence using strict structured output; and
 2. draft one to eight recovery actions after deterministic application code supplies the validated change, affected records, and dependency paths.
@@ -59,7 +70,7 @@ A proposal is not permission. Each proposed action remains inert until an author
 
 - **Web:** Next.js 16 App Router, React 19, TypeScript, React Server Components, and Tailwind CSS.
 - **Data and identity:** Supabase Postgres, Auth, row-level security, generated database types, immutable evidence, and append-only operation history.
-- **Model boundary:** server-only OpenAI Responses adapter for GPT-5.6 Luna, strict Zod-backed structured output, bounded context, no tools, and no direct mutation.
+- **Model boundary:** server-only, mode-aware adapters for exact GPT-5.6 recording or capped Gateway GPT-OSS fallback, strict Zod-backed structured output, bounded context, no tools, and no direct mutation.
 - **Domain logic:** pure TypeScript dependency traversal plus server-side authorization, validation, approval, idempotency, operation, undo, and reset services.
 - **Quality:** Vitest and Testing Library for unit/component coverage, a guarded Playwright core-demo journey, ESLint, TypeScript, and production builds.
 
@@ -90,7 +101,7 @@ No private transcript is committed. The primary shareable evidence will be the S
 ## Accomplishments
 
 - A standalone synthetic workspace with six project-record types, 24 active records, 26 explicit dependencies, and no customer data.
-- Strict server-only GPT-5.6 integration code that produces validated, inert review records and never performs an autonomous mutation.
+- Strict server-only provider integration code for one-use GPT-5.6 recording and capped GPT-OSS fallback that produces validated, inert review records and never performs an autonomous mutation.
 - Deterministic, explainable direct and downstream paths with stable ordering and fail-closed graph bounds.
 - Selective-operation, audit, compensating-undo, and history-preserving demo-reset contracts verified through linked rollback-wrapped database checks.
 - A responsive impact-review interface that distinguishes source fact, GPT inference, deterministic paths, and human approval state.
@@ -106,7 +117,7 @@ No private transcript is committed. The primary shareable evidence will be the S
 
 ## Future roadmap
 
-1. Complete a funded live GPT-5.6 request and authenticated production browser run, including incognito, responsive, accessibility, approval, history, undo, and reset checks.
+1. Complete the release plan's single authorized GPT-5.6 recording attempt or select the truthful no-verified-result path, then finish the authenticated browser, accessibility, approval, history, undo, and reset checks that apply.
 2. Deepen the existing project-item, decision, risk, and dependency views against canonical server data.
 3. Add proposal correction/rejection flows, stronger operational monitoring, and authenticated end-to-end browser coverage.
 4. Explore optional integrations only after the standalone workflow is reliable; connectors, semantic retrieval, enterprise administration, and native mobile remain outside P0.
@@ -114,6 +125,11 @@ No private transcript is committed. The primary shareable evidence will be the S
 ## Honest limitations
 
 - One production OpenAI request reached the provider and failed closed because the organization is unfunded; no successful GPT-5.6 result may be claimed and test fixtures must never be presented as live output.
+- The optional open-weight GPT-OSS fallback runs through a dedicated capped Vercel AI Gateway. Its quota can be exhausted, and it is not guaranteed to remain free forever.
+- A ChatGPT subscription cannot be used to pay for or authenticate this external application's API calls.
+- The judge account is read-only and cannot start analysis or mutate the workspace.
+- Available evidence input is typed/pasted updates, manual notes, meeting minutes, and meeting summaries. Files, CSV, URLs, voice, email, and connectors are unavailable.
+- Ordinary project provisioning is unavailable; the ordinary-project page is explicitly informational.
 - Authenticated native project-record, dependency, rollback, and reset smoke is verified; fresh incognito login/logout and the successful analysis-to-undo workflow are not.
 - The guarded Chromium demo journey intercepts provider/database seams; it validates the real UI and public request contracts but is not live authentication, RLS, Supabase RPC, or OpenAI evidence.
 - Authenticated local responsive checks passed at 375 × 812, 768 × 1024, and 1440 × 1000 without horizontal overflow; they are not deployed accessibility evidence.
