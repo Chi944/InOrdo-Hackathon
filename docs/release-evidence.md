@@ -8,19 +8,22 @@ This document records the factual release state produced by the final merged app
 | --- | --- |
 | Current production application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` |
 | Production release merge | PR [#9](https://github.com/Chi944/InOrdo-Hackathon/pull/9), merged normally into `main` |
-| Production alias | [inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app) |
+| Production alias | [inordo.vercel.app](https://inordo.vercel.app), assigned 2026-07-20; post-rename smoke pending |
 | Immutable deployment | `inordo-hackathon-e9t278oun-chi944s-projects.vercel.app` |
 | Vercel deployment ID | `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` |
 | Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
-| Current merged application `main` SHA | `debe2be4a20dc0f8f75eb3e67d17cca118d868f0` |
+| Current merged application `main` SHA | `b674fa41f315d647a7cd15293ac5a34c7309b151` |
 | Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
 | Approval-copy safety merge | PR [#12](https://github.com/Chi944/InOrdo-Hackathon/pull/12), merged normally into `main` |
+| Evidence-integrity merge | PR [#13](https://github.com/Chi944/InOrdo-Hackathon/pull/13), merged normally into `main` |
+| Approval-integrity merge | PR [#14](https://github.com/Chi944/InOrdo-Hackathon/pull/14), merged normally into `main` |
 | Exact-SHA Preview | `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD`; `inordo-hackathon-3w91bc8k0-chi944s-projects.vercel.app` |
 | Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
 | Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
+| Vercel project | `chi944s-projects/inordo`; renamed from the bootstrap name without changing project ID or the immutable historical deployment |
 | Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; migrations aligned through `20260719113000` |
 
-Prompt 14 started as a documentation-only branch at the production SHA, then merged current `main` normally to reconcile the completed release-boundary hardening and approval-copy repair. The production and Preview identities remain separate: production still serves `d581b0a9...`; Preview proves the `72a6fc5...` hardening; current `main` adds the reviewed approval-copy repair at `debe2be4...`. Neither newer SHA is production evidence until Deston completes the explicit Vercel terms gate and production redeploy. Record the final documentation merge SHA externally after this draft PR merges.
+Prompt 14 started as a documentation-only branch at the production SHA, then merged the then-current `main` normally to reconcile release-boundary hardening and approval-copy repair. The production and Preview identities remain separate: production still serves `d581b0a9...`; Preview proves the `72a6fc5...` hardening; current `main` is now `b674fa4...` after the normally merged evidence- and approval-integrity PRs. None of the newer SHAs is production evidence until Deston completes the explicit Vercel terms gate and an exact-SHA production redeploy.
 
 ## Implemented feature evidence
 
@@ -98,17 +101,17 @@ The approval-copy repair commit `90ac845...` passed a fresh Node `22.23.1` clean
 
 Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck, 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build. After merging current `main`, Node `22.23.1` and npm `10.9.8` completed a fresh `npm ci`, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, and a zero-vulnerability production dependency audit. Final staged/unstaged whitespace checks are recorded in `docs/qa-checklist.md` immediately before the merge-resolution commit.
 
-## Production smoke recorded 2026-07-19
+## Historical pre-rename production smoke recorded 2026-07-19
 
 | Check | Result |
 | --- | --- |
-| Production alias resolves to the recorded deployment ID | Pass |
+| Then-current production alias resolved to the recorded deployment ID | Pass; not evidence for the renamed alias |
 | `/` | `200` |
 | `/login` | `200` |
 | Signed-out `/app` | `307` to `/login?next=%2Fapp`; no tenant data returned |
 | `/api/health` with intentionally absent `OPENAI_API_KEY` | Expected `503 not_ready`, `Cache-Control: no-store`, generic configuration-only body |
 
-The six non-OpenAI production variable names are configured and hosted Supabase Auth URLs include the production host and documented local/Preview redirects. Values are intentionally not recorded here. The Vercel project runtime default was aligned from Node `24.x` to the required Node `22.x`; the existing Production and Preview artifacts already reported Node `22.x`, so this project-setting correction did not redeploy or alter either artifact. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
+The six non-OpenAI production variable names are configured; values are intentionally not recorded here. Hosted Supabase Auth still requires an operator-confirmed save replacing the retired production hostname with `https://inordo.vercel.app` and `https://inordo.vercel.app/**`, followed by fresh login/logout verification. The Vercel project runtime default was aligned from Node `24.x` to the required Node `22.x`; the existing Production and Preview artifacts already reported Node `22.x`, so this project-setting correction did not redeploy or alter either artifact. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
 
 ## Hardening Preview smoke recorded 2026-07-19
 

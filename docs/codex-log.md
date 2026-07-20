@@ -198,7 +198,9 @@ The implementation entries above correspond to these Git commits. Merge commits 
 | Release-boundary hardening | [`efff09c`](https://github.com/Chi944/InOrdo-Hackathon/commit/efff09c471d1336edf401085f8eaf5842189ab90) |
 | Hardening merge and Preview release | [`72a6fc5`](https://github.com/Chi944/InOrdo-Hackathon/commit/72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c) |
 | Approval reversibility copy repair | [`90ac845`](https://github.com/Chi944/InOrdo-Hackathon/commit/90ac845f90e0f6c0eb60e40eef958cc7baafe369) |
-| Current merged application `main` | [`debe2be4`](https://github.com/Chi944/InOrdo-Hackathon/commit/debe2be4a20dc0f8f75eb3e67d17cca118d868f0) |
+| Evidence-integrity repair | [`d02604d`](https://github.com/Chi944/InOrdo-Hackathon/commit/d02604dce354161281aec402926233c50186ea5e) |
+| Approval-integrity repair | [`8608464`](https://github.com/Chi944/InOrdo-Hackathon/commit/8608464c01147356e3c637783260f13072f0fbef) |
+| Current merged application `main` before PR #15 | [`b674fa4`](https://github.com/Chi944/InOrdo-Hackathon/commit/b674fa41f315d647a7cd15293ac5a34c7309b151) |
 
 ## 2026-07-19 — Release-boundary hardening and local configuration repair
 
@@ -245,6 +247,15 @@ The implementation entries above correspond to these Git commits. Merge commits 
 - The bounded parity helper rejects malformed, oversized, mismatched, duplicate, out-of-order, or stale migration ledgers and passed against the actual local Supabase ledger without printing it. Node 22.23.1/npm 10.9.8 then completed a clean lockfile-stable install, lint, typecheck, 394 Vitest tests across 57 files, production build, the guarded Chromium journey, a zero-vulnerability production audit, and whitespace checks.
 - The review also recorded two P2 scale limits without overstating the P0: analysis completion briefly serializes cross-project writes with whole-table `SHARE` locks, and dependency management silently caps its list at 500 rows. The synthetic demo bounds mitigate current exposure; project-scoped coordination, pagination, and an explicit completeness signal remain backlog work.
 - This entry records documentation and local review only. No hosted migration, database mutation, deployment, credentialed browser journey, provider call, environment value, credential, or private transcript was accessed or changed.
+
+## 2026-07-20 — Vercel rename and staged mutation-rollout review
+
+- Renamed the existing manual Vercel project to `chi944s-projects/inordo` without changing its project ID or Git remote, assigned `https://inordo.vercel.app` as the canonical alias, and removed the former public aliases. The immutable historical deployment hostname and served SHA remain recorded as provenance; neither is presented as proof of the current branch.
+- Verified by configuration name only that local and Vercel Production contain the six non-OpenAI values. `OPENAI_API_KEY` remains intentionally absent; the optimized local server returned generic `503 not_ready`, and its safe server log identified only that missing variable name. No value was read, printed, copied, or committed. Saving the renamed Supabase Auth Site URL/redirect and repeating production Auth smoke remain explicit operator gates.
+- Reworked the README from representative high-visibility repository patterns: a clear product statement, restrained badges, truthful product captures, quick start, environment boundary, local-versus-Vercel comparison, architecture/safety contracts, release status, limitations, documentation map, and submission handoff. Existing P0, setup, testing, legal-attribution TODO, `/feedback`, and honest-status content was retained.
+- Ran an independent Claude Opus cross-model review plus local correctness, security, testing, migration, reliability, deployment, and documentation reviews. Validated findings led to an expand/deploy/contract rollout, exact-replay ordering before mutable owner validation, pending-form mutation locks, unchanged-payload ambiguous-retry coverage, renamed-alias evidence corrections, reset containment for pre-RPC rollback, and explicit future removal of table- and column-level grants. The known whole-table analysis-finalization lock remains documented as bounded P0 scaling debt.
+- Migration `20260719140000` is now expand-only: it adds generation-fenced idempotent RPCs and the private receipt ledger while temporarily retaining legacy contributor DML. The RPC artifact must deploy and pass all four mutation/replay smokes before a separate contract PR removes the compatibility path. A pre-RPC artifact is schema-compatible but not generation-safe, so reset or all native mutation surfaces must be contained while it is served.
+- Node `22.23.1` and npm `10.9.8` passed lint, typecheck, 399 Vitest tests across 57 files, the Next.js `16.2.10` production build, one guarded Chromium journey, and a zero-vulnerability production dependency audit. A clean local Supabase replay passed all nine rollback-wrapped SQL verifiers and error-level schema lint. This remains local evidence: no hosted migration, funded model call, authenticated production flow, environment value, credential, provider payload, or private transcript is claimed.
 
 ## Primary `/feedback` evidence
 

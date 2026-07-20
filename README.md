@@ -1,185 +1,121 @@
 # InOrdo
 
-**InOrdo turns one project update into evidence-backed impacts and recovery actions for selective human approval, with traceable history and undo contracts where supported.**
+<div align="center">
 
-InOrdo is a Build Week project in the **Work and Productivity** track. It is designed for small teams that need to understand what a new fact changes before they update the rest of a project.
+**Turn an unstructured project update into evidence-backed impacts and recovery actions—without giving the model permission to change the plan.**
 
-## Current status
+[![CI](https://github.com/Chi944/InOrdo-Hackathon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Chi944/InOrdo-Hackathon/actions/workflows/ci.yml)
+![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-The integrated P0 includes the workspace-scoped Supabase schema and synthetic summit fixture, email/password authentication, protected project records, deterministic dependency traversal, server-only GPT-5.6 analysis, selective approval, ordered audit history, compensating undo, and the named-demo reset workflow. A guarded Chromium journey verifies the real UI and public request contracts with provider/database seams intercepted; the authenticated live Supabase/OpenAI production smoke remains a release gate.
+[Open the application](https://inordo.vercel.app) · [Read the architecture](docs/architecture.md) · [Follow the demo](docs/demo-scenario.md) · [Review release evidence](docs/release-evidence.md)
 
-The reviewed application release is commit [`d581b0a9d736bd12046a4314e15b359ec8fd8205`](https://github.com/Chi944/InOrdo-Hackathon/commit/d581b0a9d736bd12046a4314e15b359ec8fd8205), deployed at [inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app). Exact implementation, verification, deployment, and remaining-human-gate evidence is recorded in [`docs/release-evidence.md`](docs/release-evidence.md).
+<sub>OpenAI Build Week · Work & Productivity · Built for small teams</sub>
 
-## Problem
+</div>
 
-A venue change, deadline shift, or revised decision rarely affects one record. It can invalidate tasks, milestones, risks, and shared artifacts several steps downstream. Small teams often reconstruct that chain manually, which leads to hidden blockers, stale plans, missed deadlines, and decisions that are hard to trace later.
+InOrdo gives a team one reviewable path from new evidence to a safe project response. It preserves the source, uses GPT-5.6 for bounded interpretation and drafting, computes dependency reach in deterministic TypeScript, and requires an authorized person to approve each internal action. Applied operations are attributable and reversible only when the recorded contract says they are.
 
-## What InOrdo does
+> [!IMPORTANT]
+> **The canonical public URL is [inordo.vercel.app](https://inordo.vercel.app), but it is not evidence of the newest repository state.** The renamed Vercel project, `chi944s-projects/inordo`, currently serves historical commit [`d581b0a9d736bd12046a4314e15b359ec8fd8205`](https://github.com/Chi944/InOrdo-Hackathon/commit/d581b0a9d736bd12046a4314e15b359ec8fd8205) through deployment `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV`. The current `main` commit and the open review branch are both newer and have not yet been proven in production.
+>
+> The six non-OpenAI configuration names are present in the current local and Vercel Production setups, but `OPENAI_API_KEY` is still absent. Consequently, `/api/health` correctly returns `503 not_ready`, live analysis is unavailable, and this repository does **not** claim a funded GPT-5.6 call or an authenticated end-to-end production pass. See [Release status](#release-status) for the remaining gates.
 
-InOrdo keeps the response to change inside one reviewable sequence:
+## Product interface
+
+These captures show the implemented product interface from an optimized build. They are not a live-provider response or proof of an authenticated production session.
+
+| Landing and change trace | Responsibility-separated workflow |
+| --- | --- |
+| ![InOrdo landing page showing the Control project change without the chain reaction headline and an illustrative venue-date trace.](docs/assets/inordo-landing.jpg) | ![InOrdo workflow showing evidence, deterministic impact, recovery drafting, and human approval as distinct steps.](docs/assets/inordo-workflow.jpg) |
+
+The protected workspace capture remains a final production-QA deliverable. Synthetic or intercepted test data must never be presented as live GPT-5.6 output.
+
+## Contents
+
+- [Why InOrdo](#why-inordo)
+- [How it works](#how-it-works)
+- [What is implemented](#what-is-implemented)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [Local development versus Vercel](#local-development-versus-vercel)
+- [Architecture and safety contracts](#architecture-and-safety-contracts)
+- [Testing and release](#testing-and-release)
+- [Demo scenario](#demo-scenario)
+- [Limitations and non-goals](#limitations-and-non-goals)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Submission handoff](#submission-handoff)
+- [License](#license)
+
+## Why InOrdo
+
+A venue change, shifted deadline, or revised decision rarely affects one record. It can invalidate tasks, milestones, risks, and shared artifacts several steps downstream. Small teams often reconstruct that chain manually, under time pressure, with the source fact, inferred impact, and resulting edits scattered across different tools.
+
+InOrdo keeps those responsibilities visible and separate:
 
 **evidence → impact → proposal → approval → history and undo**
 
-- Preserves a pasted source update as evidence.
-- Uses server-side GPT-5.6 to extract one bounded candidate change and draft recovery actions.
-- Traverses explicit project dependencies with deterministic TypeScript logic.
-- Shows direct and downstream impacts with readable paths.
-- Keeps every proposed action inert until an authorized person selects it.
-- Records applied internal operations and creates a compensating undo operation where the complete operation is reversible.
-- Provides a constrained reset API for the named synthetic demo workspace.
+- Preserve the raw update before interpreting it.
+- Distinguish source fact from model inference.
+- Derive downstream reach from explicit, inspectable dependencies.
+- Show a full path for every direct or indirect impact.
+- Keep drafted actions inert until selective human approval.
+- Apply allowed internal changes atomically and record who did what.
+- Undo only when the entire operation is supported and still safe to reverse.
 
-The repository contains a public landing page, email/password sign-in, and a protected workspace under `/app`, including item, decision, risk, and dependency views. The workspace reads the seeded Supabase project, accepts source updates, renders persisted impact-review data, presents recovery actions, exposes the named-demo reset control to authorized roles, and reads operation history. The current integration limits are listed under [Known limitations](#known-limitations); this README does not claim a verified live model or production browser run.
-
-## Core demo flow
-
-The seed creates the **Civic Futures Lab — Regional Climate Action Summit 2026** synthetic workspace and project. All people, records, and updates are fictional. This is the intended recorded flow; use it in the submission only after each step passes the final QA gate.
-
-1. Sign in with an operator-provisioned demo account and open `/app`.
-2. Insert or paste the venue update that moves the summit from 12 September 2026 to 26 September 2026.
-3. Submit the evidence to the server-only analysis route.
-4. Review the preserved source beside GPT-5.6's structured candidate change.
-5. Inspect direct and indirect impacts produced by deterministic dependency traversal, including the event → speaker confirmation → programme lock → briefing pack path.
-6. Review recovery actions individually and, if the draft contains a travel-related action, leave it unselected because it needs a human cost decision.
-7. Apply selected actions only when the proposal is in a backend-accepted state, then inspect actor-attributed history.
-8. Undo an entirely reversible field-update operation, or reset the isolated demo through its server-held reset boundary.
-
-Successful analysis finalization promotes only an eligible, fully linked proposal from `draft` to `ready`. That transition does not approve or apply anything: every recovery action remains pending and unattributed until an authorized owner or admin explicitly selects it. The UI continues to disable approval for every non-ready state.
-
-## Screenshots and short GIFs
-
-These captures come from the optimized production build served locally. They show product framing, not a live model response or an authenticated production session.
-
-![InOrdo landing page with the headline “Control project change without the chain reaction” beside a clearly labeled illustrative venue-date trace.](docs/assets/inordo-landing.jpg)
-
-![InOrdo landing-page workflow showing evidence, deterministic impact, recovery draft, and human approval as four distinct responsibilities.](docs/assets/inordo-workflow.jpg)
-
-The protected workspace still needs a final capture after authenticated production QA. Do not use the removed fixture-preview route as submission evidence or describe a fixture as a live GPT-5.6 response.
-
-## Architecture
+## How it works
 
 ```mermaid
-flowchart TD
-    U["Authenticated reviewer"] --> W["Next.js App Router"]
-    W --> RSC["Server Components and client review UI"]
-    W --> US["Request-scoped Supabase client"]
-    US --> DB["Supabase Auth, Postgres, and RLS"]
+flowchart LR
+    E["Unstructured update"] --> S["Immutable evidence"]
+    S --> X["GPT-5.6 extraction"]
+    X --> V["Strict schema and evidence validation"]
+    V --> G["Deterministic graph traversal"]
+    G --> D["GPT-5.6 recovery draft"]
+    D --> H["Human selective approval"]
+    H --> O["Atomic allowlisted operation"]
+    O --> A["Actor-attributed history"]
+    A --> U["Compensating undo when safe"]
 
-    W --> AR["Server-only analysis route"]
-    AR --> AUTH["Authorization, bounds, revision, and duplicate checks"]
-    AUTH --> EXTRACT["GPT-5.6 structured extraction"]
-    EXTRACT --> VALIDATE["Zod parsing and canonical-state postvalidation"]
-    VALIDATE --> GRAPH["Deterministic dependency traversal"]
-    GRAPH --> DRAFT["GPT-5.6 recovery drafting over computed paths"]
-    DRAFT --> FINAL["Action, impact, and evidence postvalidation"]
-    FINAL --> PERSIST["Constrained server-only persistence RPCs"]
-    PERSIST --> DB
-
-    W --> OR["Apply, history, undo, and reset routes"]
-    OR --> SAFE["Authorization, approval, current-state, and idempotency checks"]
-    SAFE --> PERSIST
-
-    EXTRACT -. "No tools or direct mutation access" .-> AR
-    DRAFT -. "No tools or direct mutation access" .-> AR
+    classDef model fill:#fff7ed,stroke:#c2410c,color:#431407;
+    classDef deterministic fill:#eff6ff,stroke:#1d4ed8,color:#172554;
+    classDef human fill:#f0fdf4,stroke:#15803d,color:#052e16;
+    class X,D model;
+    class S,V,G,O,A,U deterministic;
+    class H human;
 ```
 
-The browser receives only the public Supabase URL and anonymous key. OpenAI and service-role credentials remain server-only. See [`docs/architecture.md`](docs/architecture.md) and [`docs/security-review.md`](docs/security-review.md) for the complete boundaries and threat review.
+GPT-5.6 interprets bounded context and drafts options. It has no tools, never traverses the graph, never authorizes a user, and never mutates data. Application and database code own canonical state, authorization, reachability, approval, idempotency, transactions, audit history, undo, and reset.
 
-## Technology stack
+## What is implemented
 
-| Layer | Technology |
-| --- | --- |
-| Web | Next.js 16 App Router, React 19, TypeScript |
-| Styling | Tailwind CSS 4, Lucide icons |
-| Data and identity | Supabase Postgres, Auth, RLS, Supabase JS/SSR |
-| Model boundary | OpenAI Responses API, GPT-5.6, OpenAI SDK |
-| Validation | Zod |
-| Tests | Vitest, Testing Library, guarded Playwright journey, SQL assertion suites |
-| Toolchain | Node.js 22, npm |
+The P0 repository includes:
 
-## How GPT-5.6 is meaningfully used
+- a public landing page, email/password sign-in, and a protected workspace under `/app`;
+- native tasks, milestones, decisions, events, risks, and artifacts;
+- item, decision, risk, and dependency views, including item detail and editing;
+- explicit directed dependencies and deterministic direct/downstream impact paths;
+- immutable source intake and server-only two-stage GPT-5.6 integration;
+- persisted proposals with one to eight independently reviewable recovery actions;
+- allowlisted, selectively approved internal operations with ordered history;
+- compensating undo for eligible whole field-update operations;
+- a generation-fenced reset for one named synthetic demo project; and
+- unit, component, guarded browser, migration, RLS, and rollback-wrapped SQL verification paths.
 
-The analysis pipeline makes two bounded logical model calls on the server:
+This is a Build Week P0, not a production-readiness claim. Live-service and staged-release gaps are listed under [Release status](#release-status) and [Limitations and non-goals](#limitations-and-non-goals).
 
-1. **Extraction:** GPT-5.6 receives the untrusted source and a bounded canonical project snapshot, then returns either one structured candidate change or no change.
-2. **Recovery drafting:** after application validation and deterministic graph traversal, GPT-5.6 receives the validated change plus the computed impact paths and drafts one to eight inert recovery actions and impact annotations.
+## Quick start
 
-Both calls use strict Zod-backed structured output, no tools, `store: false`, bounded prompts and output, and postvalidation against canonical IDs, fields, values, versions, evidence spans, dates, owners, and impact coverage. An invalid candidate cannot drive traversal, and no derived records are persisted unless the complete pipeline validates.
+### Prerequisites
 
-This integration is implemented and covered by injected-adapter tests. A funded live OpenAI request has **not** yet been run from this worktree, so provider behavior is still a release gate rather than a submission claim.
+- Node.js **22.x** and npm.
+- A Supabase project, or Docker Desktop/a compatible container runtime for local Supabase.
+- An operator-created Supabase Auth user mapped to the synthetic workspace for protected-route testing.
+- A funded OpenAI key with access to the configured model only when performing an approved live analysis.
 
-## Model logic versus deterministic application logic
-
-| GPT-5.6 may | Deterministic application code owns |
-| --- | --- |
-| Extract one candidate field change from supplied evidence. | Authentication, tenant authorization, and RLS-scoped access. |
-| Quote evidence and surface confidence, ambiguity, and warnings. | Request limits, canonical-value checks, schemas, and fail-closed validation. |
-| Draft bounded recovery actions from validated context. | Explicit dependency traversal, cycle handling, shortest paths, and maximum depth. |
-| Annotate application-computed impacts with severity and explanations. | Project revisions, source hashes, fixed claim leases, duplicate reconciliation, rate limits, and idempotency. |
-| Return structured data to the server-only adapter. | Proposal state, human approval, mutations, ordered history, undo, and demo reset. |
-
-The model has no tools and no direct database path. It does not choose graph reach, authorize a user, approve an action, or mutate a project record.
-
-## Human approval and undo safety
-
-- A generated proposal is inert; model output never grants permission.
-- Owner/admin authorization and current project state are rechecked before the privileged operation executor is initialized.
-- Reviewers submit explicit action IDs and any required human responses. Unselected actions remain pending.
-- Duplicate target-field updates and contradictory same-target start/due proposals are rejected in application postvalidation and again by a serialized database guard.
-- Only allowlisted field updates, constrained task/risk creation, and confirmation activity can execute.
-- Create-item cards and the final confirmation show every bounded field that will be committed; successful audit receipts are rebuilt from the committed row rather than trusted proposal/caller JSON.
-- Selected actions, mutations, proposal transitions, and ordered before/after audit records commit in one transaction or none do.
-- An undo is a new compensating operation linked to the original; history is not erased.
-- Undo is available only when every mutating action in the original operation is a reversible field update and current state still matches the recorded after-state.
-- Demo reset is restricted to an owner/admin and the configured synthetic project; its secret never enters the browser request.
-
-The database operation contracts have passed rollback-wrapped linked verification. Authenticated HTTP and production-browser verification remain pending.
-
-## How Codex accelerated the build
-
-The significant work sessions are summarized without private transcripts in [`docs/codex-log.md`](docs/codex-log.md). Codex helped the team deliver focused work packages while preserving Andres/Deston ownership boundaries:
-
-- bootstrapped the Node 22/Next.js testable foundation and product documentation;
-- designed and checked the workspace schema, RLS rules, synthetic seed, and SQL verification;
-- implemented and tested authentication, bounded repositories, project records, and explicit dependency semantics;
-- built the server-only structured-analysis boundary and adversarial validation cases;
-- implemented deterministic traversal, selective operation contracts, append-only history, compensating undo, and reset safety;
-- built the impact-review interface, responsive states, focus behavior, and component tests; and
-- surfaced the `draft` versus `ready` proposal-state mismatch, then verified the narrow server-owned readiness transition without introducing a client-side workaround.
-
-Codex also accelerated review decisions: the model boundary stayed interpretive rather than autonomous, dependency direction was documented once, secrets stayed out of client code and logs, and unverified behavior remained labeled as a limitation. The primary public `/feedback` Session ID is intentionally left as a placeholder below.
-
-## Repository structure
-
-```text
-.
-├── src/
-│   ├── app/                     # Landing, login, protected /app, and API routes
-│   ├── features/
-│   │   ├── analysis/            # Intake, GPT adapter, validation, orchestration
-│   │   ├── impact/              # Pure deterministic dependency traversal
-│   │   ├── operations/          # Apply, history, undo, and reset services
-│   │   └── project-records/     # Typed item and dependency operations
-│   ├── lib/                     # Auth, environment, repositories, Supabase clients
-│   └── types/                   # Generated database types
-├── supabase/
-│   ├── migrations/              # Schema, RLS, analysis, and operation migrations
-│   ├── tests/                   # Rollback-wrapped SQL assertion suites
-│   └── seed.sql                 # Credential-free synthetic summit fixture
-├── docs/                        # Product, architecture, demo, QA, security, and submission docs
-└── .github/                     # CI and contribution templates
-```
-
-## Prerequisites
-
-- Node.js 22.x and npm.
-- A Supabase project; the development dependencies pin Supabase CLI `2.109.1` for database/authenticated flows.
-- Docker Desktop or another compatible container runtime only when running Supabase locally.
-- An OpenAI API key with access to the configured GPT-5.6 model for live analysis.
-- An operator-created Supabase Auth user mapped to the synthetic workspace for the protected demo.
-
-The public landing page can render without the private server credentials. The authenticated workflow cannot be verified without valid Supabase configuration and a provisioned account.
-
-## Local setup
+### Install and run
 
 ```bash
 git clone https://github.com/Chi944/InOrdo-Hackathon.git
@@ -189,151 +125,279 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Keep `.env.local` untracked and never paste its values into issues, screenshots, logs, or commits.
+On Windows PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`. Configure the names described below, restart the development server after changing them, then open [http://localhost:3000](http://localhost:3000).
 
-Windows PowerShell users can copy the environment template with `Copy-Item .env.example .env.local`.
+The public landing page can render without private credentials. Protected data requires valid Supabase configuration and a provisioned account; live analysis additionally requires `OPENAI_API_KEY`. Keep `.env.local` ignored, and never paste its values into commands, issues, screenshots, logs, or commits.
 
-For the shared hosted-project setup, environment pull, Windows/macOS commands, automated gate, authenticated workflow, and role-specific review steps, follow [`docs/local-run-and-test.md`](docs/local-run-and-test.md).
+For the complete Windows/macOS setup, least-privilege frontend setup, health checks, and authenticated review steps, use [`docs/local-run-and-test.md`](docs/local-run-and-test.md). Do not casually push a hosted database from the quick-start flow; hosted migrations use the exact approval gates in the [deployment runbook](docs/deployment-runbook.md).
 
-## Environment variables
+## Configuration
 
-Populate these names in `.env.local` or the deployment environment. No value belongs in this README.
+All seven names belong in local `.env.local` and in the appropriate Vercel environment when that capability is needed. Values never belong in this README.
 
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5.6-luna
-DEMO_PROJECT_SLUG=
-DEMO_RESET_SECRET=
-```
-
-| Variable | Scope | Purpose |
+| Variable | Exposure | Purpose and rules |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser-safe | Supabase project URL used with RLS. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-safe | Public anonymous key used with the signed-in session and RLS. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Narrow analysis/operation persistence capabilities after user authorization. |
-| `OPENAI_API_KEY` | Server only | OpenAI Responses API authentication. |
-| `OPENAI_MODEL` | Server only | Configured GPT-5.6 deployment model. |
-| `DEMO_PROJECT_SLUG` | Server only | Selects the checked-in synthetic project for protected workspace lookup and reset. |
-| `DEMO_RESET_SECRET` | Server only | Server-held reset guard; never sent by the browser. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser-safe | Supabase project URL. Vercel embeds `NEXT_PUBLIC_*` values into the client build. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-safe | Anonymous key used with the signed-in session and RLS; it is not a service-role credential. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Narrow privileged persistence after request-scoped user authorization. Never import it into a Client Component. |
+| `OPENAI_API_KEY` | Server only | OpenAI Responses API authentication. It is intentionally absent from the current local/Vercel setup. |
+| `OPENAI_MODEL` | Server only | Model name. The application defaults to `gpt-5.6-luna` only when this variable is omitted; an explicit blank value is invalid. |
+| `DEMO_PROJECT_SLUG` | Server only | Selects the exact checked-in synthetic project for workspace lookup and protected reset. |
+| `DEMO_RESET_SECRET` | Server only | Server-held reset guard; it is never supplied by browser code. |
 
-## Supabase migrations and seed
+Only the two `NEXT_PUBLIC_` variables may enter the browser bundle. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET` remain server-side. The application validates names and readiness without printing values.
 
-For an isolated hosted project, authenticate and inspect the target before applying migrations:
+## Local development versus Vercel
 
-```bash
-npx --no-install supabase login
-npx --no-install supabase link --project-ref <SUPABASE_PROJECT_REF>
-npx --no-install supabase db push --dry-run
-npx --no-install supabase db push
+The same Next.js code runs in both places, but the runtime and configuration lifecycle differ.
+
+| Concern | Local | Vercel |
+| --- | --- | --- |
+| Code lifecycle | `npm run dev` provides hot reload on your machine. | Each deployment is an immutable cloud build. Production changes only after a new deploy/alias assignment. |
+| Environment | Next.js reads ignored `.env.local`; restart after changing a variable. | Variables are scoped to Production, Preview, or Development. A change affects only a new deployment. |
+| Public values | `NEXT_PUBLIC_*` values are compiled when the local process builds/starts. | `NEXT_PUBLIC_*` values are inlined at build time and frozen into that artifact. |
+| Data services | Use the local Docker stack or an explicitly configured hosted Supabase project. | Server functions reach the configured hosted Supabase project over the network. |
+| Reachability | Normally machine-only at `localhost:3000`. | Public through the assigned domain, currently [inordo.vercel.app](https://inordo.vercel.app). |
+| Auth | Local callback URLs must be allowed in Supabase Auth. | The canonical domain and approved Preview wildcard must be configured as Auth redirects. |
+| Runtime behavior | Long-lived developer process with local logs and resources. | Platform-managed functions, build artifacts, cold starts, request/body/time limits, and provider/network failure modes. |
+| Verification | Best for fast unit, UI, and local database iteration. | Required for domain, cookie, redirect, environment-scope, hosted RLS/RPC, and production smoke evidence. |
+
+The Vercel project uses Node.js 22.x and is deployed manually; it is not connected to automatic Git deployments. See [`docs/deployment-runbook.md`](docs/deployment-runbook.md) before changing Production configuration or deploying.
+
+## Architecture and safety contracts
+
+### Technology
+
+| Layer | Technology |
+| --- | --- |
+| Web | Next.js 16 App Router, React 19, TypeScript, React Server Components |
+| Interface | Tailwind CSS 4, Lucide icons |
+| Data and identity | Supabase Postgres, Auth, RLS, Supabase JS/SSR |
+| Model boundary | OpenAI Responses API, GPT-5.6, OpenAI SDK |
+| Validation | Zod plus canonical-state postvalidation |
+| Quality | Vitest, Testing Library, Playwright, ESLint, TypeScript, SQL assertion suites |
+| Toolchain | Node.js 22, npm |
+
+```mermaid
+flowchart TD
+    B["Browser"] --> N["Next.js App Router"]
+    N --> U["Request-scoped Supabase client"]
+    U --> P["Supabase Auth + Postgres + RLS"]
+    N --> R["Server-only analysis and operation routes"]
+    R --> C["Authorization + canonical-state checks"]
+    C --> M["OpenAI adapter"]
+    C --> T["Pure TypeScript traversal"]
+    C --> Q["Constrained Supabase RPCs"]
+    Q --> P
+    M -. "Structured drafts only" .-> C
 ```
 
-For a local Supabase stack, start the containers and rebuild from migrations plus `supabase/seed.sql`:
+Browser code receives only the public Supabase URL and anonymous key. Normal product reads use a request-scoped user client under RLS; the service-role client is not a general read path. OpenAI calls and privileged persistence live in server-only modules. RLS and database constraints remain the source of truth; hiding a control in the UI is never treated as authorization.
 
-```bash
-npx --no-install supabase start
-npx --no-install supabase db reset
+### Analysis boundary
+
+The server performs two bounded logical model calls:
+
+1. **Extraction** returns either no candidate or one structured candidate change from the source and a bounded canonical snapshot.
+2. **Recovery drafting** receives the validated change plus application-computed impact paths and returns **one to eight** inert recovery actions and annotations.
+
+Both calls use strict Zod-backed structured output, canonical-state postvalidation, evidence-span checks, no tools, `store: false`, a 30-second timeout per call, and no automatic retries. IDs, fields, values, versions, dates, owners, and impact coverage are checked before derived data can persist. OpenAI is never called from a Client Component.
+
+An analysis claim has a fixed, nonrenewable three-minute lease. An active exact duplicate returns `202` with `Retry-After`; replay after expiry terminalizes the same claim instead of spending on a second model attempt. Idempotent completion accepts one owner of the claim, and late provider results plus their derived writes are rejected atomically.
+
+### Deterministic dependency graph
+
+Dependency direction follows the database contract:
+
+- `from_item_id` is the **dependent** item;
+- `to_item_id` is its **upstream prerequisite or context**; and
+- when an upstream item changes, traversal follows reverse adjacency to find what it affects.
+
+Pure TypeScript breadth-first traversal considers active records only, terminates cycles and self-loops defensively, deduplicates edges and affected records, and returns stable direct/indirect paths. A best-depth map preserves the deterministic shortest/best path. Default maximum depth is **5** and the validated maximum is **20**. The graph function makes no network or model call.
+
+### Approval, history, and undo
+
+- A proposal is not permission. Only an authorized owner/admin can select specific action IDs and confirm the operation.
+- Only an eligible, fully linked proposal can move from `draft` to `ready` on the server. That transition approves nothing: actions remain pending, and the UI fails closed in every other state.
+- The mutation vocabulary is allowlisted: field update, constrained task creation, constrained risk creation, and confirmation activity.
+- Authorization, proposal readiness, action state, expected item versions, human responses, payload bounds, and idempotency are rechecked server-side.
+- Set-level validation rejects duplicate target-field updates and incompatible same-item dates; create-item audit receipts are rebuilt from the committed row rather than caller or model JSON.
+- Selected actions, record changes, proposal transitions, and ordered before/after audit entries commit in one transaction or none do.
+- History is actor-attributed and append-only.
+- Undo is available only for an **entire** operation made solely of reversible field updates, and only while current state still matches every recorded after-state.
+- Undo creates a linked compensating operation. It never edits or erases the original history.
+
+### Demo reset
+
+Reset is restricted to an owner/admin, the exact configured synthetic project, and a server-held guard. It restores the checked-in baseline of **24 active records and 26 edges**, retires nonbaseline records, advances the project workflow generation to fence stale requests, and preserves prior evidence and operation history as archived history. It is not a general workspace-delete endpoint.
+
+### Native record mutation rollout
+
+Native create/update item and create/remove dependency writes are moving to four authorized, generation-fenced, idempotent RPCs. Migration `20260719140000_guard_project_record_mutations` is deliberately the **expand** phase: it adds the private receipt ledger and RPCs while temporarily retaining legacy contributor DML. That keeps the currently deployed pre-RPC artifact schema-compatible, but not generation-safe; reset must be contained whenever that artifact is served during the rollback window.
+
+The contract is not complete. The safe sequence is:
+
+1. apply only the reviewed expand migration after its exact typed approval;
+2. deploy the exact RPC-capable `main` artifact;
+3. verify item create, item update, dependency create, dependency remove, and exact replay against that artifact; then
+4. ship a separate reviewed **contract** migration that removes legacy direct DML.
+
+Expand and contract must never be pending in the same hosted `db push`. After contract, a pre-RPC deployment is no longer a valid rollback target. The authoritative sequence and containment rules are in the [deployment runbook](docs/deployment-runbook.md) and [rollback plan](docs/rollback-plan.md).
+
+### Repository map
+
+```text
+.
+├── src/
+│   ├── app/                     # Landing, login, protected workspace, API routes
+│   ├── features/
+│   │   ├── analysis/            # Intake, model adapter, validation, orchestration
+│   │   ├── impact/              # Pure deterministic graph traversal
+│   │   ├── operations/          # Apply, history, undo, reset
+│   │   └── project-records/     # Typed item/dependency operations
+│   ├── lib/                     # Auth, environment, repositories, Supabase clients
+│   └── types/                   # Generated database types
+├── supabase/
+│   ├── migrations/              # Forward-only schema and contract migrations
+│   ├── tests/                   # Rollback-wrapped SQL assertions
+│   └── seed.sql                 # Credential-free fictional summit fixture
+├── docs/                        # Product, architecture, QA, release, submission
+└── .github/                     # CI and contribution templates
 ```
 
-`db reset` is destructive. Use it only for the local or explicitly disposable demo database. For a new isolated hosted demo, review `supabase/seed.sql` and apply it through the team's approved Supabase workflow; never seed a shared customer database. The seed creates fictional profiles and workspace data but no Auth password. Follow [`docs/demo-user-setup.md`](docs/demo-user-setup.md) to provision access outside source control.
+## Testing and release
 
-Analysis claims have an immutable three-minute database lease. An active exact duplicate returns `202` with `Retry-After`; submit that exact update again after the displayed delay to reconcile an interrupted claim. Expiry never starts another model attempt: the same request becomes a safe terminal failure, while a late success and all of its derived writes are rejected atomically.
-
-The Prompt 13 evidence-integrity bridge keeps one canonical revision/hash analysis claim for provider-spend control while retaining append-only links to every attributable source capture. Exact replays preserve claim/link cardinality, while the same capture can support a fresh claim after the project revision changes. Ready proposals close when any project item or dependency changes; historic live proposals are conservatively closed rather than reopened. On Windows, run the focused verifier against the started local stack after a reset with `Get-Content supabase/tests/verify_prompt13_evidence_integrity.sql -Raw | docker exec -i supabase_db_InOrdo-Hackathon psql -X -q -v ON_ERROR_STOP=1 -U postgres -d postgres`.
-
-Approval-integrity migration `20260719130000_harden_approval_action_integrity` rejects ambiguous duplicate updates and incompatible date-action sets before they can become approvable. It also records versioned create-item receipts from the actual committed row while preserving legacy append-only receipts. The focused local verifiers are `supabase/tests/verify_proposal_action_integrity.sql` and `supabase/tests/verify_create_item_receipts.sql`; run them through the same rollback-wrapped local `psql` pattern after `supabase db reset`.
-
-Generation-integrity migration `20260719140000_guard_project_record_mutations` moves authenticated item and dependency writes behind four typed RPCs. Each RPC authorizes the current contributor, locks the project row shared with apply/reset, binds an idempotency key to one canonical request, replays an exact success before checking generation, and rejects a stale pre-reset request without consuming its key. Direct authenticated DML is revoked while member reads and service-role orchestration remain available. Superseded proposals reconcile pending or approved child actions to `stale` at transaction end, so temporary supersession inside a successful apply does not corrupt action state.
-
-## Run, test, and build commands
+### Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the local Next.js development server. |
+| `npm run dev` | Start the local development server. |
 | `npm run lint` | Run ESLint. |
 | `npm run typecheck` | Check TypeScript without emitting files. |
-| `npm run test:run` | Run the Vitest suite once. |
-| `npm run test:e2e` | Run the guarded Chromium core-demo journey; it mocks only provider/database seams and is not live-service evidence. |
-| `npm run build` | Create the production Next.js build. |
-| `npm run start` | Serve the production build. |
-| `git diff --check` | Check the patch for whitespace errors. |
+| `npm run test` | Run Vitest in watch mode. |
+| `npm run test:run` | Run unit and component tests once. |
+| `npm run test:e2e` | Run the guarded Chromium journey; provider/database seams are intercepted, so this is not live-service evidence. |
+| `npm run build` | Create the optimized production build. |
+| `npm run start` | Serve the optimized build. |
+| `git diff --check` | Detect whitespace errors in the patch. |
 
-Exact completed and pending checks are recorded in [`docs/qa-checklist.md`](docs/qa-checklist.md). A configured browser run and a funded live-model call must not be inferred from unit or linked-database results.
+Before committing, run:
 
-## Demo and test-account instructions
+```bash
+npm run lint
+npm run typecheck
+npm run test:run
+npm run build
+git diff --check
+```
 
-Final access path: **`<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>`**
+Local Supabase verification starts with `npx --no-install supabase start` and may use `npx --no-install supabase db reset` to replay migrations and `supabase/seed.sql`. **`db reset` is destructive**: run it only against the local or an explicitly disposable demo database. Linked hosted migrations, rollback-wrapped SQL suites, security checks, and release approval are documented separately; do not infer them from an application build.
 
-Until that placeholder is replaced, use [`docs/demo-user-setup.md`](docs/demo-user-setup.md). It explains how an operator creates an email/password Auth user and maps its UUID to the seeded workspace without committing credentials. Share the final account details out of band; do not put a password in this repository.
+### Release status
 
-The exact synthetic source text and expected dependency path are documented in [`docs/demo-scenario.md`](docs/demo-scenario.md).
+| Area | Current evidence | Still required |
+| --- | --- | --- |
+| Application | Node 22 gates, component/unit suites, guarded browser contract journey, and local production behavior are documented. | Re-run on the exact merged SHA and deploy that same clean `main`. |
+| Database | The current expand patch passes local migration replay, error-level lint, and nine rollback-wrapped SQL verifiers; earlier linked checks are documented separately. | Exact approval and hosted expand parity; deployed four-RPC/replay smoke; separate contract migration and denial verification. |
+| OpenAI | Server-only adapter and adversarial validation paths are implemented and tested with injected seams. | Add `OPENAI_API_KEY` through hidden secret input, redeploy, require `/api/health` `200 ready`, then run one funded synthetic request. |
+| Browser | The real UI and public request contracts run through guarded Chromium with conspicuous synthetic data. | Authenticated/incognito production flow covering login, analysis, approval, history, undo, reset, refresh, responsive behavior, and accessibility. |
+| Deployment | [inordo.vercel.app](https://inordo.vercel.app) resolves to the manually managed project `chi944s-projects/inordo`. | Prove the newer exact Git SHA in Vercel metadata and complete the production smoke without weakening protection. |
 
-## Deployment
+Vercel deployment is manual—there is no Git-connected automatic deploy. Production must use Node.js 22.x, a clean reviewed `main` equal to `origin/main`, correctly scoped environment names, and the canonical alias. Environment changes require redeployment. Supabase Auth must allow the canonical production origin, the documented local redirects, and only the approved account-scoped Preview wildcard. A human operator must also recheck the current Vercel Hobby terms and limits and confirm that this non-commercial hackathon demo remains eligible before the next deployment.
 
-- Production URL: **[inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app)**
-- Hosting target: **Vercel Hobby, manual Deston CLI deployment to `chi944s-projects/inordo-hackathon`**
-- Deployed application SHA: **`d581b0a9d736bd12046a4314e15b359ec8fd8205`** (`dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV`)
+Never treat `db push --dry-run` as mutation authorization, never deploy a feature branch as Production, never expose a server secret to Preview/client code, and never describe a build/test seam as live provider or RLS evidence. Use:
 
-The production alias serves the manually deployed Deston-operated Vercel project with no automatic Git deployment. Preserve commit authorship, deploy only a clean reviewed `main` whose `HEAD` exactly equals `origin/main`, and confirm the current Vercel Hobby terms still permit this small non-commercial hackathon demo. Do not add analytics, paid monitoring, a custom domain, workers, scheduled jobs, Railway, or another hosting path for P0.
+- [QA checklist](docs/qa-checklist.md) for exact completed and pending evidence;
+- [release evidence](docs/release-evidence.md) for commit/deployment identity;
+- [deployment runbook](docs/deployment-runbook.md) for environment, migration, deploy, smoke, and rollback commands;
+- [security review](docs/security-review.md) for the threat checklist; and
+- [rollback plan](docs/rollback-plan.md) for forward-only database and application containment.
 
-The exact login, link, Preview, production, environment-name, Supabase redirect, smoke, SHA-recording, and rollback commands are in [`docs/deployment-runbook.md`](docs/deployment-runbook.md). The required production command is `npx vercel --prod` after a clean status and the complete Node 22 gate. `/api/health` is a no-spend configuration readiness check: while `OPENAI_API_KEY` is intentionally absent, it must return `503 not_ready` and live analysis remains unavailable; after Deston adds the key through Vercel's hidden prompt and redeploys, require `200 ready` before a funded smoke.
+## Demo scenario
 
-Do not expose server variables to client code, point a Preview at the production Supabase/reset configuration, use a service-role key for normal reads, or call the deployment production-ready until the unresolved QA gates are complete. Configure hosted Supabase Auth only after the real deployment hosts exist: use the exact production origin as Site URL, allow the exact production redirect, both documented local HTTP redirects, and the account-scoped Vercel Preview wildcard.
+The fixture is the fictional **Civic Futures Lab — Regional Climate Action Summit 2026**: eight fictional team members, 24 active project records, and 26 explicit dependencies. No customer data or credential is included.
 
-## Known limitations
+The demo source moves the summit from **12 September 2026** to **26 September 2026** because the venue is unavailable. The intended review path is:
 
-| Limitation | Current effect |
+1. sign in with an operator-provisioned email/password account and open `/app`;
+2. paste the exact venue update and preserve it as evidence;
+3. compare the source with the structured candidate change;
+4. inspect deterministic direct and indirect paths, including event → speaker confirmation → programme lock → briefing pack;
+5. review one to eight recovery actions and leave any cost-sensitive travel decision unselected;
+6. confirm only the chosen actions, then inspect actor-attributed history; and
+7. undo an eligible whole field-update operation or run the protected named-demo reset.
+
+The protected workspace also exposes `/app/items`, item detail, `/app/decisions`, `/app/risks`, and `/app/dependencies`. Follow the exact source, expected path, presenter notes, and stop conditions in [`docs/demo-scenario.md`](docs/demo-scenario.md). Account provisioning stays out of source control and is described in [`docs/demo-user-setup.md`](docs/demo-user-setup.md).
+
+## Limitations and non-goals
+
+| Limitation | Practical effect |
 | --- | --- |
-| No funded live OpenAI analysis has been run from this worktree. | The server integration and tests exist, but a real provider response cannot yet be claimed. |
-| Authenticated end-to-end and incognito production tests are pending. | Login, analysis, approval, undo, and reset are not yet verified as one deployed browser journey. |
-| The guarded Playwright journey uses conspicuously labeled synthetic data and intercepted provider/database seams. | It verifies the real browser components and request contracts, but not live authentication, RLS, Supabase RPCs, or OpenAI. |
-| Undo supports only entirely reversible field-update operations. | Operations containing task/risk creation or confirmation activity remain in history but cannot be undone. |
-| Authenticated production Playwright coverage is not complete. | Component, unit, build, linked SQL/RPC, and guarded journey evidence do not replace production browser QA. |
-| Analysis completion currently takes whole-table `SHARE` locks on project items and dependencies. | Finalization stays consistent, but writes in other projects may briefly wait; the P0 mitigation is a bounded, low-volume synthetic demo, with project-scoped coordination required before broader multi-tenant scale. |
-| The dependency-management UI returns at most 500 dependencies without a truncation indicator. | The 26-edge P0 fixture is complete, but larger projects must not rely on this screen as a complete inventory until pagination and an explicit completeness signal are added. |
-| Build Week scope is intentionally narrow. | No connectors, RAG, embeddings, autonomous mutation, enterprise administration, or native mobile application is included. |
+| `OPENAI_API_KEY` and a funded live call are absent. | Analysis code exists, but no live GPT-5.6 result may be claimed yet. |
+| Authenticated production QA is incomplete. | Unit, SQL, and guarded-browser evidence do not prove the complete hosted Auth/RLS/OpenAI workflow. |
+| Native DML is in the expand stage. | Legacy contributor writes remain temporarily available until the RPC artifact passes smoke and a separate contract migration removes them. |
+| Undo is intentionally narrow. | Only an entirely reversible field-update operation with matching current after-state can be compensated. |
+| Analysis finalization takes whole-table `SHARE` locks on item/dependency tables. | Other-project writes may wait; P0 is bounded to a low-volume synthetic demo pending project-scoped coordination. |
+| Dependency management loads at most 500 edges without a truncation indicator. | The 26-edge fixture is complete; larger projects must not treat the screen as a complete inventory. |
+| Deployment protection and operator-held credentials constrain public QA. | Access, provider spend, and production mutation gates remain explicit human responsibilities. |
 
-## Future roadmap
+Outside P0:
 
-- Complete the authenticated evidence-to-undo production browser journey and record safe release evidence.
-- Improve the existing project item, decision, risk, and dependency views without duplicating canonical state.
-- Add proposal editing, richer conflict handling, and clearer approval roles.
-- Add collaborative assignments, comments, notifications, search, filters, saved views, and reusable templates.
-- Add deployment observability, retention controls, abuse monitoring, and hardened operator reconciliation.
-- Replace cross-project analysis-finalization table locks with project-scoped coordination, and paginate dependency management with a visible completeness signal.
-- Explore optional integrations after the standalone workflow is reliable; connectors, embeddings, and autonomous mutation remain outside Build Week P0.
+- external connectors and synchronization engines;
+- embeddings, vector search, RAG, or semantic search infrastructure;
+- autonomous model-driven mutation;
+- enterprise administration and production-scale observability;
+- native mobile applications; and
+- alternate backends, graph databases, or workflow orchestrators.
 
-## Open-source license
+The current priorities and scale follow-ups live in [`docs/backlog.md`](docs/backlog.md).
 
-InOrdo is available under the [MIT License](LICENSE). Copyright is held by the InOrdo Hackathon Team as stated in the repository license.
+## Documentation
 
-> TODO before submission: verify the temporary license attribution and copyright holder with every InOrdo team member.
+| Document | Use it for |
+| --- | --- |
+| [Product brief](docs/product-brief.md) | Purpose, P0 scope, actors, and acceptance principles. |
+| [Architecture](docs/architecture.md) | Trust boundaries, schemas, graph semantics, model/data contracts, and invariants. |
+| [Local run and test](docs/local-run-and-test.md) | Safe environment setup, local/hosted modes, and role-specific verification. |
+| [Demo user setup](docs/demo-user-setup.md) | Provisioning an Auth user without committing credentials. |
+| [Demo scenario](docs/demo-scenario.md) | Fictional source, expected paths, presenter flow, and stop conditions. |
+| [Security review](docs/security-review.md) | Threat checklist, completed evidence, and remaining live checks. |
+| [QA checklist](docs/qa-checklist.md) | Automated, SQL, browser, accessibility, and production gates. |
+| [Release evidence](docs/release-evidence.md) | Exact commit/deployment status and evidence matrix. |
+| [Deployment runbook](docs/deployment-runbook.md) | Manual Vercel/Supabase release, exact approvals, smoke, and recovery. |
+| [Rollback plan](docs/rollback-plan.md) | Containment, compatible artifacts, forward migrations, and domain compensation. |
+| [Backlog](docs/backlog.md) | P0 closure, roadmap, and scaling debt. |
+| [Codex log](docs/codex-log.md) | Public work-package summaries without private transcripts. |
+| [Submission copy](docs/submission-copy.md) · [video script](docs/video-script.md) · [submission checklist](docs/submission-checklist.md) | Final Build Week packaging and human handoff. |
 
-## Build Week submission evidence
+## Contributing
 
-- Track: **Work and Productivity**
-- Repository: **[github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon)** — confirm the final submitted commit from a signed-out browser before submission.
-- Production application: **[inordo-hackathon.vercel.app](https://inordo-hackathon.vercel.app)**
-- Public video (maximum three minutes): **`<PUBLIC_YOUTUBE_VIDEO_URL>`**
-- Devpost entry: **`<DEVPOST_URL>`**
-- Team members and roles: **`<TEAM_MEMBER_NAMES_AND_ROLES>`**
-- Final submission deadline: **July 21, 2026 at 5:00 PM PDT** (**July 22, 2026 at 8:00 AM SGT**), per the [official Devpost schedule](https://openai.devpost.com/details/dates).
-- Product and technical decisions: [`docs/product-brief.md`](docs/product-brief.md), [`docs/architecture.md`](docs/architecture.md)
-- Synthetic demo evidence: [`docs/demo-scenario.md`](docs/demo-scenario.md), [`supabase/seed.sql`](supabase/seed.sql)
-- Verification and unresolved gates: [`docs/qa-checklist.md`](docs/qa-checklist.md)
-- Final release identity and evidence matrix: [`docs/release-evidence.md`](docs/release-evidence.md)
-- Manual Vercel/Supabase release and rollback procedure: [`docs/deployment-runbook.md`](docs/deployment-runbook.md)
-- Codex contribution summary: [`docs/codex-log.md`](docs/codex-log.md)
-- Submission copy and video plan: [`docs/submission-copy.md`](docs/submission-copy.md), [`docs/video-script.md`](docs/video-script.md)
-- Final human handoff: [`docs/submission-checklist.md`](docs/submission-checklist.md)
-- License: [MIT](LICENSE)
+Read [`AGENTS.md`](AGENTS.md) before making changes. It defines Deston/Andres ownership, architecture boundaries, secret handling, required checks, branch naming, and the non-negotiable rule that model output never directly mutates data.
 
-The repository, production URL, video, access path, team list, deadline, and primary Session ID must be checked immediately before submission. Do not edit the submission after the final deadline.
+Use short-lived `deston/`, `andres/`, or `codex/` branches as appropriate, keep commits focused and conventional, preserve unrelated work, and never force-push a shared branch. Pull requests should state user-visible behavior, trust-boundary changes, tests run, and remaining human gates.
 
-## Primary `/feedback` Session ID
+### How Codex accelerated the build
 
-**`<PRIMARY_FEEDBACK_SESSION_ID>`**
+Codex supported scoped implementation and review across the repository foundation, schema/RLS, deterministic graph engine, strict GPT contracts, operation/undo/reset boundaries, accessibility-focused UI, automated checks, and release documentation. Human owners retained product decisions, credentials, approvals, provider spend, and deployment authority. Public work-package summaries are in [`docs/codex-log.md`](docs/codex-log.md); no private transcript is committed.
 
-Deston should replace this placeholder after running `/feedback` on the primary Codex task. Do not fabricate a Session ID or commit a private transcript.
+## Submission handoff
+
+| Item | Public value or required action |
+| --- | --- |
+| Track | OpenAI Build Week — **Work and Productivity** |
+| Repository | [github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon) |
+| Production application | [inordo.vercel.app](https://inordo.vercel.app) — historical SHA `d581b0a9d736bd12046a4314e15b359ec8fd8205`, not proof of newer work |
+| Demo access | `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` — supply out of band; never commit a password |
+| Public video | `<PUBLIC_YOUTUBE_VIDEO_URL>` |
+| Devpost entry | `<DEVPOST_URL>` |
+| Team | `<TEAM_MEMBER_NAMES_AND_ROLES>` |
+| Primary Codex feedback Session ID | `<PRIMARY_FEEDBACK_SESSION_ID>` — run `/feedback`; never fabricate an ID or publish a private transcript |
+| Deadline | July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 8:00 AM SGT, subject to final confirmation against the [official schedule](https://openai.devpost.com/details/dates) |
+
+Before submission, replace every angle-bracket placeholder, verify all public links signed out, reconcile claims with the exact submitted Git and Vercel artifacts, finish the operator-held live gates, and lock the repository/deployment after the deadline as required. The full owner-by-owner checklist is [`docs/submission-checklist.md`](docs/submission-checklist.md).
+
+## License
+
+InOrdo is available under the [MIT License](LICENSE), currently attributed to the **InOrdo Hackathon Team**.
+
+> **TODO before submission:** verify the temporary copyright holder and legal attribution with every team member.

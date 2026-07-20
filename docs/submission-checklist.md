@@ -10,13 +10,13 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The repository contains an MIT `LICENSE` file.
 - [x] The repository contains architecture, demo, security, QA, and Codex implementation evidence.
 - [x] The implementation log contains summaries only and no private Codex transcript or fabricated Session ID.
-- [x] The reviewed/deployed application release is `d581b0a9d736bd12046a4314e15b359ec8fd8205` at `https://inordo-hackathon.vercel.app`.
+- [x] The canonical alias `https://inordo.vercel.app` is assigned to historical application release `d581b0a9d736bd12046a4314e15b359ec8fd8205`; this identity is not a post-rename HTTP/Auth smoke.
 
 ## Required public assets and access
 
 - [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public, defaults to `main`, and exposes application SHA `d581b0a9d736bd12046a4314e15b359ec8fd8205`.
 - [x] The public MIT license and README return `200`; the full-repository release review plus a current/all-history credential-format scan found no secret, unexpected tracked environment file, private data, or private transcript.
-- [x] An unauthenticated production check confirmed `https://inordo-hackathon.vercel.app` returns `200`, while Vercel metadata reports the recorded application release SHA and Node `22.x` deployment as `READY`.
+- [ ] Re-run the signed-out HTTP/Auth checks on canonical `https://inordo.vercel.app` after saving the renamed Supabase Auth URLs. The current anonymous check returned `302`; the prior `200`/`307` smoke belongs to the former alias and must not be reused as new-alias evidence.
 - [ ] Confirm the README renders correctly on the public repository, including Mermaid, screenshots/GIFs, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [ ] Capture a final protected-workspace screenshot or short GIF only after authenticated production QA; label synthetic data and do not present a fixture as live GPT-5.6 output.
@@ -42,7 +42,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [ ] Supabase migration, seed, generated-type, and demo-user steps match the checked-in files and do not imply that the seed creates credentials.
 - [ ] `npm ci`, local development, production build, and test commands have been followed from a clean checkout.
 - [ ] Repository structure and actual routes match the final tree.
-- [x] Deployment instructions name the confirmed manual Vercel Hobby project `chi944s-projects/inordo-hackathon` and no alternate hosting path.
+- [x] Deployment instructions name the confirmed manual Vercel Hobby project `chi944s-projects/inordo` and no alternate hosting path.
 
 ## Final QA gate
 
@@ -76,8 +76,8 @@ Replace every remaining submission token below before publishing. Search with `r
 | Placeholder | Human-supplied value | Verification |
 | --- | --- | --- |
 | Public repository | `https://github.com/Chi944/InOrdo-Hackathon` | Open signed out and confirm the final intended commit and README are visible. |
-| Production application | `https://inordo-hackathon.vercel.app` | Open incognito and run the production checklist. |
-| Hosting platform/project | Manual Vercel Hobby project `chi944s-projects/inordo-hackathon` | Confirm the project remains manually deployed with no Git-connected automatic deployment. |
+| Production application | `https://inordo.vercel.app` | Open incognito and run the production checklist. |
+| Hosting platform/project | Manual Vercel Hobby project `chi944s-projects/inordo` | Confirm the project remains manually deployed with no Git-connected automatic deployment. |
 | Deployed application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` | Compare the public deployment metadata and final submission reference. |
 | `<DEVPOST_URL>` | Final public Devpost entry. | Open signed out after submission. |
 | `<PUBLIC_YOUTUBE_VIDEO_URL>` | Public voiceover video URL, duration at most 3:00. | Play signed out and compare against the final build. |

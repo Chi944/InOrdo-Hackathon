@@ -39,9 +39,9 @@ npm ci
 Link the checkout to the existing Vercel project and confirm the Production variable **names and scopes**. Public configuration and sensitive credentials have different visibility rules; do not use `vercel env pull` as a teammate secret-distribution mechanism or assume every Production value is recoverable:
 
 ```powershell
-npx vercel login
-npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
-npx vercel env ls production
+npx --yes vercel@56.3.2 login
+npx --yes vercel@56.3.2 link --yes --project inordo --scope chi944s-projects
+npx --yes vercel@56.3.2 env ls production --scope chi944s-projects
 if (-not (Test-Path -LiteralPath .env.local)) {
     Copy-Item -LiteralPath .env.example -Destination .env.local
 }
@@ -153,7 +153,7 @@ With the account configured:
 
 ## Full live workflow after OpenAI is enabled
 
-This section targets **`https://inordo-hackathon.vercel.app`**, not the local server. Do not run it until `OPENAI_API_KEY` is stored through Vercel's hidden secret input, a new production deployment is ready, and `https://inordo-hackathon.vercel.app/api/health` returns `200 ready`. Open the production URL in a fresh private/incognito browser and sign in with the operator-provisioned synthetic account.
+This section targets **`https://inordo.vercel.app`**, not the local server. Do not run it until `OPENAI_API_KEY` is stored through Vercel's hidden secret input, a new production deployment is ready, and `https://inordo.vercel.app/api/health` returns `200 ready`. Open the production URL in a fresh private/incognito browser and sign in with the operator-provisioned synthetic account.
 
 The Production secret is intentionally not present in either teammate's `.env.local` right now. If authorized local live-provider testing is needed later, each tester must enter their own approved key directly into the ignored `.env.local` through a private editor, restart `npm run dev`, and require `http://localhost:3000/api/health` to return `200 ready`. Never transmit that key through Git, chat, email, terminal history, screenshots, or logs; remove it again when the local live test is complete.
 
