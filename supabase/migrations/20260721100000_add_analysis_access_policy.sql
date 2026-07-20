@@ -266,7 +266,8 @@ begin
     on owner_membership.workspace_id = project.workspace_id
    and owner_membership.user_id = p_verified_by
    and owner_membership.role = 'owner'::public.workspace_role
-  where grant_record.id = p_grant_id;
+  where grant_record.id = p_grant_id
+  for update of grant_record;
 
   if not found then
     raise exception 'recording grant not found or access denied'
@@ -757,24 +758,6 @@ begin
     return begin_result;
   end if;
 
-  configuration_ready := (
-    p_recording_model_name = 'gpt-5.6-luna'
-    and p_gateway_model_name = 'openai/gpt-oss-20b'
-    and (
-      (
-        p_analysis_mode = 'recording'
-        and coalesce(p_recording_ready, false)
-      )
-      or (
-        p_analysis_mode = 'auto'
-        and coalesce(p_gateway_ready, false)
-      )
-    )
-  );
-  if not coalesce(configuration_ready, false) then
-    return begin_result;
-  end if;
-
   select
     request.workspace_id,
     request.workflow_generation,
@@ -799,6 +782,24 @@ begin
     'provider_route', request_provider_route,
     'model_name', request_model_name
   );
+
+  configuration_ready := (
+    p_recording_model_name = 'gpt-5.6-luna'
+    and p_gateway_model_name = 'openai/gpt-oss-20b'
+    and (
+      (
+        p_analysis_mode = 'recording'
+        and coalesce(p_recording_ready, false)
+      )
+      or (
+        p_analysis_mode = 'auto'
+        and coalesce(p_gateway_ready, false)
+      )
+    )
+  );
+  if not coalesce(configuration_ready, false) then
+    return begin_result;
+  end if;
 
   select source.id
   into capture_source_document_id
@@ -875,6 +876,9 @@ revoke all on function public.begin_project_analysis(
 revoke all on function private.begin_project_analysis_internal(
   uuid, text, text, text, text, text, text, timestamptz, text, text
 ) from service_role;
+revoke all on function private.reconcile_expired_analysis_claim(
+  uuid, uuid, text, text
+) from public, anon, authenticated, service_role;
 revoke all on function private.begin_project_analysis_with_policy_internal(
   uuid, text, text, text, text, text, text, timestamptz, text, text,
   boolean, boolean, text, text

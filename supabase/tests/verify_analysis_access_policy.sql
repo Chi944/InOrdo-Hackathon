@@ -57,6 +57,13 @@ begin
     true
   );
   perform pg_catalog.set_config(
+    'inordo.analysis_policy_expired_duplicate_hash',
+    private.source_normalized_sha256(
+      'Expired duplicate metadata verification.'
+    ),
+    true
+  );
+  perform pg_catalog.set_config(
     'inordo.analysis_policy_rate_hash',
     private.source_normalized_sha256(
       'Rate-limited recording grant verification.'
@@ -150,8 +157,8 @@ begin
   );
 
   if result ->> 'status' <> 'claimed'
-     or result ->> 'provider_route' <> 'gateway_fallback'
-     or result ->> 'model_name' <> 'openai/gpt-oss-20b'
+     or result ->> 'provider_route' is distinct from 'gateway_fallback'
+     or result ->> 'model_name' is distinct from 'openai/gpt-oss-20b'
      or not exists (
        select 1 from public.analysis_requests as request
        where request.id = (result ->> 'analysis_request_id')::uuid
@@ -236,6 +243,94 @@ begin
   end if;
 end;
 $$;
+
+-- An unavailable duplicate still returns persisted provider metadata after the
+-- wrapper reconciles its expired processing lease, without adding provenance.
+do $$
+declare
+  expired_created_at timestamptz := pg_catalog.clock_timestamp()
+    - interval '4 minutes';
+  source_id uuid;
+  request_id uuid;
+begin
+  insert into public.source_documents (
+    workspace_id, project_id, title, source_kind, raw_text, captured_by,
+    source_author, normalized_content_sha256, created_at
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    'Expired duplicate metadata', 'manual_note',
+    'Expired duplicate metadata verification.',
+    '00000000-0000-4000-8000-000000000106'::uuid,
+    'SQL verifier',
+    pg_catalog.current_setting(
+      'inordo.analysis_policy_expired_duplicate_hash'
+    ),
+    expired_created_at
+  ) returning id into source_id;
+
+  insert into public.analysis_requests (
+    workspace_id, project_id, source_document_id, project_revision,
+    normalized_content_sha256, model_name, requested_by, created_at
+  ) values (
+    '10000000-0000-4000-8000-000000000001'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    source_id,
+    pg_catalog.current_setting('inordo.analysis_policy_revision'),
+    pg_catalog.current_setting(
+      'inordo.analysis_policy_expired_duplicate_hash'
+    ),
+    'openai/gpt-oss-20b',
+    '00000000-0000-4000-8000-000000000106'::uuid,
+    expired_created_at
+  ) returning id into request_id;
+
+  perform pg_catalog.set_config(
+    'inordo.expired_duplicate_request_id', request_id::text, true
+  );
+end;
+$$;
+set local role service_role;
+select pg_catalog.set_config(
+  'request.jwt.claims', '{"role":"service_role"}', true
+);
+do $$
+declare
+  source_count bigint;
+  provenance_count bigint;
+  result jsonb;
+begin
+  select count(*) into source_count from public.source_documents;
+  select count(*) into provenance_count from public.analysis_request_sources;
+
+  result := public.begin_project_analysis_with_policy(
+    '00000000-0000-4000-8000-000000000106'::uuid,
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    pg_catalog.current_setting('inordo.analysis_policy_revision'),
+    'Expired duplicate unavailable capture', 'manual_note',
+    'Different unavailable author',
+    'Expired duplicate metadata verification.',
+    pg_catalog.current_setting(
+      'inordo.analysis_policy_expired_duplicate_hash'
+    ),
+    null, null, 'disabled', false, false,
+    'gpt-5.6-luna', 'openai/gpt-oss-20b'
+  );
+
+  if result ->> 'status' <> 'duplicate'
+     or result ->> 'state' <> 'failed'
+     or result ->> 'analysis_request_id' <>
+       pg_catalog.current_setting('inordo.expired_duplicate_request_id')
+     or result ->> 'provider_route' is distinct from 'gateway_fallback'
+     or result ->> 'model_name' is distinct from 'openai/gpt-oss-20b'
+     or (select count(*) from public.source_documents) <> source_count
+     or (select count(*) from public.analysis_request_sources)
+       <> provenance_count then
+    raise exception 'expired_duplicate_metadata_without_capture: %', result;
+  end if;
+end;
+$$;
+reset role;
 
 -- recording_replay_rejected
 set local role service_role;
@@ -890,6 +985,13 @@ begin
     raise exception 'direct_policy_internal_denied_to_service_role';
   end if;
   if has_function_privilege(
+    'service_role',
+    'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
+    'EXECUTE'
+  ) then
+    raise exception 'direct_reconcile_denied_to_service_role';
+  end if;
+  if has_function_privilege(
        'authenticated',
        'public.begin_project_analysis_with_policy(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text,boolean,boolean,text,text)',
        'EXECUTE'
@@ -928,6 +1030,11 @@ begin
        'EXECUTE'
      ) then
     raise exception 'owner_only_issue_revoke_and_verify';
+  end if;
+  if pg_catalog.pg_get_functiondef(
+       'private.verify_analysis_recording_grant(uuid,uuid)'::regprocedure
+     ) !~* 'for[[:space:]]+update[[:space:]]+of[[:space:]]+grant_record' then
+    raise exception 'verify_grant_reads_under_tuple_lock';
   end if;
 end;
 $$;

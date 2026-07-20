@@ -319,7 +319,7 @@ begin
        'authenticated',
        'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
        'EXECUTE'
-     ) or not has_function_privilege(
+     ) or has_function_privilege(
        'service_role',
        'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
        'EXECUTE'
