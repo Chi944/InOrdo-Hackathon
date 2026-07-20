@@ -1,6 +1,10 @@
 export default function WorkspaceLoading() {
   return (
-    <main className="mx-auto w-full max-w-[90rem] px-5 py-10 sm:px-8 lg:px-12" id="main-content">
+    <main
+      className="mx-auto w-full max-w-[90rem] px-5 py-10 sm:px-8 lg:px-12"
+      id="main-content"
+      tabIndex={-1}
+    >
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.15em] text-signal">
         Loading authenticated workspace
       </p>

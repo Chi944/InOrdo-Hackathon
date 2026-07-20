@@ -44,7 +44,11 @@ export default async function ProjectItemDetailPage({
   const canEdit = role !== "viewer";
 
   return (
-    <main className="mx-auto w-full max-w-[90rem] px-4 py-8 sm:px-8 sm:py-10 lg:px-12" id="main-content">
+    <main
+      className="mx-auto w-full max-w-[90rem] px-4 py-8 sm:px-8 sm:py-10 lg:px-12"
+      id="main-content"
+      tabIndex={-1}
+    >
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex flex-wrap items-center gap-2 text-sm text-muted">
           <li><Link className="rounded-sm underline decoration-rule underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal" href="/app">Overview</Link></li>

@@ -23,6 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main
       className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-[90rem] place-items-center px-5 py-12 sm:px-8"
       id="main-content"
+      tabIndex={-1}
     >
       <section className="grid w-full max-w-4xl border border-rule bg-white shadow-[0_30px_80px_rgba(23,35,31,0.1)] lg:grid-cols-[0.9fr_1.1fr]">
         <div className="bg-ink p-8 text-paper sm:p-10">

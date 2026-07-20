@@ -2,7 +2,11 @@
 
 export default function WorkspaceError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-20 text-center" id="main-content">
+    <main
+      className="mx-auto w-full max-w-3xl px-5 py-20 text-center"
+      id="main-content"
+      tabIndex={-1}
+    >
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.15em] text-caution">
         Workspace error
       </p>

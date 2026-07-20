@@ -38,7 +38,7 @@ const workflow = [
 
 export default function Home() {
   return (
-    <main id="main-content">
+    <main id="main-content" tabIndex={-1}>
       <header className="mx-auto flex w-full max-w-[90rem] items-center justify-between px-5 py-6 sm:px-8 lg:px-12">
         <a
           className="inline-flex items-center gap-3 rounded-sm font-semibold tracking-[-0.04em] text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"

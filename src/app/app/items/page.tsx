@@ -10,6 +10,7 @@ export default async function ProjectItemsPage() {
     <main
       className="mx-auto w-full max-w-[90rem] px-4 py-8 sm:px-8 sm:py-10 lg:px-12"
       id="main-content"
+      tabIndex={-1}
     >
       <header className="mb-6 border-b border-rule pb-6">
         <p className="font-mono text-[0.63rem] uppercase tracking-[0.13em] text-signal">

@@ -11,6 +11,7 @@ export default async function ProjectRisksPage() {
     <main
       className="mx-auto w-full max-w-[90rem] px-4 py-8 sm:px-8 sm:py-10 lg:px-12"
       id="main-content"
+      tabIndex={-1}
     >
       <Link
         className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"

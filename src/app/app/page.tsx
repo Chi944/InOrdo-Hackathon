@@ -187,6 +187,7 @@ export default async function DemoWorkspacePage({
     <main
       className="mx-auto w-full max-w-[90rem] px-4 py-8 sm:px-8 sm:py-10 lg:px-12"
       id="main-content"
+      tabIndex={-1}
     >
       <header className="grid gap-6 border-b border-rule pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
