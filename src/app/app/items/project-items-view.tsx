@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -228,7 +229,7 @@ function CreateItemDialog({
       state,
     );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (
       (state.status === "error" || state.status === "conflict") &&
       formRef.current &&

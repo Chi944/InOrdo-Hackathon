@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -182,7 +183,7 @@ function RemoveRelationshipForm({
     if (state.status === "success") closeDialog();
   }, [state.status]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (
       (state.status === "error" || state.status === "conflict") &&
       formRef.current &&
@@ -394,7 +395,7 @@ function AddRelationshipDialog({
     if (state.status === "success") onClose();
   }, [onClose, state.status]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (
       (state.status === "error" || state.status === "conflict") &&
       formRef.current &&

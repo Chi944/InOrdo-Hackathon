@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -122,7 +123,7 @@ export function ProjectItemEditor({
       state,
     );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (
       (state.status === "error" || state.status === "conflict") &&
       formRef.current &&
