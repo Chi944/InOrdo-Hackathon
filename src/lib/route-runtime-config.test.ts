@@ -78,6 +78,7 @@ describe("production route runtime configuration", () => {
       resolve(process.cwd(), "docs/deployment-runbook.md"),
       "utf8",
     );
+    const normalizedRunbook = runbook.replaceAll("\r\n", "\n");
     const revertPlanner = readFileSync(
       resolve(process.cwd(), "scripts/revert-plan.mjs"),
       "utf8",
@@ -105,8 +106,10 @@ describe("production route runtime configuration", () => {
     );
     expect(runbook).toContain("node scripts/verify-migration-parity.mjs");
     expect(
-      runbook.indexOf("npx --no-install supabase db push --dry-run"),
-    ).toBeLessThan(runbook.indexOf("npx --no-install supabase db push\n"));
+      normalizedRunbook.indexOf("npx --no-install supabase db push --dry-run"),
+    ).toBeLessThan(
+      normalizedRunbook.indexOf("npx --no-install supabase db push\n"),
+    );
     expect(
       runbook.indexOf("node scripts/verify-migration-parity.mjs"),
     ).toBeLessThan(runbook.indexOf("npx --yes vercel@56.3.2 --prod"));
