@@ -2,7 +2,7 @@
 
 **Authoritative runtime:** 2:47 (under the three-minute submission limit)
 
-**Track:** Work and Productivity
+**Track:** Work & Productivity
 
 **Production rule:** Record only the public Production application with the synthetic workspace label visible. Do not show fixtures, test routes, generated interfaces, private tools, or expected results as live product behavior. Raw media and credentials remain outside Git.
 

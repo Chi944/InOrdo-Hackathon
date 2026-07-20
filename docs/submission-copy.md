@@ -2,7 +2,7 @@
 
 ## Submission details
 
-- **Track:** Work and Productivity
+- **Track:** Work & Productivity
 - **Deployed application:** `https://inordo.vercel.app`
 - **Reviewed/deployed application SHA:** `dad6b33e8fe99ae134f6949a4c46e8311352691d`
 - **Public repository:** `https://github.com/Chi944/InOrdo-Hackathon`

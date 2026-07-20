@@ -5,7 +5,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 ## Confirmed submission facts
 
 - [x] Product: InOrdo.
-- [x] Track: **Work and Productivity**.
+- [x] Track: **Work & Productivity**.
 - [x] Demo records represent the synthetic “Regional Climate Action Summit 2026” workspace; no customer account is used.
 - [x] The repository contains an MIT `LICENSE` file.
 - [x] The repository contains architecture, demo, security, QA, and Codex implementation evidence.
@@ -26,7 +26,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 ## Product and claim review
 
-- [ ] README and Devpost use the one-line pitch consistently and identify the Work and Productivity track.
+- [ ] README and Devpost use the one-line pitch consistently and identify the Work & Productivity track.
 - [ ] The demo follows evidence → impact → proposal → approval → history and undo, or clearly stops at the last independently verified step.
 - [ ] The GPT-5.6 explanation is specific: server-side structured extraction and recovery drafting, strict validation, no tools, and no direct mutation authority.
 - [ ] The deterministic explanation is specific: explicit dependency traversal, authorization, approval checks, mutations, operation history, and undo remain application/database logic.

@@ -489,7 +489,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 - [ ] Run exactly one funded synthetic GPT-5.6 analysis and record safe metadata only; do not record a key, prompt, raw provider output, or source body.
 - [ ] Complete the authenticated production smoke path above as owner/admin and repeat read-only/denial checks as viewer and nonmember where feasible.
 - [ ] Verify the real authenticated route at approximately 375, 768, and 1440 pixels, including keyboard order, visible focus, accessible names, status announcements, and no horizontal overflow.
-- [ ] Confirm Devpost copy and the public voiceover video describe only the verified artifact, use the Work and Productivity track, and never present a fixture as live model output.
+- [ ] Confirm Devpost copy and the public voiceover video describe only the verified artifact, use the Work & Productivity track, and never present a fixture as live model output.
 - [ ] Replace the production, demo-access, Devpost, video, team, deadline, and primary `/feedback` placeholders in the submission materials.
 - [ ] Test the repository, production, video, Devpost, and demo-access links without a team-authenticated browser session.
 - [ ] Record the final submitted commit externally and stop repository, deployment, Devpost, and video edits at the official deadline.
