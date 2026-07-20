@@ -1,4 +1,5 @@
 import {
+  APIError,
   APIConnectionTimeoutError,
   RateLimitError,
 } from "openai";
@@ -299,6 +300,24 @@ describe("createOpenAIAnalysisAdapter", () => {
       code: "transient_provider",
       requestId: "req_rate_limit_test_only",
       message: "The analysis provider is temporarily unavailable.",
+    });
+  });
+
+  it("normalizes an HTTP 402 response to a quota-exhausted model error", async () => {
+    const quotaError = new APIError(
+      402,
+      { code: "quota_exhausted" },
+      "test-only provider detail",
+      new Headers({ "x-request-id": "req_quota_test_only" }),
+    );
+    const client = createParseClient(vi.fn().mockRejectedValue(quotaError));
+
+    await expect(
+      createOpenAIAnalysisAdapter(client).extractChange(prompt),
+    ).rejects.toMatchObject({
+      code: "quota_exhausted",
+      requestId: "req_quota_test_only",
+      message: "The analysis provider quota is exhausted.",
     });
   });
 

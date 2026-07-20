@@ -5,7 +5,7 @@ import { AnalysisError } from "@/features/analysis/errors";
 import type { AnalysisProviderPolicy } from "@/features/analysis/provider-policy";
 import {
   AnalysisModelError,
-  type OpenAIAnalysisAdapter,
+  type AnalysisModelAdapter,
 } from "@/features/analysis/openai-adapter";
 import {
   type AnalysisPersistence,
@@ -136,7 +136,7 @@ function dependencies() {
     complete,
     fail,
   } satisfies AnalysisPersistence;
-  const extractChange = vi.fn<OpenAIAnalysisAdapter["extractChange"]>(async () => ({
+  const extractChange = vi.fn<AnalysisModelAdapter["extractChange"]>(async () => ({
     data: {
       change: {
         targetItemId: changedItemId,
@@ -158,7 +158,7 @@ function dependencies() {
     },
     metadata: extractionMetadata,
   }));
-  const draftProposal = vi.fn<OpenAIAnalysisAdapter["draftProposal"]>(async () => ({
+  const draftProposal = vi.fn<AnalysisModelAdapter["draftProposal"]>(async () => ({
     data: {
       title: "Recover the briefing schedule",
       rationale: "Keep summit preparation aligned.",
@@ -186,9 +186,18 @@ function dependencies() {
   const model = {
     extractChange,
     draftProposal,
-  } satisfies OpenAIAnalysisAdapter;
+  } satisfies AnalysisModelAdapter;
+  const resolveModel = vi.fn(() => model);
+  const resolveProviderPolicy = vi.fn(() => recordingPolicy);
 
-  return { authorize, loadContext, persistence, model };
+  return {
+    authorize,
+    loadContext,
+    persistence,
+    model,
+    resolveModel,
+    resolveProviderPolicy,
+  };
 }
 
 describe("project analysis service", () => {
@@ -197,7 +206,6 @@ describe("project analysis service", () => {
     const service = createProjectAnalysisService({
       client: {} as ServerSupabaseClient,
       ...deps,
-      providerPolicy: recordingPolicy,
     });
 
     await expect(service.analyze(projectId, request)).resolves.toMatchObject({
@@ -217,8 +225,12 @@ describe("project analysis service", () => {
     expect(deps.model.draftProposal).toHaveBeenCalledTimes(1);
     expect(deps.persistence.complete).toHaveBeenCalledTimes(1);
     expect(deps.persistence.begin.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.resolveModel.mock.invocationCallOrder[0]!,
+    );
+    expect(deps.resolveModel.mock.invocationCallOrder[0]).toBeLessThan(
       deps.model.extractChange.mock.invocationCallOrder[0]!,
     );
+    expect(deps.resolveModel).toHaveBeenCalledWith("openai_recording");
     expect(deps.model.extractChange.mock.invocationCallOrder[0]).toBeLessThan(
       deps.model.draftProposal.mock.invocationCallOrder[0]!,
     );
@@ -274,6 +286,7 @@ describe("project analysis service", () => {
     });
     expect(deps.model.extractChange).not.toHaveBeenCalled();
     expect(deps.model.draftProposal).not.toHaveBeenCalled();
+    expect(deps.resolveModel).not.toHaveBeenCalled();
     expect(deps.persistence.complete).not.toHaveBeenCalled();
   });
 
@@ -303,7 +316,30 @@ describe("project analysis service", () => {
     });
     expect(deps.model.extractChange).not.toHaveBeenCalled();
     expect(deps.model.draftProposal).not.toHaveBeenCalled();
+    expect(deps.resolveModel).not.toHaveBeenCalled();
     expect(deps.persistence.complete).not.toHaveBeenCalled();
+    expect(deps.persistence.fail).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "rate_limited",
+    "analysis_disabled",
+    "recording_unavailable",
+    "fallback_unavailable",
+  ] as const)("does not resolve a provider when begin returns %s", async (code) => {
+    const deps = dependencies();
+    deps.persistence.begin.mockRejectedValueOnce(new AnalysisError(code));
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+    });
+
+    await expect(service.analyze(projectId, request)).rejects.toMatchObject({
+      code,
+    });
+    expect(deps.resolveModel).not.toHaveBeenCalled();
+    expect(deps.model.extractChange).not.toHaveBeenCalled();
+    expect(deps.model.draftProposal).not.toHaveBeenCalled();
     expect(deps.persistence.fail).not.toHaveBeenCalled();
   });
 
@@ -399,28 +435,118 @@ describe("project analysis service", () => {
     );
     expect(deps.persistence.begin).not.toHaveBeenCalled();
     expect(deps.model.extractChange).not.toHaveBeenCalled();
+    expect(deps.resolveModel).not.toHaveBeenCalled();
   });
 
-  it("checks model configuration before creating an idempotency claim", async () => {
+  it("claims before resolving the selected model and fails the claim if resolution fails", async () => {
     const deps = dependencies();
-    const resolveModelName = vi.fn(() => {
+    deps.resolveModel.mockImplementationOnce(() => {
       throw new Error("test-only missing model configuration");
     });
     const service = createProjectAnalysisService({
       client: {} as ServerSupabaseClient,
       ...deps,
-      resolveModelName,
     });
 
     await expect(service.analyze(projectId, request)).rejects.toMatchObject({
       code: "model_unavailable",
     });
-    expect(resolveModelName).toHaveBeenCalledOnce();
-    expect(deps.persistence.begin).not.toHaveBeenCalled();
+    expect(deps.persistence.begin).toHaveBeenCalledOnce();
+    expect(deps.resolveModel).toHaveBeenCalledWith("openai_recording");
+    expect(deps.persistence.begin.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.resolveModel.mock.invocationCallOrder[0]!,
+    );
     expect(deps.persistence.complete).not.toHaveBeenCalled();
-    expect(deps.persistence.fail).not.toHaveBeenCalled();
+    expect(deps.persistence.fail).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId, failureCode: "model_unavailable" }),
+    );
     expect(deps.model.extractChange).not.toHaveBeenCalled();
     expect(deps.model.draftProposal).not.toHaveBeenCalled();
+  });
+
+  it("uses one claimed Gateway adapter for both bounded model stages", async () => {
+    const deps = dependencies();
+    const gatewayPolicy: AnalysisProviderPolicy = {
+      mode: "auto",
+      recordingReady: false,
+      gatewayReady: true,
+      recordingModelName: "gpt-5.6-luna",
+      gatewayModelName: "openai/gpt-oss-20b",
+    };
+    deps.resolveProviderPolicy.mockReturnValueOnce(gatewayPolicy);
+    deps.persistence.begin.mockResolvedValueOnce({
+      kind: "claimed",
+      requestId,
+      sourceDocumentId,
+      providerRoute: "gateway_fallback",
+      modelName: "openai/gpt-oss-20b",
+    });
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+    });
+
+    await service.analyze(projectId, request);
+
+    expect(deps.persistence.begin).toHaveBeenCalledWith(
+      expect.objectContaining({ providerPolicy: gatewayPolicy }),
+    );
+    expect(deps.resolveModel).toHaveBeenCalledOnce();
+    expect(deps.resolveModel).toHaveBeenCalledWith("gateway_fallback");
+    expect(deps.model.extractChange).toHaveBeenCalledOnce();
+    expect(deps.model.draftProposal).toHaveBeenCalledOnce();
+    expect(deps.persistence.complete).toHaveBeenCalledWith(
+      expect.objectContaining({ modelName: "openai/gpt-oss-20b" }),
+    );
+  });
+
+  it("maps quota exhaustion only for a claimed Gateway route", async () => {
+    const deps = dependencies();
+    deps.persistence.begin.mockResolvedValueOnce({
+      kind: "claimed",
+      requestId,
+      sourceDocumentId,
+      providerRoute: "gateway_fallback",
+      modelName: "openai/gpt-oss-20b",
+    });
+    deps.model.extractChange.mockRejectedValueOnce(
+      new AnalysisModelError("quota_exhausted", "test-only quota detail"),
+    );
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+    });
+
+    await expect(service.analyze(projectId, request)).rejects.toMatchObject({
+      code: "fallback_quota_exhausted",
+    });
+    expect(deps.persistence.fail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId,
+        failureCode: "fallback_quota_exhausted",
+      }),
+    );
+  });
+
+  it("does not expose the fallback quota error for a recording claim", async () => {
+    const deps = dependencies();
+    deps.model.extractChange.mockRejectedValueOnce(
+      new AnalysisModelError("quota_exhausted", "test-only quota detail"),
+    );
+    const service = createProjectAnalysisService({
+      client: {} as ServerSupabaseClient,
+      ...deps,
+    });
+
+    await expect(service.analyze(projectId, request)).rejects.toMatchObject({
+      code: "model_unavailable",
+    });
+    expect(deps.persistence.fail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId,
+        failureCode: "model_unavailable",
+      }),
+    );
   });
 
   it("propagates a stale-project conflict from atomic completion and marks the claim failed", async () => {

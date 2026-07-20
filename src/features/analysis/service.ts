@@ -21,7 +21,7 @@ import {
 } from "@/features/analysis/model-context";
 import type {
   AnalysisModelMetadata,
-  OpenAIAnalysisAdapter,
+  AnalysisModelAdapter,
 } from "@/features/analysis/openai-adapter";
 import { AnalysisModelError } from "@/features/analysis/openai-adapter";
 import {
@@ -130,10 +130,8 @@ export type ProjectAnalysisServiceResult =
 type CreateProjectAnalysisServiceOptions = {
   client: ServerSupabaseClient;
   persistence: AnalysisPersistence;
-  model: OpenAIAnalysisAdapter;
-  modelName?: string;
-  resolveModelName?: () => string | Promise<string>;
-  providerPolicy?: AnalysisProviderPolicy;
+  resolveModel: (route: AnalysisProviderRoute) => AnalysisModelAdapter;
+  resolveProviderPolicy: () => AnalysisProviderPolicy;
   authorize?: AnalysisAuthorizer;
   loadContext?: (
     client: ServerSupabaseClient,
@@ -168,7 +166,10 @@ function contextForExtraction(
   };
 }
 
-function modelErrorToAnalysisError(error: AnalysisModelError): AnalysisError {
+function modelErrorToAnalysisError(
+  error: AnalysisModelError,
+  providerRoute?: AnalysisProviderRoute,
+): AnalysisError {
   switch (error.code) {
     case "timeout":
       return new AnalysisError("model_timeout", undefined, error);
@@ -181,6 +182,14 @@ function modelErrorToAnalysisError(error: AnalysisModelError): AnalysisError {
     case "transient_provider":
     case "provider_failure":
       return new AnalysisError("model_unavailable", undefined, error);
+    case "quota_exhausted":
+      return new AnalysisError(
+        providerRoute === "gateway_fallback"
+          ? "fallback_quota_exhausted"
+          : "model_unavailable",
+        undefined,
+        error,
+      );
   }
 }
 
@@ -194,9 +203,14 @@ function failureProviderRequestId(error: unknown): string | null {
   return null;
 }
 
-function safeAnalysisError(error: unknown): AnalysisError {
+function safeAnalysisError(
+  error: unknown,
+  providerRoute?: AnalysisProviderRoute,
+): AnalysisError {
   if (error instanceof AnalysisError) return error;
-  if (error instanceof AnalysisModelError) return modelErrorToAnalysisError(error);
+  if (error instanceof AnalysisModelError) {
+    return modelErrorToAnalysisError(error, providerRoute);
+  }
   return new AnalysisError("persistence", undefined, error);
 }
 
@@ -226,16 +240,8 @@ function proposalAffectedItems(
 export function createProjectAnalysisService({
   client,
   persistence,
-  model,
-  modelName = "gpt-5.6-luna",
-  resolveModelName = () => modelName,
-  providerPolicy = {
-    mode: "recording",
-    recordingReady: true,
-    gatewayReady: false,
-    recordingModelName: "gpt-5.6-luna",
-    gatewayModelName: "openai/gpt-oss-20b",
-  },
+  resolveModel,
+  resolveProviderPolicy,
   authorize = defaultAuthorizer,
   loadContext = loadProjectAnalysisContext,
 }: CreateProjectAnalysisServiceOptions) {
@@ -263,11 +269,7 @@ export function createProjectAnalysisService({
         }
         throw error;
       }
-      try {
-        await resolveModelName();
-      } catch (error) {
-        throw new AnalysisError("model_unavailable", undefined, error);
-      }
+      const providerPolicy = resolveProviderPolicy();
       const beginning = await persistence.begin({
         actorId: user.id,
         projectId,
@@ -281,6 +283,13 @@ export function createProjectAnalysisService({
       let failureStage: FailAnalysisInput["failureStage"] = "extraction";
 
       try {
+        let model: AnalysisModelAdapter;
+        try {
+          model = resolveModel(beginning.providerRoute);
+        } catch (error) {
+          if (error instanceof AnalysisError) throw error;
+          throw new AnalysisError("model_unavailable", undefined, error);
+        }
         const extraction = await model.extractChange({
           ...buildExtractionPrompt({
             source: {
@@ -369,7 +378,7 @@ export function createProjectAnalysisService({
           ...completed,
         };
       } catch (error) {
-        const safeError = safeAnalysisError(error);
+        const safeError = safeAnalysisError(error, beginning.providerRoute);
         const providerRequestId =
           failureProviderRequestId(error) ?? latestProviderRequestId;
         try {
