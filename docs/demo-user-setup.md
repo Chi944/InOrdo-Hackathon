@@ -92,4 +92,4 @@ Ordinary login and project reads must not use `SUPABASE_SERVICE_ROLE_KEY`.
 4. Sign out, then confirm the protected route no longer loads project data.
 5. Try an invalid password and confirm the page shows a useful error without exposing credentials or Supabase internals.
 
-The automated Prompt 3 checks pass, but these live-account steps remain an operator task and are not claimed as verified by the branch.
+The operator-managed demo account has completed local login plus authenticated production project-record, dependency, rollback, and reset smoke. A fresh signed-out/login/session-refresh/logout pass remains part of the final public-release checklist; no password or Auth UUID is recorded here.

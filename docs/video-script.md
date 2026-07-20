@@ -10,7 +10,7 @@
 
 - `[VERIFY LIVE]` requires a successful authenticated production run recorded in the QA checklist before filming.
 - Successful analysis finalization now promotes only an eligible, fully linked proposal from `draft` to `ready`; every action remains pending. Show approval only after the authenticated production path verifies that transition, and keep the honest disabled state for every ineligible proposal.
-- A live GPT-5.6 request, authenticated browser flow, and incognito production run are currently unverified. If they remain unverified at recording time, use the safe fallback shots and narration below.
+- One production GPT-5.6 request failed closed because the OpenAI organization is unfunded. Native authenticated record/dependency/reset smoke is verified, but the successful analysis-to-undo and incognito judge journeys are not. Use the safe fallback shots and narration unless those remaining paths pass before recording.
 - If live analysis is slow after it has been verified, cut to a rehearsal capture of the **same verified production request**. If no verified capture exists, stay on the real loading state, cut to the architecture diagram, and state that live verification remains open.
 
 ## Timed storyboard and voiceover

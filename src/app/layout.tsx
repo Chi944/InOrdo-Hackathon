@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { SkipLink } from "@/components/skip-link";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,9 +33,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full">
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
+        <SkipLink />
         {children}
       </body>
     </html>

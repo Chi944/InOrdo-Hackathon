@@ -25,14 +25,14 @@ Configure values interactively in Vercel's secret store. The commands below cont
 | `NEXT_PUBLIC_SUPABASE_URL` | Production | Browser-safe | Exact hosted Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production | Browser-safe | Publishable/anonymous browser key used with Auth and RLS. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, sensitive | Server only | Used only after request-scoped authorization by constrained persistence/operation services. |
-| `OPENAI_API_KEY` | Production, sensitive | Server only | Required for live analysis; intentionally absent until Deston supplies it. |
+| `OPENAI_API_KEY` | Production, sensitive | Server only | Required for live analysis; configured through one-way secret handling and never exposed to client code. |
 | `OPENAI_MODEL` | Production | Server only | Use `gpt-5.6-luna` unless a reviewed release explicitly changes it. |
 | `DEMO_PROJECT_SLUG` | Production | Server only | Selects the synthetic project for protected workspace lookup and reset. |
 | `DEMO_RESET_SECRET` | Production, sensitive | Server only | Server-held reset guard; never accepted from a browser request. |
 
 Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave the seven application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
 
-With `OPENAI_API_KEY` absent, production can build and public/authenticated non-analysis routes can be deployed, but `/api/health` must return `503 not_ready` and live analysis is unavailable. Add that one value only through Deston's interactive Vercel session, redeploy, then require `200 ready` before running the funded analysis smoke.
+Production currently has all seven names and `/api/health` returns `200 ready`. That endpoint proves configuration shape only, not provider funding or a successful model call. The OpenAI organization must be funded before the one remaining synthetic analysis retry; never retry repeatedly to diagnose billing.
 
 ### Interactive production configuration
 
@@ -192,7 +192,7 @@ The project explicitly enables Fluid Compute in `vercel.json`. The analysis rout
 
 Use a fresh private/incognito browser and the operator-provisioned synthetic account. Do not record its password, session, cookies, authorization headers, or private response bodies.
 
-1. Request `https://inordo.vercel.app/api/health`. Expect `503 not_ready` while `OPENAI_API_KEY` is absent. After Deston adds the key and redeploys, require `200 ready`; the body may identify configuration names/status only and must never expose values or test the provider by spending tokens.
+1. Request `https://inordo.vercel.app/api/health` through authorized deployment access and require `200 ready`; the body may identify configuration names/status only and must never expose values or test the provider by spending tokens. Treat provider billing/funding as a separate gate.
 2. Check `npx --yes vercel@56.3.2 logs <PRODUCTION_DEPLOYMENT_URL>` for configuration-name-only failures, route timeouts, server/client boundary violations, or build-time provider activity. Any credential/value leak is an incident and blocks release.
 3. Open `/`, `/login`, and the protected `/app` path signed out. Confirm the protected path redirects safely to login and no tenant data appears.
 4. Sign in with the out-of-band synthetic owner/admin account. Confirm session refresh and logout, then verify the seeded dashboard, 24 active records, 26 edges, decision/risk/item/dependency pages, and documented dependency direction.
@@ -342,4 +342,4 @@ Open and review a PR, merge it without force, then return to `main`, pull with `
 
 ## Evidence that remains human-owned
 
-The production alias, Vercel deployment identity, linked Supabase project reference, hosted Auth URL configuration, and six non-OpenAI production variable names are recorded in `docs/release-evidence.md`; no value is recorded. Deston must still supply the OpenAI key, provision the Auth demo account, and confirm current Vercel Hobby eligibility. The team must complete the authenticated production smoke, funded synthetic analysis, final responsive/accessibility pass, public-video/Devpost links, judge access path, team/deadline details, and primary `/feedback` Session ID. Placeholders are not release evidence and must never be filled with invented values.
+The production alias/deployment identity, linked Supabase project, hosted Auth URLs, seven Production variable names, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The team must still fund the OpenAI API organization, complete the successful analysis-to-undo smoke, apply the separately approved contract migration, finish deployed accessibility and signed-out judge-access checks, and supply the public video/Devpost links, team/legal details, and primary `/feedback` Session ID. Placeholders are not release evidence and must never be filled with invented values.

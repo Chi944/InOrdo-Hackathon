@@ -8,10 +8,10 @@ This guide gives Deston on Windows and Andres on macOS repeatable, role-appropri
 - Never commit, paste, screenshot, or send `.env.local`, passwords, API keys, cookies, service-role values, or reset secrets.
 - Grant only the provider access required for the assigned work. Deston owns privileged database, deployment, reset, and model configuration. Andres's normal interface QA does not require a service-role key, reset secret, OpenAI key, or Vercel Production-secret access.
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are browser-configured values. Every other configured name is server-only.
-- Until `OPENAI_API_KEY` is intentionally added, `/api/health` must return generic `503 not_ready`; this is expected and live analysis must remain unclaimed.
+- Deston's local and Vercel Production environments contain all seven required names. The health route is ready, but the OpenAI organization currently has no credits; the single production analysis attempt failed closed and live model output must remain unclaimed.
 - Use only the fictional Regional Climate Action Summit workspace and the operator-provisioned demo Auth account.
 
-Deston's privileged local fail-closed setup uses these six non-OpenAI names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Leave `OPENAI_API_KEY` blank. Andres should prefer the deployed production application for authenticated interface QA. When local Auth/UI inspection is necessary, he needs only the two browser-safe `NEXT_PUBLIC_` values, the non-secret server-only `DEMO_PROJECT_SLUG=regional-climate-action-summit-2026`, the non-secret `OPENAI_MODEL=gpt-5.6-luna` default retained from `.env.example`, and his own operator-provisioned demo account. Every credential and privileged server value remains blank.
+Deston's privileged local setup uses all seven documented names. Their values remain only in the ignored local file and provider secret stores. Andres should prefer the deployed production application for authenticated interface QA. When local Auth/UI inspection is necessary, he needs only the two browser-safe `NEXT_PUBLIC_` values, the non-secret server-only `DEMO_PROJECT_SLUG=regional-climate-action-summit-2026`, the non-secret `OPENAI_MODEL=gpt-5.6-luna` default retained from `.env.example`, and his own operator-provisioned demo account. Every credential and privileged server value remains blank in Andres's least-privilege setup.
 
 A Vercel CLI-managed `VERCEL_OIDC_TOKEN`, if present, is also a secret: do not inspect, copy, document, or commit it. If Andres is later assigned a specific privileged local operation, the project owner must approve the narrow access and deliver each required server value through the approved secret manager; never grant the full secret set merely for environment parity.
 
@@ -49,7 +49,7 @@ git check-ignore -q .env.local
 git status --short
 ```
 
-Deston's existing machine already has the six authorized non-OpenAI values in the ignored `.env.local`; `OPENAI_API_KEY` is intentionally blank. On a fresh Windows machine, populate those six names through a private editor from the authorized Supabase/provider source or approved secret manager. `git check-ignore -q` must exit successfully and `git status --short` must not list the file. Never use `Get-Content`, `type`, `echo`, or a shell argument to inspect or set a value.
+Deston's existing machine has all seven authorized values in the ignored `.env.local`. On a fresh Windows machine, populate the names through a private editor from the authorized Supabase/OpenAI source or approved secret manager. `git check-ignore -q` must exit successfully and `git status --short` must not list the file. Never use `Get-Content`, `type`, `echo`, or a shell argument to inspect or set a value.
 
 ## Andres: macOS setup
 
@@ -104,13 +104,13 @@ Windows PowerShell and macOS use the same application commands:
 npm run dev
 ```
 
-Open `http://localhost:3000`. Before OpenAI is configured, verify:
+Open `http://localhost:3000`. In Deston's fully configured environment, verify:
 
 - `/` renders the public landing page;
 - `/login` renders the email/password form;
 - signed-out `/app` redirects to `/login?next=%2Fapp`;
-- `/api/health` returns generic `503 not_ready`; and
-- the server log never exposes a value. Deston's six-name setup should identify only `OPENAI_API_KEY` as missing; Andres's least-privilege local setup may identify the intentionally absent privileged server names from the fixed allowlist.
+- `/api/health` returns generic `200 ready`; and
+- the server log never exposes a value. Andres's least-privilege local setup may instead return `503 not_ready` and identify only intentionally absent privileged names from the fixed allowlist; that is expected and does not authorize live analysis.
 
 Stop the development server with `Ctrl+C`.
 
