@@ -55,10 +55,17 @@ Prompt 7 adds an application route and a forward database schema for immutable e
 
 ### Contain first
 
-1. Disable access to `POST /api/projects/[projectId]/analyze` at the deployment layer or redeploy the known-good Prompt 5 artifact `2c9c11b`.
-2. Preserve current application/provider logs under the project's normal retention controls, but do not copy raw source text, prompts, model output, credentials, or private project data into tickets or this repository.
-3. Record only safe incident coordinates: deployed commit, migration version, affected workspace/project/analysis-request IDs, claim state, model name, provider request ID when already stored, timestamps, and error code/stage.
-4. If credential exposure is suspected, rotate or revoke the affected key in its provider console and deployment secret store. Never place the replacement value in Git, chat, command output, or a tracked file.
+For the policy-aware analysis release, use this exact forward-containment order. Do not reorder it around an application rollback:
+
+1. Revoke the OpenAI recording key in the provider console.
+2. Remove `OPENAI_API_KEY` from every Vercel scope where it exists.
+3. Remove `AI_GATEWAY_API_KEY` if the fallback path is implicated.
+4. Set `ANALYSIS_MODE=disabled` and deploy a new reviewed artifact with the analyze route disabled by policy.
+5. Create, review, and apply a new numbered forward containment migration that revokes execution on `public.begin_project_analysis_with_policy` and transitions every still-`available` private recording grant to `revoked` with truthful owner/operator attribution. Do not alter `claimed` or already `revoked` grants, and do not edit the applied migration.
+6. Prove local/remote migration parity, run the rollback-wrapped policy SQL verifier or a reviewed containment-specific successor, check health, and verify viewer denial before reopening any capability.
+7. Never alias an old deployment while any provider credential remains valid.
+
+After the sequence is underway, preserve current application/provider logs under the project's normal retention controls, but do not copy raw source text, prompts, model output, credentials, or private project data into tickets or this repository. Record only safe incident coordinates: deployed commit, migration version, affected workspace/project/analysis-request IDs, claim state, model name, provider request ID when already stored, timestamps, and error code/stage.
 
 Redeploying Prompt 5 removes the analysis HTTP route while retaining project-item/dependency behavior. The Prompt 7 schema is additive for those paths: extra nullable source/change columns, the new analysis table, and an additional proposal enum value do not require a matching destructive down migration. The Prompt 7 migration also revokes direct authenticated source-document insertion; Prompt 5 has no supported source-write workflow that depends on that grant.
 
@@ -69,6 +76,8 @@ Redeploying Prompt 5 removes the analysis HTTP route while retaining project-ite
 - Failed claims are terminal for the same project revision and normalized source hash. Do not alter the hash, revision, state, or source text to bypass duplicate protection.
 - A `processing` claim has an immutable three-minute lease. An exact POST replay during the lease returns the bounded remaining delay; the first exact replay after expiry locks and terminalizes that same row as failed without starting a model call or deleting evidence. A success transition at or after expiry is rejected and rolls back its derived writes. This reconciliation is demand-driven: a page refresh alone does not invoke it, so follow the UI instruction to resubmit the exact source after the delay. Do not issue an ad hoc direct table update.
 - Because evidence/claim creation commits before model work, a provider failure can legitimately leave a source document plus failed claim without derived rows. That is the intended auditable state, not partial derived corruption.
+- In policy-aware recording mode, the grant is claimed in the same transaction as the evidence/request and is never returned to `available`. In auto mode no recording grant is read. A post-claim provider failure, including fallback quota exhaustion, truthfully leaves immutable evidence plus a failed analysis claim while creating no proposal or project-item mutation.
+- Duplicate lookup precedes grant selection. A ready-mode duplicate may preserve a distinct immutable source capture/link but cannot consume a second grant or make a provider call. Disabled, recording-unavailable, fallback-unavailable, and invalid-configuration duplicates must not create another capture/link.
 
 ### Database correction
 
@@ -95,6 +104,8 @@ Before restoring analysis traffic, require all of the following:
 - browser/UI verification is completed if the analysis form or pending-review surface is part of the deployment.
 
 If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.
+
+The policy migration `20260721100000_add_analysis_access_policy.sql` is not yet applied to the linked/hosted project. Its linked migration parity, `supabase/tests/verify_analysis_access_policy.sql`, privilege inventory, health status, and real viewer-denial check remain release-plan gates. Local tests and mocked provider/database seams do not satisfy those gates.
 
 ## Prompt 13 evidence-integrity rollback
 

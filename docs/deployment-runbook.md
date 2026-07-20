@@ -11,7 +11,7 @@ No analytics, paid monitoring, custom domain, background worker, scheduled job, 
 - Deploy only a reviewed commit whose full SHA equals both `HEAD` and `origin/main`; a clean working tree alone is insufficient.
 - Use Node.js 22 and npm. Do not deploy if `git status --short` prints anything.
 - Keep `.env.local`, `.vercel/`, credentials, cookies, tokens, provider payloads, and private project data out of Git, tickets, screenshots, and copied command output.
-- The browser may receive only the two `NEXT_PUBLIC_` values. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET` are server-only.
+- The browser may receive only the two `NEXT_PUBLIC_` values. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, `DEMO_RESET_SECRET`, `ANALYSIS_MODE`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` are server-only.
 - Model output never mutates project data. Authorization, deterministic traversal, selective approval, mutation, history, undo, and reset remain application/database responsibilities.
 - The production artifact must build without calling OpenAI. `/api/health` is a configuration-readiness check and must not spend model tokens or disclose values.
 - Record the full Git SHA and the deployment URL privately in the release evidence. Do not claim the live provider or authenticated workflow passed until its smoke step has actually run.
@@ -25,14 +25,17 @@ Configure values interactively in Vercel's secret store. The commands below cont
 | `NEXT_PUBLIC_SUPABASE_URL` | Production | Browser-safe | Exact hosted Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production | Browser-safe | Publishable/anonymous browser key used with Auth and RLS. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, sensitive | Server only | Used only after request-scoped authorization by constrained persistence/operation services. |
-| `OPENAI_API_KEY` | Production, sensitive | Server only | Required for live analysis; configured through one-way secret handling and never exposed to client code. |
-| `OPENAI_MODEL` | Production | Server only | Use `gpt-5.6-luna` unless a reviewed release explicitly changes it. |
+| `OPENAI_API_KEY` | Recording deployment only, sensitive | Server only | Enables only an approved exact recording grant; remove immediately after the recording attempt. |
+| `OPENAI_MODEL` | Recording deployment only | Server only | Must be exactly `gpt-5.6-luna`; recording never falls back. |
 | `DEMO_PROJECT_SLUG` | Production | Server only | Selects the synthetic project for protected workspace lookup and reset. |
 | `DEMO_RESET_SECRET` | Production, sensitive | Server only | Server-held reset guard; never accepted from a browser request. |
+| `ANALYSIS_MODE` | Production | Server only | Exactly `disabled`, `recording`, or `auto`; absent/invalid is disabled. |
+| `AI_GATEWAY_API_KEY` | Auto deployment only, sensitive | Server only | Dedicated key with a nonrenewing hard quota of USD 1 or less and automatic top-up disabled. |
+| `AI_GATEWAY_MODEL` | Auto deployment only | Server only | Must be exactly `openai/gpt-oss-20b`. |
 
-Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave the seven application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
+Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave all application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
 
-Production currently has all seven names and `/api/health` returns `200 ready`. That endpoint proves configuration shape only, not provider funding or a successful model call. The OpenAI organization must be funded before the one remaining synthetic analysis retry; never retry repeatedly to diagnose billing.
+Base application readiness no longer requires either provider credential. `/api/health` may return `200 ready` while its generic analysis status is disabled or unavailable. A configured status proves environment shape only, not an exact recording grant, Gateway quota, provider funding, or a successful model call. This branch makes no claim about the current Vercel values.
 
 ### Interactive production configuration
 
@@ -45,12 +48,20 @@ npx --yes vercel@56.3.2 env add SUPABASE_SERVICE_ROLE_KEY production --sensitive
 npx --yes vercel@56.3.2 env add OPENAI_MODEL production
 npx --yes vercel@56.3.2 env add DEMO_PROJECT_SLUG production
 npx --yes vercel@56.3.2 env add DEMO_RESET_SECRET production --sensitive
+npx --yes vercel@56.3.2 env add ANALYSIS_MODE production
 ```
 
 When Deston is ready to enable live analysis:
 
 ```bash
 npx --yes vercel@56.3.2 env add OPENAI_API_KEY production --sensitive --scope chi944s-projects
+```
+
+For the capped fallback, create a dedicated Vercel AI Gateway key in its console, set a hard quota of USD 1 or less, choose no refresh period, disable automatic top-up, and verify those settings before adding it interactively. Do not use Vercel OIDC fallback.
+
+```bash
+npx --yes vercel@56.3.2 env add AI_GATEWAY_API_KEY production --sensitive --scope chi944s-projects
+npx --yes vercel@56.3.2 env add AI_GATEWAY_MODEL production --scope chi944s-projects
 ```
 
 Use `npx --yes vercel@56.3.2 env ls production --scope chi944s-projects` to verify names and scopes only. Do not print, pull, or copy values as release evidence. A changed environment variable affects only a new deployment, so redeploy after every required configuration change. The CLI version is pinned here so a release does not silently resolve a different command contract.
@@ -203,6 +214,24 @@ Use a fresh private/incognito browser and the operator-provisioned synthetic acc
 9. Repeat the real interface at approximately 375, 768, and 1440 pixels with keyboard-only navigation, visible focus, status announcements, and no horizontal overflow.
 10. Record only date/time, full release SHA, deployment URL, browser/viewport, HTTP status, safe IDs/counts, actual model name, and pass/fail. Update public claims only for steps that passed.
 
+## Analysis-policy rollout and containment
+
+Migration `20260721100000_add_analysis_access_policy.sql` and `supabase/tests/verify_analysis_access_policy.sql` are committed local artifacts only. No linked/hosted migration, policy verifier, provider request, or credential change is claimed by their implementation. Before enabling either provider route, the release operator must review the linked ledger and dry run, obtain the separate migration approval required by the release plan, apply only the reviewed migration, prove exact parity, and run the rollback-wrapped policy verifier. Then verify health and a real viewer-denial path before any recording grant is issued.
+
+For normal public availability, prefer `ANALYSIS_MODE=disabled`, or `auto` only after the dedicated Gateway key's nonrenewing hard quota and disabled auto-top-up are verified. Recording is an exceptional one-attempt window: issue one private grant for the exact actor/project/normalized-source tuple, set `ANALYSIS_MODE=recording`, deploy, submit that exact source once, verify the grant/request link through the owner-only metadata boundary, and immediately perform the credential teardown in the release plan. Recording never falls back, and auto never uses the OpenAI key.
+
+If either provider path is suspect, execute this forward-containment sequence in order:
+
+1. Revoke the OpenAI recording key in the provider console.
+2. Remove `OPENAI_API_KEY` from every Vercel scope where it exists.
+3. Remove `AI_GATEWAY_API_KEY` if fallback is implicated.
+4. Set `ANALYSIS_MODE=disabled`, create a new deployment, and verify that its analysis status is disabled.
+5. Create, review, and apply a new forward containment migration that revokes execution on `public.begin_project_analysis_with_policy` and marks every still-`available` private recording grant `revoked` with truthful owner/operator attribution. Do not edit the applied policy migration or delete grant/request/evidence history.
+6. Prove exact migration parity, run the rollback-wrapped policy SQL verifier (or a reviewed containment-specific successor if wrapper denial changes its expected contract), check health, and verify viewer denial before reopening any route.
+7. Never assign or restore the production alias to an old deployment while any provider credential remains valid.
+
+Containment is not complete merely because the UI hides analysis. Keep the analyze route closed until the database execution grants, environment names, deployment identity, and viewer-denial result all match the intended disabled state.
+
 ## Native-mutation contract phase
 
 Do not begin this phase until production step 5 has passed on the exact deployed RPC-capable SHA. From that deployed `main`, create a new branch and a single later migration that drops the six legacy contributor write policies and revokes authenticated `INSERT`, `UPDATE`, and `DELETE` on `project_items` and `item_dependencies`. Because `project_items` also has column-level grants, the migration must explicitly revoke `INSERT` on `(id, workspace_id, project_id, item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata, created_by)` and `UPDATE` on `(item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata)`. Move the direct-DML-denial assertions into a focused contract verifier that proves table privileges and every listed column privilege are absent, then behaviorally proves direct DML is denied while all four RPCs still work. Review and merge that migration in its own PR; it must not be amended into `20260719140000` or bundled with an application rollback.
@@ -342,4 +371,4 @@ Open and review a PR, merge it without force, then return to `main`, pull with `
 
 ## Evidence that remains human-owned
 
-The production alias/deployment identity, linked Supabase project, hosted Auth URLs, seven Production variable names, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The team must still fund the OpenAI API organization, complete the successful analysis-to-undo smoke, apply the separately approved contract migration, finish deployed accessibility and signed-out judge-access checks, and supply the public video/Devpost links, team/legal details, and primary `/feedback` Session ID. Placeholders are not release evidence and must never be filled with invented values.
+The production alias/deployment identity, linked Supabase project, hosted Auth URLs, prior seven-name Production inventory, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The new `ANALYSIS_MODE`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` state, linked policy migration/verifier, one-use recording grant, capped-Gateway controls, successful analysis-to-undo smoke, final deployed accessibility and judge-access checks, public video/Devpost links, team/legal details, and primary `/feedback` Session ID remain later release-plan evidence. Placeholders are not release evidence and must never be filled with invented values.

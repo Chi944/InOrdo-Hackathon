@@ -182,6 +182,35 @@ Scope: the complete P0 diff from current `main` through `deston/07-integration-d
 
 Final command, dependency-audit, linked-database, and formal-review evidence for the integrated artifact is recorded in the Prompt 10 section of `docs/qa-checklist.md`. This section contains no secret value.
 
+## Analysis access and fallback security review
+
+Review date: 2026-07-21
+
+Scope: local implementation of `20260721100000_add_analysis_access_policy.sql` and the mode-aware analysis runtime on `codex/19-submission-production`.
+
+Result: the code and committed rollback-wrapped SQL verifier implement the reviewed fail-closed boundary. This is local implementation evidence only. The migration has not been applied to the linked/hosted Supabase project, and the linked policy verifier, parity check, health check, and viewer-denial smoke remain release gates.
+
+### Reviewed controls
+
+- [x] **Three modes are closed and exact.** `ANALYSIS_MODE` accepts only `recording`, `auto`, or `disabled`; absent or invalid values resolve to disabled. Recording selects only `gpt-5.6-luna` and never falls back. Auto selects only `openai/gpt-oss-20b` through Vercel AI Gateway and ignores `OPENAI_API_KEY`. Disabled selects no provider and creates no evidence or claim.
+- [x] **Provider construction follows authorization and an atomic claim.** Strict request validation, contributor authorization, and bounded context loading occur before policy lookup and privileged persistence. The database resolves duplicate and rate-limit outcomes before provider/grant selection, then creates evidence and the request and claims an exact grant atomically. Only a newly claimed route can construct one server-only adapter. Viewer, nonmember, unavailable-mode, duplicate, and rate-limit paths construct none.
+- [x] **The recording grant is narrow and one use.** The private grant tuple is exact actor, project, and normalized-content SHA-256, expires within 15 minutes, and transitions only from `available` to `claimed` or `revoked`. Identity and terminal state are immutable. Issuance, revocation, and metadata-only verification require a real workspace owner and have no execution grant to `public`, `anon`, `authenticated`, or `service_role`.
+- [x] **The database wrapper removes the bypass.** Only `public.begin_project_analysis_with_policy` is executable by `service_role`; it verifies that database role, establishes the already verified actor's transaction-local identity, and invokes the private migration-owner implementation. Direct service-role execution of the legacy public begin function, legacy private implementation, and new private implementation is revoked. Browser roles cannot execute the wrapper.
+- [x] **Duplicate and provenance behavior does not reopen spend.** Duplicate lookup occurs before grant access and returns the persisted request model/route. A configuration-ready duplicate may add at most one distinct immutable capture/link, but consumes no grant and makes no model call. Disabled, unavailable, invalid-configuration, and rate-limited requests add no evidence, request, capture/link, or grant change.
+- [x] **Mismatch paths roll back together.** Hash/model/policy validation precedes evidence creation. The recording grant is locked before evidence but changed only after the request insert; a claim-count or provenance invariant failure raises in the same transaction, rolling back evidence, request, and grant state.
+- [x] **Gateway credentials are explicit and capped.** The Gateway adapter requires `AI_GATEWAY_API_KEY`, fixed model `openai/gpt-oss-20b`, and base URL `https://ai-gateway.vercel.sh/v1`. It does not enable Vercel OIDC fallback. Operational release requires a nonrenewing hard quota of USD 1 or less with automatic top-up disabled.
+- [x] **Post-claim failures remain truthful.** Provider refusal, timeout, malformed output, upstream failure, or fallback quota exhaustion can leave immutable source evidence and a failed analysis claim. Safe copy states that no project item or proposal changed; persisted failures use the existing closed allowlist and never store raw provider output or source text.
+- [x] **Model output remains inert.** Both provider routes reuse the bounded Responses contract (`store: false`, no tools, no automatic retries, fixed timeouts and output bounds). Deterministic traversal, validation, approval, and database mutation remain outside the model.
+
+### Pending linked release evidence
+
+- [ ] Apply `20260721100000_add_analysis_access_policy.sql` only through the separately reviewed release sequence.
+- [ ] Prove exact local/remote migration parity and run `supabase/tests/verify_analysis_access_policy.sql` against the linked project inside its rollback transaction.
+- [ ] Confirm linked privilege inventory: the policy wrapper is service-role-only, both legacy begin paths and the new private implementation are inaccessible, and grant table/functions have no application-role access.
+- [ ] Check production health in each intended mode and prove a real viewer denial creates zero evidence, request, grant transition, privileged provider construction, or network call.
+
+These pending items are explicit gates, not failures and not completed claims. No hosted database action, provider call, credential access, environment-value inspection, or Auth identifier was part of this documentation task.
+
 ## Release-boundary hardening review
 
 Scope: application request-body handling, deployment-readiness parsing, and the migration-aware Git-revert fallback on `deston/10-release-boundary-hardening`.

@@ -282,3 +282,12 @@ The implementation entries above correspond to these Git commits. Merge commits 
 Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
 
 Replace this placeholder only after running `/feedback` in the primary Codex task. Commit the identifier only—never a private transcript, credential, or unrelated session record.
+
+## 2026-07-21 — Analysis access policy and containment documentation
+
+- Documented the fail-closed `recording`, `auto`, and `disabled` modes, with exact route/model separation: recording uses only `gpt-5.6-luna`, auto uses only `openai/gpt-oss-20b` through a dedicated capped Vercel AI Gateway key, and disabled makes no provider request or evidence claim.
+- Recorded the atomic one-use grant boundary: exact actor/project/normalized-source tuple, owner-only issuance/revocation/verification, duplicate and provenance behavior, mismatch rollback, and the policy-aware public-wrapper/legacy-private privilege split.
+- Recorded the application/database/provider ordering and truthful post-claim failure state. Provider clients are constructed only after authorization and an atomic claimed route; a later provider failure may leave immutable evidence plus a failed analysis claim, but no proposal or project-item mutation.
+- Added the exact forward-containment order for revoking provider credentials, deploying disabled mode, applying a new forward wrapper/grant containment migration, and rerunning parity, SQL, health, and viewer-denial checks. An old deployment must never be aliased while a provider credential remains valid.
+- Node `22.23.1` and npm `10.9.8` passed lint, typecheck, 473 Vitest tests across 60 files, the Next.js `16.2.10` production build, and two guarded Chromium journeys. The browser suite used the repository's synthetic fixture and intercepted API seams; it did not call a live provider or hosted database.
+- This entry records code-documentation reconciliation and local verification only. Migration `20260721100000_add_analysis_access_policy.sql` has not been applied to the linked/hosted project, and its linked policy verifier remains a release-plan gate. No hosted database action, provider request, deployment mutation, environment value, credential, Auth identifier, private transcript, or private payload was accessed.
