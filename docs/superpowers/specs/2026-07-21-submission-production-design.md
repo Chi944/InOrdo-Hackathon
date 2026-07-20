@@ -1,6 +1,6 @@
 # InOrdo submission-production design
 
-**Status:** Approved design, awaiting review of this written specification
+**Status:** Approved by the project owner on 21 July 2026
 
 **Date:** 21 July 2026
 
@@ -118,12 +118,12 @@ An available grant can transition once to `claimed` or `revoked` and never trans
 
 The begin-analysis transaction follows this exact order while holding the existing source-key lock:
 
-1. Check for an existing completed, failed, or in-progress claim for the normalized project/source/revision tuple. A duplicate returns the existing result and does not consume a grant or start a provider call.
+1. Check for an existing completed, failed, or in-progress claim for the normalized project/source/revision tuple. A duplicate returns the existing result and does not consume a grant or start a provider call. When the requested mode is disabled or its sole provider capability is unavailable, the duplicate path also creates no new source capture or provenance link; ready modes may retain the existing distinct-capture provenance behavior.
 2. Apply the existing new-analysis rate limit before consuming a grant.
-3. In `recording` mode, require an OpenAI capability flag and validate actor, project, normalized source hash, `available` state, and expiry. If all match, update the grant to `claimed` and select `openai_recording`; otherwise return the same generic recording-unavailable error with no fallback or database change.
+3. In `recording` mode, require an OpenAI capability flag and validate then lock the exact actor, project, normalized source hash, `available` state, and expiry grant. If all match, reserve that row within the transaction and select `openai_recording`; otherwise return the same generic recording-unavailable error with no fallback or database change.
 4. In `auto` mode, select `gateway_fallback` only when the Gateway capability flag is ready, without reading or consuming a recording grant.
 5. In `disabled` mode, or if the selected mode's sole route is unavailable, return `analysis_disabled` without creating evidence or an analysis request.
-6. In the same transaction as provider selection, create/reuse immutable source evidence and insert the new analysis request; for `openai_recording`, link its ID back to the claimed grant.
+6. In the same transaction as provider selection, create/reuse immutable source evidence and insert the new analysis request; for `openai_recording`, transition the locked grant to `claimed` and link that exact request ID in the same update.
 7. Commit all selected-route changes together. Any authorization, rate-limit, constraint, or grant-update failure rolls back both the grant and the evidence/analysis claim.
 
 Concurrent requests cannot both claim the grant. A provider error after commit still consumes it because the request may already have incurred cost; an operator must deliberately issue a new grant for a retry. The table is not exposed through the browser-facing API. Grant issuance and the extended begin-analysis function are `SECURITY DEFINER`, owned by the migration owner, use an explicit empty/fixed `search_path` with fully qualified names, revoke all privileges from `PUBLIC`, `anon`, and `authenticated`, and grant only the required execution path to `service_role`. There is no browser-accessible grant-management route or server action.
