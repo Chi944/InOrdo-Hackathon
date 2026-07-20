@@ -42,7 +42,7 @@ This document records the factual release state produced by the final merged app
 | Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
 | Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
 | Vercel project | `chi944s-projects/inordo`; renamed from the bootstrap name without changing project ID or the immutable historical deployment |
-| Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; hosted migrations aligned through contract tail `20260720190000` |
+| Linked Supabase project | Intended linked project identity owner-confirmed; hosted migrations aligned through contract tail `20260720190000`; policy migration `20260721100000` remains pending |
 
 The current manual Production deployment serves exact reviewed `main` SHA `dad6b33e...`. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026, all seven Production environment names are configured, and the retired `inordo-hackathon.vercel.app` project domain and alias have been removed. Anonymous Production access is verified; Preview remains intentionally protected.
 

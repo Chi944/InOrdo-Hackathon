@@ -396,7 +396,7 @@ Codex supported scoped implementation and review across the repository foundatio
 
 | Item | Public value or required action |
 | --- | --- |
-| Track | OpenAI Build Week — **Work and Productivity** |
+| Track | OpenAI Build Week — **Work & Productivity** |
 | Repository | [github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon) |
 | Production application | [inordo.vercel.app](https://inordo.vercel.app) — public deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA`, SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`; Preview deployments remain protected |
 | Demo access | Follow the non-secret [judge handoff](docs/devpost-handoff.md); enter the actual viewer credential only in Devpost's private fields and never commit a password. |

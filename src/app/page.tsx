@@ -62,7 +62,7 @@ export default function Home() {
         <div className="max-w-2xl">
           <p className="mb-5 flex items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-signal">
             <span className="h-px w-8 bg-signal" aria-hidden="true" />
-            Work and productivity · Build Week
+            Work & Productivity · Build Week
           </p>
           <h1 className="max-w-[12ch] text-balance text-[clamp(3.2rem,7.5vw,7.4rem)] font-semibold leading-[0.88] tracking-[-0.075em] text-ink">
             Control project change without the chain reaction.
