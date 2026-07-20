@@ -25,7 +25,7 @@ const workflow = [
   {
     title: "Recovery draft",
     description:
-      "Use GPT-5.6 to draft bounded recovery actions, never to decide what runs.",
+      "Use the configured bounded server-side provider to draft recovery actions, never to decide what runs.",
     icon: Sparkles,
   },
   {

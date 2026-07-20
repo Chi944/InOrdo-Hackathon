@@ -9,7 +9,7 @@ Browser
 Next.js App Router
   ├─ Server Components: reads and presentation
   ├─ Server actions/routes: validation, authorization, orchestration
-  ├─ OpenAI adapter: candidate extraction and recovery drafts
+  ├─ Bounded analysis adapters: selected recording or Gateway route
   └─ Domain services: dependency traversal, approvals, operations, undo
   │
   ▼
@@ -68,12 +68,12 @@ Project-record operations derive the current user from verified claims inside th
 
 `POST /api/projects/[projectId]/analyze` is the only Prompt 7 model boundary. It accepts a strict, bounded source object (`title`, allowlisted `type`, `author`, optional timestamp, and text) plus an optional maximum graph depth. The route requires a verified contributor role and returns private, non-cacheable JSON. Oversized bodies, unsupported media types, unknown fields, malformed JSON, and invalid project IDs fail before orchestration.
 
-Analysis is intentionally two stage:
+Analysis is intentionally two stage after the database policy boundary selects one configured provider route:
 
-1. GPT-5.6 Luna extracts at most one candidate change from the untrusted source and a bounded canonical snapshot of one project.
-2. Application code postvalidates that change, runs the pure deterministic graph traversal, and gives the second model call only the validated change, deterministic paths, and bounded current values needed to draft inert recovery actions.
+1. The selected provider extracts at most one candidate change from the untrusted source and a bounded canonical snapshot of one project.
+2. Application code postvalidates that change, runs the pure deterministic graph traversal, and gives the same selected route only the validated change, deterministic paths, and bounded current values needed to draft inert recovery actions.
 
-The model is a constrained interpreter and drafting assistant. It does not authorize users, traverse dependencies, call tools, persist records directly, approve actions, or mutate project data. Both logical calls use the OpenAI Responses API from a server-only adapter with `OPENAI_MODEL` (default `gpt-5.6-luna`), strict Zod-backed structured output, `store: false`, low reasoning effort, an empty tools list, bounded prompts and output tokens, a 30-second timeout per call, and SDK/request retries disabled. There is no application retry loop.
+The model is a constrained interpreter and drafting assistant. It does not authorize users, traverse dependencies, call tools, persist records directly, approve actions, or mutate project data. Recording mode uses the server-only OpenAI adapter with exact model `gpt-5.6-luna`; auto mode uses the server-only Vercel AI Gateway adapter with exact model `openai/gpt-oss-20b`; disabled mode constructs neither. Recording never falls back, and auto never uses the recording credential. Both active routes use strict Zod-backed structured output, `store: false`, low reasoning effort, an empty tools list, bounded prompts and output tokens, a 30-second timeout per call, and SDK/request retries disabled. There is no application retry loop.
 
 The canonical context loader still fails closed above 200 active items or 1,000 edges. Before either prompt is built, a pure deterministic projection limits each item description to 500 characters and all item descriptions to 15,000 characters, marks every truncated description, and rejects an encoded item projection above 160,000 bytes. Extraction does not receive dependency rows because the model does not traverse the graph. The second call receives only bounded affected-item values plus application-computed paths. Canonical database rows are never truncated or rewritten by this projection.
 
@@ -83,7 +83,7 @@ Strict output parsing is only the first gate. Application postvalidation rejects
 
 ### Analysis request and response shape
 
-The following redacted examples describe the wire shape only; bracketed IDs/text and zero token counts are placeholders, not credentials or reusable production data.
+The following redacted request and recording-mode response examples describe the wire shape only; bracketed IDs/text and zero token counts are placeholders, not credentials or reusable production data. A Gateway response has the same bounded shape but truthfully records the actual provider-returned model identifier instead of the recording model shown here.
 
 ```json
 {
@@ -196,7 +196,7 @@ The current completion implementation obtains whole-table `SHARE` locks on `proj
 - Extraction and proposal responses are capped separately at 2,048 and 4,096 output tokens.
 - Low reasoning effort, no tools, no web/file search, no embeddings, no RAG, no background jobs, and no model-driven loops keep calls predictable.
 - Duplicate claims and the per-actor rolling rate limit run before either provider call.
-- Exactly two logical model calls and two provider attempts are required for a successful new analysis. A validation/provider failure stops the pipeline. SDK/request retries and model-driven/application retry loops are disabled.
+- Exactly two logical model calls and two provider attempts through the selected route are required for a successful new analysis. A validation/provider failure stops the pipeline. SDK/request retries and model-driven/application retry loops are disabled.
 
 ### Deployment and readiness boundary
 
@@ -204,7 +204,7 @@ The Build Week deployment target is one manually operated Vercel Hobby project w
 
 `GET /api/health` is a no-store, no-spend configuration-readiness endpoint. It checks only whether the base application configuration parses and reports one generic analysis capability status; it does not call a provider, query Supabase, validate a credential by using it, inspect a recording grant, reveal a value, or claim the authenticated workflow passed. Base application readiness is independent of AI availability. A healthy application may therefore report `recording_configured`, `recording_unavailable`, `fallback_configured`, `fallback_unavailable`, or `disabled`; `recording_configured` means only that the environment is shaped correctly, not that an exact grant exists or a provider call will succeed. The server log includes only allowlisted configuration names, never their values, the source body, provider output, credentials, authorization headers, or cookies.
 
-The analysis route uses the Node.js runtime and an application `maxDuration` of 90 seconds. Vercel's currently supported Hobby Fluid maximum is 300 seconds, so 90 seconds is a conservative application budget rather than the plan ceiling. The two sequential OpenAI calls each have a 30-second internal timeout with SDK/request retries disabled, leaving about 30 seconds for authorization, deterministic graph work, persistence, and safe failure recording. Other mutation/history routes use a 30-second duration. No route introduces background work, and the OpenAI client remains lazy so `next build` and Vercel's build phase cannot contact the provider.
+The analysis route uses the Node.js runtime and an application `maxDuration` of 90 seconds. Vercel's currently supported Hobby Fluid maximum is 300 seconds, so 90 seconds is a conservative application budget rather than the plan ceiling. The two sequential calls through the selected provider route each have a 30-second internal timeout with SDK/request retries disabled, leaving about 30 seconds for authorization, deterministic graph work, persistence, and safe failure recording. Other mutation/history routes use a 30-second duration. No route introduces background work, and both provider clients remain lazy so `next build` and Vercel's build phase cannot contact a provider.
 
 Recording configuration requires exact model `gpt-5.6-luna` plus `OPENAI_API_KEY`. Auto configuration requires exact model `openai/gpt-oss-20b` plus a dedicated, explicitly capped `AI_GATEWAY_API_KEY`; it uses the OpenAI SDK Responses client with base URL `https://ai-gateway.vercel.sh/v1`. Vercel OIDC fallback is intentionally not enabled. The Gateway key must have a nonrenewing hard quota of USD 1 or less and automatic top-up disabled, or auto mode stays unavailable. Provider clients are lazy: validation, contributor authorization, bounded context loading, database duplicate/rate/provider/grant selection, evidence insertion, and request claiming all precede construction of the one selected adapter. Viewer and nonmember denial, unavailable modes, rate limits, and duplicates therefore construct no provider client. Safe response and persisted model-call metadata retain the actual model identifier returned by the provider so release evidence does not silently substitute the requested name. Metadata never grants mutation authority and excludes prompts, source text, provider output, grants, and keys.
 
