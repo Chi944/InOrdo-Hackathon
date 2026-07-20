@@ -18,9 +18,9 @@
 InOrdo gives a team one reviewable path from new evidence to a safe project response. It preserves the source, uses GPT-5.6 for bounded interpretation and drafting, computes dependency reach in deterministic TypeScript, and requires an authorized person to approve each internal action. Applied operations are attributable and reversible only when the recorded contract says they are.
 
 > [!IMPORTANT]
-> **The canonical deployment is [inordo.vercel.app](https://inordo.vercel.app).** Vercel project `chi944s-projects/inordo` serves reviewed `main` commit [`38067619a81c1118c46d9709f6403193fdc0f0c4`](https://github.com/Chi944/InOrdo-Hackathon/commit/38067619a81c1118c46d9709f6403193fdc0f0c4) through production deployment `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ`. Vercel Authentication currently protects the deployment, so judges cannot open it anonymously until the operator deliberately changes that setting.
+> **The canonical deployment is [inordo.vercel.app](https://inordo.vercel.app).** Vercel project `chi944s-projects/inordo` publicly serves reviewed `main` commit [`dad6b33e8fe99ae134f6949a4c46e8311352691d`](https://github.com/Chi944/InOrdo-Hackathon/commit/dad6b33e8fe99ae134f6949a4c46e8311352691d) through production deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA`. Vercel Authentication remains enabled for Preview deployments only.
 >
-> All seven configuration names are present locally and in Vercel Production, Supabase Auth uses the canonical URL, and the protected workspace has passed authenticated record, dependency, rollback, and reset smoke tests. One bounded production analysis reached the provider boundary and failed closed with `model_unavailable` because the OpenAI organization has no credits. This repository therefore does **not** claim a successful GPT-5.6 result, proposal apply, or undo. See [Release status](#release-status) for the remaining gates.
+> All seven configuration names are present locally and in Vercel Production, Supabase Auth uses the canonical URL, and the workspace has passed authenticated record, dependency, rollback, and reset smoke tests. Contract migration `20260720190000` is applied and verifies that legacy direct writes are denied while all four guarded RPCs remain available. One bounded production analysis reached the provider boundary and failed closed with `model_unavailable` because the OpenAI organization has no credits. This repository therefore does **not** claim a successful GPT-5.6 result, proposal apply, or undo. See [Release status](#release-status) for the remaining gates.
 
 ## Product interface
 
@@ -157,7 +157,7 @@ The same Next.js code runs in both places, but the runtime and configuration lif
 | Environment | Next.js reads ignored `.env.local`; restart after changing a variable. | Variables are scoped to Production, Preview, or Development. A change affects only a new deployment. |
 | Public values | `NEXT_PUBLIC_*` values are compiled when the local process builds/starts. | `NEXT_PUBLIC_*` values are inlined at build time and frozen into that artifact. |
 | Data services | Use the local Docker stack or an explicitly configured hosted Supabase project. | Server functions reach the configured hosted Supabase project over the network. |
-| Reachability | Normally machine-only at `localhost:3000`. | Available at [inordo.vercel.app](https://inordo.vercel.app), currently behind Vercel Authentication rather than anonymously public. |
+| Reachability | Normally machine-only at `localhost:3000`. | Publicly available at [inordo.vercel.app](https://inordo.vercel.app); Preview deployments remain behind Vercel Authentication. |
 | Auth | Local callback URLs must be allowed in Supabase Auth. | The canonical domain and approved Preview wildcard must be configured as Auth redirects. |
 | Runtime behavior | Long-lived developer process with local logs and resources. | Platform-managed functions, build artifacts, cold starts, request/body/time limits, and provider/network failure modes. |
 | Verification | Best for fast unit, UI, and local database iteration. | Required for domain, cookie, redirect, environment-scope, hosted RLS/RPC, and production smoke evidence. |
@@ -233,16 +233,9 @@ Reset is restricted to an owner/admin, the exact configured synthetic project, a
 
 ### Native record mutation rollout
 
-Native create/update item and create/remove dependency writes use four authorized, generation-fenced, idempotent RPCs. Migration `20260719140000_guard_project_record_mutations` is the applied **expand** phase: it added the private receipt ledger and RPCs while temporarily retaining legacy contributor DML. The exact RPC-capable production artifact passed hosted create, update, dependency-add, dependency-remove, and exact-replay smoke tests, followed by reset to the 24-item/26-edge baseline.
+Native create/update item and create/remove dependency writes use four authorized, generation-fenced, idempotent RPCs. Migration `20260719140000_guard_project_record_mutations` was the **expand** phase: it added the private receipt ledger and RPCs while temporarily retaining legacy contributor DML. After the exact RPC artifact passed hosted create, update, dependency-add, dependency-remove, replay, and reset smoke tests, reviewed PR [#17](https://github.com/Chi944/InOrdo-Hackathon/pull/17) merged and the separately approved `20260720190000` **contract** migration was applied by itself.
 
-The final contract is not applied. The remaining safe sequence is:
-
-1. merge reviewed PR [#17](https://github.com/Chi944/InOrdo-Hackathon/pull/17);
-2. obtain the separate exact approval `apply-20260720190000`;
-3. apply only that contract migration and prove exact hosted parity; then
-4. rerun denial, RPC, replay, read-access, and rollback verification against the contracted schema.
-
-Expand and contract must never be pending in the same hosted `db push`. After contract, a pre-RPC deployment is no longer a valid rollback target. The authoritative sequence and containment rules are in the [deployment runbook](docs/deployment-runbook.md) and [rollback plan](docs/rollback-plan.md).
+The linked ledger now has exact parity through `20260720190000`. The contract verifier proves legacy table and column write grants/policies are absent, member reads remain, direct DML is denied, all four RPCs succeed, exact retry deduplicates, and true nonmembers are rejected. Because the contract is forward-only, a pre-RPC deployment is no longer a valid rollback target. The authoritative containment and forward-recovery rules are in the [deployment runbook](docs/deployment-runbook.md) and [rollback plan](docs/rollback-plan.md).
 
 ### Repository map
 
@@ -297,11 +290,11 @@ Local Supabase verification starts with `npx --no-install supabase start` and ma
 
 | Area | Current evidence | Still required |
 | --- | --- | --- |
-| Application | Clean Node 22 install, lint, typecheck, 399 unit/component tests, one guarded Chromium journey, production build, audit, and whitespace checks passed for the deployed SHA. | Merge and deploy later hardening only after its own review and gates. |
-| Database | Hosted migrations align through expand tail `20260719140000`; the deployed four-RPC/replay smoke, rollback assertions, and reset baseline passed. | Merge PR #17, type `apply-20260720190000`, apply the contract alone, and rerun its denial/parity suite. |
+| Application | Node 22 lint, typecheck, 400 unit/component tests across 58 files, two Chromium journeys, production build, audit, and whitespace checks passed; PRs #19 and #20 independently passed CI before merge. | Keep future changes behind their own review and gates. |
+| Database | Hosted migrations align through contract tail `20260720190000`; linked type parity, migration parity, error-level lint, direct-DML denial, four guarded RPCs, replay, member reads, and nonmember rejection passed. | Re-run the contract verifier after any future privilege or mutation-RPC change. |
 | OpenAI | All server configuration is present; one production request failed closed during extraction with safe `model_unavailable` metadata. | Fund the OpenAI API organization, then run exactly one synthetic retry and complete proposal/apply/history/undo evidence. |
-| Browser | Authenticated production native-mutation/reset smoke passed; authenticated local layouts passed at 375, 768, and 1440 pixels without overflow. | Deploy the skip-link focus repair, complete a fresh login/logout/incognito pass, and verify the funded analysis-to-undo path. |
-| Deployment | Production `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` is `READY` at [inordo.vercel.app](https://inordo.vercel.app), with all seven Production names configured. | Decide whether to make Production anonymous for judges, then verify every submission link signed out. |
+| Browser | Authenticated production native-mutation/reset smoke passed; local layouts passed at 375, 768, and 1440 pixels; the deployed skip link passed keyboard focus verification. | Complete a fresh login/session/logout matrix and the funded analysis-to-undo path. |
+| Deployment | Production `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` is `READY` at public [inordo.vercel.app](https://inordo.vercel.app), serves SHA `dad6b33e...`, and has all seven Production names. Preview remains protected. | Verify the final video, Devpost, and demo-access links signed out before submission. |
 
 Vercel deployment is manual—there is no Git-connected automatic deploy. Production must use Node.js 22.x, a clean reviewed `main` equal to `origin/main`, correctly scoped environment names, and the canonical alias. Environment changes require redeployment. Supabase Auth allows the canonical production origin, documented local redirects, and the approved account-scoped Preview wildcard. Deston confirmed on July 20, 2026 that the current Vercel Hobby terms permit this hackathon demo; that project-owner confirmation is recorded as operational evidence, not legal advice.
 
@@ -335,11 +328,11 @@ The protected workspace also exposes `/app/items`, item detail, `/app/decisions`
 | --- | --- |
 | The OpenAI organization is unfunded. | The key and server path are configured, but the single production attempt failed closed; no successful GPT-5.6 result may be claimed yet. |
 | Authenticated production QA is partial. | Native records, dependencies, rollback, and reset are proven; the funded analysis, proposal apply, history, and undo journey is not. |
-| Native DML is in the expand stage. | RPC smoke passed, but legacy contributor writes remain until reviewed PR #17 is merged and its separately approved contract migration is applied. |
+| Supabase leaked-password screening is unavailable on the current Free plan. | Keep the synthetic demo password unique, generated, out of source control, and rotate it if exposure is suspected. |
 | Undo is intentionally narrow. | Only an entirely reversible field-update operation with matching current after-state can be compensated. |
 | Analysis finalization takes whole-table `SHARE` locks on item/dependency tables. | Other-project writes may wait; P0 is bounded to a low-volume synthetic demo pending project-scoped coordination. |
 | Dependency management loads at most 500 edges without a truncation indicator. | The 26-edge fixture is complete; larger projects must not treat the screen as a complete inventory. |
-| Deployment protection and operator-held credentials constrain public QA. | Access, provider spend, and production mutation gates remain explicit human responsibilities. |
+| Preview protection and operator-held credentials constrain authenticated QA. | Public Production access is available, while login credentials and provider spend remain explicit human responsibilities. |
 
 Outside P0:
 
@@ -386,7 +379,7 @@ Codex supported scoped implementation and review across the repository foundatio
 | --- | --- |
 | Track | OpenAI Build Week — **Work and Productivity** |
 | Repository | [github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon) |
-| Production application | [inordo.vercel.app](https://inordo.vercel.app) — deployment `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ`, SHA `38067619a81c1118c46d9709f6403193fdc0f0c4`, currently protected by Vercel Authentication |
+| Production application | [inordo.vercel.app](https://inordo.vercel.app) — public deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA`, SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`; Preview deployments remain protected |
 | Demo access | `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` — supply out of band; never commit a password |
 | Public video | `<PUBLIC_YOUTUBE_VIDEO_URL>` |
 | Devpost entry | `<DEVPOST_URL>` |

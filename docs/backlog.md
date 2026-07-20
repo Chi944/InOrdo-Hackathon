@@ -16,7 +16,7 @@
 - [x] Implement and linked-verify authorized, idempotent, reversible internal operation contracts.
 - [x] Implement and linked-verify operation history, undo, and isolated demo reset contracts.
 - [x] Build the integrated end-to-end demo workspace and CI-safe core browser journey.
-- [ ] Complete the native-mutation contract release: expand `20260719140000`, exact RPC deployment, four-mutation/replay smoke, and reset are complete; merge PR #17, approve/apply only `20260720190000`, then rerun hosted denial/parity verification.
+- [x] Complete the native-mutation contract release: expand `20260719140000`, exact RPC deployment, four-mutation/replay smoke, reset, PR #17, separately approved contract `20260720190000`, and hosted parity/denial verification are complete.
 - [ ] Complete the operator-held live production smoke path for authentication, Supabase/RLS, one funded GPT-5.6 analysis, selective apply, audit, undo, and reset.
 
 ## P1

@@ -124,7 +124,7 @@ npx --yes vercel@56.3.2 inspect <PREVIEW_DEPLOYMENT_URL>
 npx --yes vercel@56.3.2 curl /api/health --deployment <PREVIEW_DEPLOYMENT_URL>
 ```
 
-Stop if either status command prints a path, a gate fails, either pair of full SHAs differs, either divergence count is not exactly `0 0`, the inspected deployment is not ready, or the deployed Git SHA differs from the recorded SHA. The second fetch catches `origin/main` moving during the gate; restart from the new reviewed commit instead of deploying the stale one. With Preview variables intentionally absent, health should report only non-secret missing configuration names and return `503`; that is expected and is not production-readiness evidence. Inspect `/` and `/login` through the preview URL. Use `vercel curl` when deployment protection is enabled; do not disable protection.
+Stop if either status command prints a path, a gate fails, either pair of full SHAs differs, either divergence count is not exactly `0 0`, the inspected deployment is not ready, or the deployed Git SHA differs from the recorded SHA. The second fetch catches `origin/main` moving during the gate; restart from the new reviewed commit instead of deploying the stale one. With Preview variables intentionally absent, health should report only non-secret missing configuration names and return `503`; that is expected and is not production-readiness evidence. Inspect `/` and `/login` through the preview URL. Use `vercel curl` for the protected Preview and preserve the reviewed Preview-only protection setting; public Production access does not authorize exposing Preview deployments.
 
 ## Production sequence
 

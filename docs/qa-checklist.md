@@ -3,15 +3,16 @@
 ## 2026-07-20 production release execution and follow-up hardening
 
 - [x] Existing manual Vercel project is `chi944s-projects/inordo`; project ID and Git remote are unchanged; canonical alias is `https://inordo.vercel.app`; the final leftover `inordo-hackathon.vercel.app` alias was removed.
-- [x] Local and Vercel Production inventories contain all seven required names, including encrypted `OPENAI_API_KEY`; no value was printed, logged, or committed. Exact production deployment `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` is `READY` and returned health `200 ready`.
+- [x] Local and Vercel Production inventories contain all seven required names, including encrypted `OPENAI_API_KEY`; no value was printed, logged, or committed. Exact production deployment `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` is `READY`, serves `dad6b33e8fe99ae134f6949a4c46e8311352691d`, and returned health `200 ready`.
 - [x] Hosted Supabase Auth uses Site URL `https://inordo.vercel.app` and redirect `https://inordo.vercel.app/**`, retaining only the approved Preview/local redirects. An operator-managed account is confirmed and mapped as demo admin.
 - [x] Expand migration `20260719140000` is applied and hosted parity is exact through that tail. The deployed artifact passed item create/update, dependency add/remove, exact replay, rollback-only authorization/generation assertions, and reset to 24 active items/26 edges with no temporary residue.
 - [x] One bounded production analysis reached OpenAI and failed closed during extraction with safe `model_unavailable` metadata. The configured OpenAI organization/project has no credits, so there was no retry and no successful proposal/apply/history/undo claim.
 - [x] Deston confirmed on July 20, 2026 that current Vercel Hobby terms permit this hackathon demo; this checklist is operational evidence, not legal advice.
 - [x] Authenticated local layout smoke passed at 375×812, 768×1024, and 1440×1000 with no horizontal overflow. A red/green regression fixes skip-link focus without changing visual design.
-- [ ] Merge reviewed PR #17, then obtain exact approval `apply-20260720190000`, apply only that contract migration, and rerun hosted parity/read/denial/RPC/replay/rollback verification.
+- [x] PR #17 merged; exact approval `apply-20260720190000` authorized only the reviewed contract migration; linked ledger/type parity, dry run, error-level lint, direct-DML denial, four-RPC/replay, member-read, and true-nonmember verification passed after apply.
 - [ ] Fund the OpenAI API organization, then run exactly one synthetic analysis retry and complete proposal selection, apply, ordered history, undo, and reset evidence.
-- [ ] Decide whether to remove Vercel Authentication for judge access; then verify landing, login, protected routing, logout, keyboard order, announcements, and every submission link in a signed-out profile.
+- [x] Production is public while Preview remains protected. Anonymous `/`, `/login`, `/api/health`, signed-out `/app`, the immutable Production URL, and a real Preview URL returned the expected `200`/`ready`/`307`/`302` outcomes; the deployed skip link moved focus to `main-content`.
+- [ ] Complete login/session/logout, authenticated announcements and keyboard order, and every final submission link in a fresh profile.
 
 ## Prompt 14 final release evidence (`andres/06-final-evidence`)
 
@@ -124,11 +125,11 @@ This section records each command or live step individually. Checked items have 
 - [x] `OPENAI_API_KEY` is configured and the deployed health route returns `200 ready`. One synthetic request failed closed with `model_unavailable` because the organization has no credits; no successful live result is claimed.
 - [x] Hosted Supabase Auth uses Site URL `https://inordo.vercel.app` and redirect `https://inordo.vercel.app/**`; approved local HTTP and account-scoped Vercel Preview redirects were retained.
 - [x] Preview deploy proved `HEAD == origin/main == 72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` and divergence `0 0`; deployment `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD` is `READY`, target Preview, Node `22.x`, and reports the same `githubCommitSha`/`main` ref. Authenticated Vercel curl reached `/` and `/login` with `200` and expected missing-config health `503`; anonymous requests remain intentionally SSO-protected and therefore are not called a public Preview pass.
-- [x] Production deploy `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` proved exact reviewed `main` SHA `38067619a81c1118c46d9709f6403193fdc0f0c4`, Node `22.x`, `READY`, target `production`, canonical alias `https://inordo.vercel.app`, and health `200 ready`.
+- [x] Production deploy `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` proved exact reviewed `main` SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`, Node `22.x`, `READY`, target `production`, public canonical alias `https://inordo.vercel.app`, and health `200 ready`; Preview still returns Vercel SSO.
 - [ ] In a fresh incognito profile, `/`, `/login`, signed-out `/app`, login/session refresh/logout, and tenant denial behave as documented.
 - [ ] After Deston funds the OpenAI API organization, exactly one synthetic venue analysis retry records only safe actual-model/ID/status metadata and no prompt, source body, output, key, header, or cookie.
 - [ ] Owner/admin completes the canonical evidence -> deterministic impact -> selective apply -> ordered history -> compensating undo -> protected reset flow; viewer/nonmember/cross-project attempts fail closed.
-- [ ] The exact deployed UI passes full keyboard, visible-focus, and status-announcement checks. Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels; the skip-link focus fix still needs merge/deploy verification.
+- [ ] The exact deployed UI passes full authenticated keyboard, visible-focus, and status-announcement checks. Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels; the public Production skip-link path is separately verified.
 - [x] The previous schema-compatible deployment `dpl_8znxpQsmZsBH7hoqWmLqui4HXtqc` is identified; the Vercel rollback path, mandatory reset/native-mutation containment for any pre-RPC artifact, and migration-preserving Git forward-repair path are reviewed.
 
 ## Prompt 11 submission integration gate (`codex/andres-05-integration`)
@@ -280,7 +281,7 @@ Linked evidence on 2026-07-18: the migration ledger is aligned through `20260718
 - [x] Release review found and corrected the incompatible migration/deploy ordering: `20260719140000` is expand-only, the RPC artifact must deploy and pass all four native mutation smokes, and a separate contract migration removes legacy DML only afterward.
 - [x] Configuration-contract review corrected the protected-workspace role of `DEMO_PROJECT_SLUG`, retained the non-secret model default for least-privilege local QA, and explicitly rejects an empty `OPENAI_MODEL=` entry.
 - [x] Two P2 scale limits are disclosed with mitigations and backlog owners: analysis finalization's cross-project table-lock scope and the dependency-management UI's silent 500-row cap.
-- [x] Hosted expand migrations through `20260719140000`, exact-SHA RPC deployment, and authenticated item create/update plus dependency create/remove smoke passed on July 20, 2026. The isolated `20260720190000` contract migration is locally verified and remains unapplied until its reviewed branch is merged and a new exact typed approval is supplied.
+- [x] Hosted expand migrations through `20260719140000`, exact-SHA RPC deployment, and authenticated item create/update plus dependency create/remove smoke passed on July 20, 2026. PR #17 then merged and separately approved contract migration `20260720190000` applied alone; hosted parity, type parity, lint, direct-write denial, four RPCs, replay, member reads, and nonmember denial passed.
 
 ### Pending authenticated HTTP/browser procedure
 
@@ -485,7 +486,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 | High | The configured production analysis reached OpenAI but failed closed because the API organization has no credits. | Deston / Shared | Add credits or billing in the OpenAI Platform, then run one safe synthetic retry and record only non-secret metadata. Until then, keep public copy explicit that no successful live result exists. |
 | High | Authenticated native-mutation/reset production smoke is recorded, but fresh incognito login/logout and the funded analysis-to-undo journey are incomplete. | Shared | Complete the remaining live smoke matrix on the recorded production URL after provider funding. There is no documentation-only substitute. |
 | High | Final demo-access, Devpost, and video URLs, team roles, and primary `/feedback` Session ID are not supplied. | Shared | Replace each remaining submission placeholder from its authoritative human/external source and verify every public link before submission. The official deadline is already recorded above. |
-| Medium | Production is current and configured, but Vercel Authentication blocks anonymous judges; contract PR #17 and its hosted migration remain pending. | Deston / Shared | Deliberately decide public access, merge PR #17, type `apply-20260720190000`, apply only that migration, and rerun parity/denial verification. |
+| Resolved | Production is public with Preview-only protection, and contract PR #17/migration `20260720190000` passed hosted parity and denial/RPC verification. | Deston / Shared | Preserve Preview protection and rerun the contract verifier after future privilege changes. |
 | Medium | Authenticated Playwright does not cover live Supabase/Auth/OpenAI. | Andres / Shared | Use the guarded journey only as UI/contract evidence; complete the real production browser matrix before making live-service claims. |
 
 ## Submission claim rule

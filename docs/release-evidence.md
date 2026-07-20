@@ -6,24 +6,28 @@ This document records the factual release state produced by the final merged app
 
 | Field | Recorded value |
 | --- | --- |
-| Current production application SHA | `38067619a81c1118c46d9709f6403193fdc0f0c4` |
-| Production release merge | PR [#9](https://github.com/Chi944/InOrdo-Hackathon/pull/9), merged normally into `main` |
-| Production alias | [inordo.vercel.app](https://inordo.vercel.app), assigned to the current production deployment and protected by Vercel Authentication |
-| Immutable deployment | `inordo-bybqa9jnw-chi944s-projects.vercel.app` |
-| Vercel deployment ID | `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` |
+| Current production application SHA | `dad6b33e8fe99ae134f6949a4c46e8311352691d` |
+| Production release merge | PR [#20](https://github.com/Chi944/InOrdo-Hackathon/pull/20), merged normally into `main` after PRs #17, #18, and #19 |
+| Production alias | Public [inordo.vercel.app](https://inordo.vercel.app), assigned to the current production deployment; Vercel Authentication protects Preview only |
+| Immutable deployment | `inordo-99qmyjlj1-chi944s-projects.vercel.app` |
+| Vercel deployment ID | `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` |
 | Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
-| Current merged application `main` SHA | `38067619a81c1118c46d9709f6403193fdc0f0c4` |
+| Current merged application `main` SHA before this documentation-only reconciliation | `dad6b33e8fe99ae134f6949a4c46e8311352691d` |
 | Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
 | Approval-copy safety merge | PR [#12](https://github.com/Chi944/InOrdo-Hackathon/pull/12), merged normally into `main` |
 | Evidence-integrity merge | PR [#13](https://github.com/Chi944/InOrdo-Hackathon/pull/13), merged normally into `main` |
 | Approval-integrity merge | PR [#14](https://github.com/Chi944/InOrdo-Hackathon/pull/14), merged normally into `main` |
+| Native-write contract merge | PR [#17](https://github.com/Chi944/InOrdo-Hackathon/pull/17), merged normally into `main` |
+| Release hardening merge | PR [#18](https://github.com/Chi944/InOrdo-Hackathon/pull/18), merged normally into `main` |
+| Hydration-safe focus repair | PR [#19](https://github.com/Chi944/InOrdo-Hackathon/pull/19), merged normally into `main` after local and CI verification |
+| Ambiguous retry payload repair | PR [#20](https://github.com/Chi944/InOrdo-Hackathon/pull/20), merged normally into `main`; retained idempotency keys restore the submitted payload before the retry action is paint-visible |
 | Exact-SHA Preview | `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD`; `inordo-hackathon-3w91bc8k0-chi944s-projects.vercel.app` |
 | Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
 | Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
 | Vercel project | `chi944s-projects/inordo`; renamed from the bootstrap name without changing project ID or the immutable historical deployment |
-| Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; hosted migrations aligned through expand tail `20260719140000`; contract tail `20260720190000` remains local-only in PR #17 |
+| Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; hosted migrations aligned through contract tail `20260720190000` |
 
-The current manual Production deployment serves exact reviewed `main` SHA `38067619...`. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026, all seven Production environment names are configured, and the retired `inordo-hackathon.vercel.app` alias has been removed. Anonymous judge access is still blocked by Vercel Authentication and remains an explicit operator decision.
+The current manual Production deployment serves exact reviewed `main` SHA `dad6b33e...`. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026, all seven Production environment names are configured, and the retired `inordo-hackathon.vercel.app` project domain and alias have been removed. Anonymous Production access is verified; Preview remains intentionally protected.
 
 ## Implemented feature evidence
 
@@ -87,13 +91,13 @@ The current production application SHA passed the following under Node `22.23.1`
 - clean `npm ci`;
 - `npm run lint`;
 - `npm run typecheck`;
-- `npm run test:run`: 399 tests across 57 Vitest files;
-- `npm run test:e2e`: one Chromium core-demo journey;
+- `npm run test:run`: 400 tests across 58 Vitest files;
+- `npm run test:e2e`: two Chromium journeys, including the deployed skip-link focus invariant;
 - `npm run build`;
 - `npm audit --omit=dev`: zero production vulnerabilities; and
 - `git diff --check` with a clean synchronized `main`.
 
-Linked Supabase evidence includes aligned local/remote migrations through `20260719140000`, generated database types matching the hosted schema, clean error-level schema lint, and passing rollback-wrapped SQL verification. The exact deployed RPC artifact passed item create/update, dependency add/remove, exact replay, generation/version rejection, viewer/anonymous/cross-project denial, and reset back to the 24-item/26-edge baseline. Verification transactions and the final reset retained no temporary test records.
+Linked Supabase evidence includes aligned local/remote migrations through `20260720190000`, generated database types matching the hosted schema, clean error-level schema lint, and passing rollback-wrapped SQL verification. The exact deployed RPC artifact passed item create/update, dependency add/remove, exact replay, generation/version rejection, viewer/anonymous/cross-project denial, and reset back to the 24-item/26-edge baseline. The post-contract verifier additionally proves legacy table/column writes are denied, all four guarded RPCs remain executable, member reads remain, and true nonmembers are rejected. Verification transactions and the final reset retained no temporary test records.
 
 The current merged hardening SHA `72a6fc5...` separately passed a clean Node `22.23.1` gate: lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks. Its exact-SHA Preview inspection is recorded below; this does not turn it into production evidence.
 
@@ -129,12 +133,11 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 
 - The demo Auth account is provisioned and mapped as an admin. Authenticated native-mutation/reset smoke is complete, but a fresh signed-out/login/session/logout matrix remains pending.
 - No successful funded live GPT-5.6 request has been verified; the one production attempt failed closed because the OpenAI organization has no credits.
-- Production serves exact reviewed `main` SHA `38067619...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026.
-- Production is protected by Vercel Authentication. Judges cannot access it anonymously until the operator deliberately changes that setting.
+- Production publicly serves exact reviewed `main` SHA `dad6b33e...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026. Preview remains protected by Vercel Authentication.
 - The complete authenticated evidence -> impact -> selective apply -> history -> undo journey is pending on OpenAI funding. Reset itself is verified.
-- PR #17 contains the separately reviewed native-write contract migration. It is not merged or hosted; applying it requires the exact new approval `apply-20260720190000` and a fresh parity/denial run.
+- PR #17 and contract migration `20260720190000` are merged and hosted. Exact typed approval, linked parity/type checks, error-level lint, and the direct-DML/RPC/replay/member/nonmember verifier passed.
 - Viewer/nonmember/cross-project denial has hosted rollback and automated coverage but still needs the final deployed-browser check where feasible.
-- Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels. The skip-link focus repair is tested on a follow-up branch and still needs merge/deploy; production announcements and full keyboard order remain pending.
+- Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels. The skip-link focus repair is merged, deployed, and verified on public Production; status announcements and the complete authenticated keyboard order remain pending.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
 - Vercel Hobby eligibility was confirmed by Deston on July 20, 2026; this repository is not legal advice.
 - The final video, Devpost page, judge access path, team list, and primary Codex `/feedback` Session ID remain human-owned.
