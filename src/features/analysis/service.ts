@@ -10,6 +10,10 @@ import {
   AnalysisError,
   type AnalysisErrorCode,
 } from "@/features/analysis/errors";
+import type {
+  AnalysisProviderPolicy,
+  AnalysisProviderRoute,
+} from "@/features/analysis/provider-policy";
 import {
   buildBoundedModelItemContext,
   type ModelContextItem,
@@ -57,6 +61,8 @@ export type BeginAnalysisResult =
       kind: "claimed";
       requestId: string;
       sourceDocumentId: string;
+      providerRoute: AnalysisProviderRoute;
+      modelName: string;
     }
   | (DuplicateAnalysisResultBase & {
       state: "processing";
@@ -99,7 +105,7 @@ export interface AnalysisPersistence {
     projectId: string;
     projectRevision: string;
     source: AnalysisSource;
-    modelName: string;
+    providerPolicy: AnalysisProviderPolicy;
   }): Promise<BeginAnalysisResult>;
   complete(input: CompleteAnalysisInput): Promise<CompleteAnalysisResult>;
   fail(input: FailAnalysisInput): Promise<void>;
@@ -127,6 +133,7 @@ type CreateProjectAnalysisServiceOptions = {
   model: OpenAIAnalysisAdapter;
   modelName?: string;
   resolveModelName?: () => string | Promise<string>;
+  providerPolicy?: AnalysisProviderPolicy;
   authorize?: AnalysisAuthorizer;
   loadContext?: (
     client: ServerSupabaseClient,
@@ -222,6 +229,13 @@ export function createProjectAnalysisService({
   model,
   modelName = "gpt-5.6-luna",
   resolveModelName = () => modelName,
+  providerPolicy = {
+    mode: "recording",
+    recordingReady: true,
+    gatewayReady: false,
+    recordingModelName: "gpt-5.6-luna",
+    gatewayModelName: "openai/gpt-oss-20b",
+  },
   authorize = defaultAuthorizer,
   loadContext = loadProjectAnalysisContext,
 }: CreateProjectAnalysisServiceOptions) {
@@ -249,9 +263,8 @@ export function createProjectAnalysisService({
         }
         throw error;
       }
-      let activeModelName: string;
       try {
-        activeModelName = await resolveModelName();
+        await resolveModelName();
       } catch (error) {
         throw new AnalysisError("model_unavailable", undefined, error);
       }
@@ -260,7 +273,7 @@ export function createProjectAnalysisService({
         projectId,
         projectRevision: context.revision,
         source: parsed.data.source,
-        modelName: activeModelName,
+        providerPolicy,
       });
       if (beginning.kind === "duplicate") return beginning;
 
@@ -339,7 +352,7 @@ export function createProjectAnalysisService({
           requestId: beginning.requestId,
           projectRevision: context.revision,
           maxDepth: parsed.data.maxDepth,
-          modelName: activeModelName,
+          modelName: beginning.modelName,
           change,
           proposal,
           extractionMetadata: extraction.metadata,

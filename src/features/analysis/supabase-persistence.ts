@@ -28,7 +28,7 @@ type RpcResult = {
 export interface AnalysisRpcExecutor {
   execute(
     functionName:
-      | "begin_project_analysis"
+      | "begin_project_analysis_with_policy"
       | "complete_project_analysis"
       | "fail_project_analysis",
     args: Record<string, unknown>,
@@ -70,16 +70,113 @@ export function createPrivilegedSupabaseAnalysisRpcExecutor(
 }
 
 const nullableUuidSchema = z.uuid().nullable();
-const beginResultSchema = z.strictObject({
-  status: z.enum(["claimed", "duplicate", "rate_limited"]),
-  analysis_request_id: nullableUuidSchema,
-  source_document_id: nullableUuidSchema,
-  state: z.enum(["processing", "succeeded", "failed"]).nullable(),
-  change_event_id: nullableUuidSchema,
-  impact_run_id: nullableUuidSchema,
-  proposal_id: nullableUuidSchema,
-  retry_after_seconds: z.number().int().min(1).max(600).nullable(),
-});
+const providerRouteSchema = z.enum(["openai_recording", "gateway_fallback"]);
+const beginResultSchema = z
+  .strictObject({
+    status: z.enum([
+      "claimed",
+      "duplicate",
+      "rate_limited",
+      "analysis_disabled",
+      "recording_unavailable",
+      "fallback_unavailable",
+    ]),
+    analysis_request_id: nullableUuidSchema,
+    source_document_id: nullableUuidSchema,
+    state: z.enum(["processing", "succeeded", "failed"]).nullable(),
+    change_event_id: nullableUuidSchema,
+    impact_run_id: nullableUuidSchema,
+    proposal_id: nullableUuidSchema,
+    retry_after_seconds: z.number().int().min(1).max(600).nullable(),
+    provider_route: providerRouteSchema.nullable(),
+    model_name: z.string().min(1).nullable(),
+  })
+  .superRefine((result, context) => {
+    const allIdsNull =
+      result.analysis_request_id === null &&
+      result.source_document_id === null &&
+      result.change_event_id === null &&
+      result.impact_run_id === null &&
+      result.proposal_id === null;
+    const providerSelectionAbsent =
+      result.provider_route === null && result.model_name === null;
+    const providerSelectionMatches =
+      (result.provider_route === "openai_recording" &&
+        result.model_name === "gpt-5.6-luna") ||
+      (result.provider_route === "gateway_fallback" &&
+        result.model_name === "openai/gpt-oss-20b");
+
+    if (result.status === "claimed") {
+      if (
+        result.analysis_request_id === null ||
+        result.source_document_id === null ||
+        result.state !== "processing" ||
+        result.change_event_id !== null ||
+        result.impact_run_id !== null ||
+        result.proposal_id !== null ||
+        result.retry_after_seconds !== null ||
+        result.provider_route === null ||
+        result.model_name === null
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Invalid claimed analysis result.",
+        });
+        return;
+      }
+      if (!providerSelectionMatches) {
+        context.addIssue({
+          code: "custom",
+          message: "Invalid claimed provider route.",
+        });
+      }
+      return;
+    }
+
+    if (result.status === "duplicate") {
+      if (
+        result.analysis_request_id === null ||
+        result.source_document_id === null ||
+        result.state === null ||
+        (!providerSelectionAbsent && !providerSelectionMatches)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Invalid duplicate analysis result.",
+        });
+      }
+      return;
+    }
+
+    if (result.status === "rate_limited") {
+      if (
+        !allIdsNull ||
+        result.state !== null ||
+        result.retry_after_seconds === null ||
+        result.provider_route !== null ||
+        result.model_name !== null
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Invalid rate-limited analysis result.",
+        });
+      }
+      return;
+    }
+
+    if (
+      !allIdsNull ||
+      result.state !== null ||
+      result.retry_after_seconds !== null ||
+      result.provider_route !== null ||
+      result.model_name !== null
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Invalid unavailable analysis result.",
+      });
+    }
+  });
 const completeResultSchema = z.strictObject({
   status: z.enum(["succeeded", "duplicate_succeeded"]),
   analysis_request_id: z.uuid(),
@@ -112,6 +209,8 @@ function databaseFailureCode(errorCode: AnalysisErrorCode) {
       return "model_timeout";
     case "model_unavailable":
       return "model_unavailable";
+    case "fallback_quota_exhausted":
+      return "model_unavailable";
     case "model_refusal":
     case "model_invalid":
       return "model_invalid_output";
@@ -126,6 +225,10 @@ function databaseFailureCode(errorCode: AnalysisErrorCode) {
     case "rate_limited":
     case "persistence":
       return "internal_error";
+    case "analysis_disabled":
+    case "recording_unavailable":
+    case "fallback_unavailable":
+      throw new AnalysisError("persistence");
   }
 }
 
@@ -271,23 +374,38 @@ export function createSupabaseAnalysisPersistence(
 ): AnalysisPersistence {
   return {
     async begin(input) {
-      const { data, error } = await rpc.execute("begin_project_analysis", {
-        p_actor_id: input.actorId,
-        p_project_id: input.projectId,
-        p_expected_project_revision: input.projectRevision,
-        p_title: input.source.title,
-        p_source_kind: input.source.type,
-        p_source_author: input.source.author,
-        p_raw_text: input.source.text,
-        p_normalized_content_sha256: normalizedSourceHash(input.source.text),
-        p_occurred_at: input.source.timestamp,
-        p_source_url: null,
-        p_model_name: input.modelName,
-      });
+      const policy = input.providerPolicy;
+      const { data, error } = await rpc.execute(
+        "begin_project_analysis_with_policy",
+        {
+          p_actor_id: input.actorId,
+          p_project_id: input.projectId,
+          p_expected_project_revision: input.projectRevision,
+          p_title: input.source.title,
+          p_source_kind: input.source.type,
+          p_source_author: input.source.author,
+          p_raw_text: input.source.text,
+          p_normalized_content_sha256: normalizedSourceHash(input.source.text),
+          p_occurred_at: input.source.timestamp,
+          p_source_url: null,
+          p_analysis_mode: policy.mode,
+          p_recording_ready: policy.recordingReady,
+          p_gateway_ready: policy.gatewayReady,
+          p_recording_model_name: policy.recordingModelName,
+          p_gateway_model_name: policy.gatewayModelName,
+        },
+      );
       if (error) throw persistenceError(error);
 
       const parsed = beginResultSchema.safeParse(data);
       if (!parsed.success) throw persistenceError();
+      if (
+        parsed.data.status === "analysis_disabled" ||
+        parsed.data.status === "recording_unavailable" ||
+        parsed.data.status === "fallback_unavailable"
+      ) {
+        throw new AnalysisError(parsed.data.status);
+      }
       if (parsed.data.status === "rate_limited") {
         throw new AnalysisError(
           "rate_limited",
@@ -300,10 +418,15 @@ export function createSupabaseAnalysisPersistence(
         throw persistenceError();
       }
       if (parsed.data.status === "claimed") {
+        if (parsed.data.provider_route === null || parsed.data.model_name === null) {
+          throw persistenceError();
+        }
         return {
           kind: "claimed",
           requestId: parsed.data.analysis_request_id,
           sourceDocumentId: parsed.data.source_document_id,
+          providerRoute: parsed.data.provider_route,
+          modelName: parsed.data.model_name,
         };
       }
       if (!parsed.data.state) throw persistenceError();

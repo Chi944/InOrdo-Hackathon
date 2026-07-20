@@ -8,6 +8,10 @@ export type AnalysisErrorCode =
   | "project_changed"
   | "model_timeout"
   | "model_unavailable"
+  | "analysis_disabled"
+  | "recording_unavailable"
+  | "fallback_unavailable"
+  | "fallback_quota_exhausted"
   | "model_refusal"
   | "model_invalid"
   | "persistence";
@@ -22,6 +26,14 @@ const safeMessages: Record<AnalysisErrorCode, string> = {
   project_changed: "The project changed during analysis. Review it and try again.",
   model_timeout: "The analysis timed out before completion. Try again safely.",
   model_unavailable: "The analysis service is temporarily unavailable.",
+  analysis_disabled:
+    "Live AI analysis is disabled. Preserved results remain available for review.",
+  recording_unavailable:
+    "The approved recording window is unavailable. No model request was made.",
+  fallback_unavailable:
+    "The capped analysis fallback is unavailable. No model request was made.",
+  fallback_quota_exhausted:
+    "The capped analysis fallback has reached its usage limit.",
   model_refusal: "The update could not be analyzed safely.",
   model_invalid: "The analysis result could not be validated safely.",
   persistence: "The analysis could not be saved. Try again safely.",
@@ -37,6 +49,10 @@ const errorStatuses: Record<AnalysisErrorCode, number> = {
   project_changed: 409,
   model_timeout: 504,
   model_unavailable: 503,
+  analysis_disabled: 503,
+  recording_unavailable: 503,
+  fallback_unavailable: 503,
+  fallback_quota_exhausted: 503,
   model_refusal: 422,
   model_invalid: 422,
   persistence: 503,

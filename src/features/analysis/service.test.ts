@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ProjectAnalysisContext } from "@/features/analysis/context";
 import { AnalysisError } from "@/features/analysis/errors";
+import type { AnalysisProviderPolicy } from "@/features/analysis/provider-policy";
 import {
   AnalysisModelError,
   type OpenAIAnalysisAdapter,
@@ -21,6 +22,13 @@ const impactedItemId = "b993a2d1-8060-4c96-a7d0-e79f4cd43303";
 const requestId = "0dd9e279-fee5-4bb6-9e25-3b1a5165a510";
 const sourceDocumentId = "e5a80ad3-7d7a-4758-841e-bdd773987e11";
 const extractionEvidence = "briefing pack due date moved to 2026-08-17";
+const recordingPolicy: AnalysisProviderPolicy = {
+  mode: "recording",
+  recordingReady: true,
+  gatewayReady: false,
+  recordingModelName: "gpt-5.6-luna",
+  gatewayModelName: "openai/gpt-oss-20b",
+};
 
 const scope: AuthorizedProjectScope = {
   workspaceId,
@@ -114,6 +122,8 @@ function dependencies() {
     kind: "claimed",
     requestId,
     sourceDocumentId,
+    providerRoute: "openai_recording",
+    modelName: "gpt-5.6-luna",
   }));
   const complete = vi.fn<AnalysisPersistence["complete"]>(async () => ({
     changeEventId: "2aece803-d4d7-45c3-aab8-5e0e75231501",
@@ -187,6 +197,7 @@ describe("project analysis service", () => {
     const service = createProjectAnalysisService({
       client: {} as ServerSupabaseClient,
       ...deps,
+      providerPolicy: recordingPolicy,
     });
 
     await expect(service.analyze(projectId, request)).resolves.toMatchObject({
@@ -197,7 +208,10 @@ describe("project analysis service", () => {
     });
     expect(deps.persistence.begin).toHaveBeenCalledTimes(1);
     expect(deps.persistence.begin).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: userId }),
+      expect.objectContaining({
+        actorId: userId,
+        providerPolicy: recordingPolicy,
+      }),
     );
     expect(deps.model.extractChange).toHaveBeenCalledTimes(1);
     expect(deps.model.draftProposal).toHaveBeenCalledTimes(1);

@@ -16,6 +16,10 @@ describe("analysis errors", () => {
     ["project_changed", 409],
     ["model_timeout", 504],
     ["model_unavailable", 503],
+    ["analysis_disabled", 503],
+    ["recording_unavailable", 503],
+    ["fallback_unavailable", 503],
+    ["fallback_quota_exhausted", 503],
     ["model_refusal", 422],
     ["model_invalid", 422],
     ["persistence", 503],
@@ -41,5 +45,18 @@ describe("analysis errors", () => {
       },
     });
     expect(JSON.stringify(error.toResponseBody())).not.toContain("private");
+  });
+
+  it.each([
+    "analysis_disabled",
+    "recording_unavailable",
+    "fallback_unavailable",
+    "fallback_quota_exhausted",
+  ] as const)("keeps %s database details out of the response body", (code) => {
+    const privateDetail = "private database host and service-role token";
+    const error = new AnalysisError(code, undefined, new Error(privateDetail));
+
+    expect(analysisErrorStatus(error)).toBe(503);
+    expect(JSON.stringify(error.toResponseBody())).not.toContain(privateDetail);
   });
 });
