@@ -67,56 +67,6 @@ begin
     raise exception 'project mutation ledger is directly readable';
   end if;
 
-  if exists (
-       select 1
-       from pg_catalog.unnest(array[
-         'id', 'workspace_id', 'project_id', 'item_key', 'item_type',
-         'title', 'description', 'status', 'priority', 'owner_id',
-         'start_date', 'due_date', 'event_date', 'metadata', 'created_by'
-       ]) as field(column_name)
-       where not pg_catalog.has_column_privilege(
-         'authenticated', 'public.project_items', field.column_name, 'INSERT'
-       )
-     )
-     or exists (
-       select 1
-       from pg_catalog.unnest(array[
-         'item_key', 'item_type', 'title', 'description', 'status', 'priority',
-         'owner_id', 'start_date', 'due_date', 'event_date', 'metadata'
-       ]) as field(column_name)
-       where not pg_catalog.has_column_privilege(
-         'authenticated', 'public.project_items', field.column_name, 'UPDATE'
-       )
-     )
-     or not pg_catalog.has_table_privilege(
-       'authenticated', 'public.project_items', 'DELETE'
-     )
-     or not pg_catalog.has_table_privilege(
-       'authenticated', 'public.item_dependencies', 'INSERT'
-     )
-     or not pg_catalog.has_table_privilege(
-       'authenticated', 'public.item_dependencies', 'UPDATE'
-     )
-     or not pg_catalog.has_table_privilege(
-       'authenticated', 'public.item_dependencies', 'DELETE'
-     ) then
-    raise exception 'expand-phase compatibility DML is missing';
-  end if;
-  if (
-    select pg_catalog.count(*)
-    from pg_catalog.pg_policies as policy
-    where policy.schemaname = 'public'
-      and policy.policyname in (
-        'project_items_insert_contributor',
-        'project_items_update_contributor',
-        'project_items_delete_contributor',
-        'item_dependencies_insert_contributor',
-        'item_dependencies_update_contributor',
-        'item_dependencies_delete_contributor'
-      )
-  ) <> 6 then
-    raise exception 'expand-phase compatibility policies are missing';
-  end if;
 end;
 $$;
 
@@ -165,63 +115,6 @@ select pg_catalog.set_config(
   '{"sub":"00000000-0000-4000-8000-000000000103","role":"authenticated","is_anonymous":false}',
   true
 );
-
--- The expand migration must remain compatible with the still-live direct-DML
--- application until the separately deployed RPC artifact passes smoke. The
--- later contract verifier replaces this positive assertion with denial checks.
-do $$
-declare
-  changed_count integer;
-begin
-  insert into public.project_items (
-    id, workspace_id, project_id, item_key, item_type, title, description,
-    status, priority, owner_id, start_date, due_date, event_date, metadata,
-    created_by
-  ) values (
-    '3e140000-0000-4000-8000-000000000089',
-    '10000000-0000-4000-8000-000000000001',
-    '20000000-0000-4000-8000-000000000001',
-    'TST-89', 'task', 'Expand compatibility fixture', null,
-    'not_started', 'medium', null, null, null, null, '{}'::jsonb,
-    '00000000-0000-4000-8000-000000000103'
-  );
-  update public.project_items
-  set title = 'Expand compatibility updated'
-  where id = '3e140000-0000-4000-8000-000000000089'::uuid;
-  get diagnostics changed_count = row_count;
-  if changed_count <> 1 then
-    raise exception 'expand compatibility item update changed % rows',
-      changed_count;
-  end if;
-
-  insert into public.item_dependencies (
-    id, workspace_id, project_id, from_item_id, to_item_id, relationship,
-    rationale, created_by
-  ) values (
-    '4e140000-0000-4000-8000-000000000089',
-    '10000000-0000-4000-8000-000000000001',
-    '20000000-0000-4000-8000-000000000001',
-    '3e140000-0000-4000-8000-000000000089',
-    '30000000-0000-4000-8000-000000000001',
-    'requires', 'Rollback-only expand compatibility check.',
-    '00000000-0000-4000-8000-000000000103'
-  );
-  delete from public.item_dependencies
-  where id = '4e140000-0000-4000-8000-000000000089'::uuid;
-  get diagnostics changed_count = row_count;
-  if changed_count <> 1 then
-    raise exception 'expand compatibility dependency delete changed % rows',
-      changed_count;
-  end if;
-  delete from public.project_items
-  where id = '3e140000-0000-4000-8000-000000000089'::uuid;
-  get diagnostics changed_count = row_count;
-  if changed_count <> 1 then
-    raise exception 'expand compatibility item delete changed % rows',
-      changed_count;
-  end if;
-end;
-$$;
 
 do $$
 declare

@@ -273,13 +273,13 @@ Linked evidence on 2026-07-18: the migration ledger is aligned through `20260718
 
 - [x] Clean local migration replay and database lint pass through `20260719140000_guard_project_record_mutations`.
 - [x] `verify_superseded_action_reconciliation.sql` proves pending/approved staleness, attribution preservation, terminal-history preservation, and apply-safe deferred reconciliation.
-- [x] `verify_generation_guarded_mutations.sql` proves RPC authorization, expand-phase legacy-policy compatibility, strict record validation, exact replay (including after mutable owner removal), key conflicts, generation/version fences, and dependency integrity. Direct-DML denial moves to the later contract verifier.
+- [x] `verify_generation_guarded_mutations.sql` proves RPC authorization, strict record validation, exact replay (including after mutable owner removal), key conflicts, generation/version fences, and dependency integrity. `verify_project_record_contract.sql` separately proves legacy write-policy/grant removal, retained member reads, direct-DML denial, contracted RPC execution, exact replay, and true-nonmember rejection.
 - [x] A real two-session local race proved a generation-1 mutation waited behind the project lock, rejected with `40001` after generation advanced to 2, and created zero stale items and zero ledger receipts.
 - [x] Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 394 unit tests across 57 files, guarded Chromium journey, production build, zero-vulnerability production audit, generated-type comparison, local migration-parity guard, and diff check passed on the settled branch.
 - [x] Release review found and corrected the incompatible migration/deploy ordering: `20260719140000` is expand-only, the RPC artifact must deploy and pass all four native mutation smokes, and a separate contract migration removes legacy DML only afterward.
 - [x] Configuration-contract review corrected the protected-workspace role of `DEMO_PROJECT_SLUG`, retained the non-secret model default for least-privilege local QA, and explicitly rejects an empty `OPENAI_MODEL=` entry.
 - [x] Two P2 scale limits are disclosed with mitigations and backlog owners: analysis finalization's cross-project table-lock scope and the dependency-management UI's silent 500-row cap.
-- [ ] Hosted expand migration, exact-SHA RPC deployment, authenticated four-mutation smoke, and the separate contract migration remain pending until the reviewed branch is merged and the operator passes each exact typed gate.
+- [x] Hosted expand migrations through `20260719140000`, exact-SHA RPC deployment, and authenticated item create/update plus dependency create/remove smoke passed on July 20, 2026. The isolated `20260720190000` contract migration is locally verified and remains unapplied until its reviewed branch is merged and a new exact typed approval is supplied.
 
 ### Pending authenticated HTTP/browser procedure
 
