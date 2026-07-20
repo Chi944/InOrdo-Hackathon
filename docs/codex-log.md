@@ -300,3 +300,11 @@ Replace this placeholder only after running `/feedback` in the primary Codex tas
 - Reconciled public claims: text paste/manual notes/meeting minutes/summaries are available; files, CSV, URLs, voice, email, and connectors are not; ordinary project provisioning is unavailable; judge access is read-only; Gateway GPT-OSS is capped but not guaranteed free forever; and ChatGPT subscriptions cannot fund external application API calls.
 - Node `22.23.1` and npm `10.9.8` completed lint, typecheck, 513 Vitest tests across 64 files, two guarded Chromium journeys, and the Next.js `16.2.10` production build. Final diff and filename-only secret/environment checks ran before commit.
 - This work package created no account, password, recording grant, provider request, hosted mutation, deployment change, or Devpost edit. No environment file, credential, Auth identifier, private transcript, or secret value was read or recorded.
+
+## 2026-07-21 — Production video documentation package
+
+- Replaced the earlier draft storyboard with the approved exact 2:47 Production timeline and separate verbatim voiceover masters for Andres sections A1–A5 and Deston sections D1–D4.
+- Added the seven-file Production capture map, 1920×1080 privacy-safe recording procedure, caption/edit guidance, voice recording specifications and external media paths, immediate post-capture recording-key revocation gate, and exact 1280×720 genuine-frame thumbnail brief.
+- Preserved the product truth boundary: GPT-5.6 has bounded server-only extraction/drafting jobs, deterministic TypeScript owns dependency reach, synthetic data is used throughout, human approval remains required, and model output never directly mutates project records.
+- The documentation explicitly excludes test routes, generated interfaces, private Codex transcripts, terminal or environment output, browser/account details, committed raw media, and paid premium media generation.
+- No media file, browser state, credential, identifier, provider request, deployment, hosted database, Devpost entry, GitHub issue, or private transcript was accessed or changed by this work package. Capture, voice delivery, editing, key revocation, final export, upload, and publication remain release gates.

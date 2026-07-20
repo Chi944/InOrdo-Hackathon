@@ -35,6 +35,21 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The proposal-readiness mismatch is resolved by the invariant-checked server-owned transition and its linked reconciliation; non-ready states still fail closed.
 - [ ] Known limitations include the unverified live model/browser/deployment gates that remain open at submission time.
 
+## Production video package
+
+- [x] The authoritative storyboard is exactly 2:47 and assigns Andres sections A1–A5 and Deston sections D1–D4.
+- [x] Separate recording masters specify mono PCM WAV at 48 kHz/24-bit, no clipping, approximately two seconds between sections, approximately five seconds of room tone, and external-only media paths.
+- [x] The capture runbook requires genuine public Production behavior at 1920×1080, 100% browser zoom, full-screen browser, disabled notifications, a visible synthetic label, and a privacy frame check before every take.
+- [x] The video package states that GPT-5.6 performs bounded server-only extraction/drafting, deterministic TypeScript owns dependency reach, and model output never directly mutates project records.
+- [ ] Record the seven named Production captures in `C:\Users\User\Videos\InOrdo-Build-Week\01-screen-captures`; never commit raw captures, voice files, browser profiles, edit projects, credentials, or private notes.
+- [ ] Verify the single authorized GPT-5.6 raw capture is playable, then immediately revoke the purpose-specific OpenAI key, remove it from Vercel Production, and redeploy in the approved safe mode.
+- [ ] If the one provider attempt does not yield a verified result, do not retry without explicit authorization; select the truthful no-verified-result copy and do not imply a live success in the video or thumbnail.
+- [ ] Receive `Andres.wav`, `Andres-room-tone.wav`, `Deston.wav`, and `Deston-room-tone.wav` at the documented external paths and verify format, clipping, intelligibility, and section order.
+- [ ] Assemble accurate captions, restrained cursor movement, readable holds on evidence/path/approval/history, and a final frame-by-frame privacy review.
+- [ ] Export and inspect the exactly 2:47 1920×1080 final video; verify it contains no test route, generated interface, private transcript, environment output, account detail, credential, or customer data.
+- [ ] Export `C:\Users\User\Videos\InOrdo-Build-Week\05-exports\final\inordo-thumbnail-1280x720.png` at exactly 1280×720 from a genuine Production frame with the approved title, subtitle, badge, synthetic label, and privacy constraints.
+- [ ] Confirm the recording key is revoked and the safe post-recording Production deployment is live before uploading or sharing any video.
+
 ## README and local reproduction
 
 - [ ] Prerequisites match `package.json` and the repository toolchain, including Node 22 and npm.

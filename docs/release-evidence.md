@@ -2,6 +2,21 @@
 
 This document records the factual release state produced by the final merged application review. It separates automated and public evidence from checks that still require a human-held credential, a funded provider request, or submission-account access.
 
+## Production video package prepared 2026-07-21
+
+- The repository contains an authoritative 2:47 storyboard, separate verbatim Andres A1–A5 and Deston D1–D4 voiceover masters, a seven-capture Production runbook, and an exact 1280×720 thumbnail brief.
+- The package requires genuine Production frames, synthetic data, a privacy check before every take, bounded server-only GPT-5.6 work, deterministic TypeScript dependency reach, inert model output, and human approval before internal mutations.
+- Raw captures, voice files, edit projects, browser profiles, exports, credentials, account identifiers, and private notes remain outside Git under the owner-managed media workspace.
+- No recording, provider attempt, key revocation, media inspection, export, upload, or publication is claimed by this documentation step. Those remain explicit release gates.
+- After the single authorized Production analysis is captured and the raw file is verified playable, the purpose-specific recording key must be revoked immediately, removed from Vercel Production, and followed by the approved safe-mode redeployment before public handoff.
+
+## Recoverable workspace cleanup recorded 2026-07-21
+
+- Archive: `C:\Users\User\Documents\Archives\InOrdo\workspace-cleanup-2026-07-21`
+- Moved for recovery: `.playwright-mcp`, `inordo-desktop.png`, and `inordo-mobile.png`
+- Removed after exact validation: empty `.agents`, empty `.git`, and the unchanged audited zero-byte `Program` reparse point
+- Final `C:\Users\User\Documents\Projects\Hackathons` listing: `InOrdo-Hackathon`
+
 ## Release identity
 
 | Field | Recorded value |
