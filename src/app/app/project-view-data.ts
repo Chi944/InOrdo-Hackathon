@@ -45,6 +45,13 @@ async function resolveDemoProjectContext() {
   }
 }
 
+export async function loadProjectIndexView() {
+  const { client, scope } = await resolveDemoProjectContext();
+  const overview = await getProjectOverview(client, scope);
+
+  return { overview, role: scope.membership.role };
+}
+
 export async function loadProjectViewData() {
   const { client, scope } = await resolveDemoProjectContext();
   const projectRecords = createProjectRecordOperations({ client });

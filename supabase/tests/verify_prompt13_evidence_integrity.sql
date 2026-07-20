@@ -126,29 +126,32 @@ begin
     'hex'
   );
 
-  first_result := public.begin_project_analysis(
+  first_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     expected_project_revision,
     'Programme desk capture', 'manual_note', 'Programme desk',
     'Prompt 13 provenance verifier: summit update.', normalized_hash,
-    '2026-07-19 09:00:00+00'::timestamptz, null, 'gpt-5.6-luna'
+    '2026-07-19 09:00:00+00'::timestamptz, null,
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
-  second_result := public.begin_project_analysis(
+  second_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     expected_project_revision,
     'Operations handoff capture', 'manual_note', 'Operations lead',
     'Prompt 13 provenance verifier: summit update.', normalized_hash,
-    '2026-07-19 10:00:00+00'::timestamptz, null, 'gpt-5.6-luna'
+    '2026-07-19 10:00:00+00'::timestamptz, null,
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
-  exact_replay := public.begin_project_analysis(
+  exact_replay := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     expected_project_revision,
     'Operations handoff capture', 'manual_note', 'Operations lead',
     'Prompt 13 provenance verifier: summit update.', normalized_hash,
-    '2026-07-19 10:00:00+00'::timestamptz, null, 'gpt-5.6-luna'
+    '2026-07-19 10:00:00+00'::timestamptz, null,
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
 
   if first_result ->> 'status' <> 'claimed'
@@ -377,7 +380,7 @@ begin
   where request.project_id = '20000000-0000-4000-8000-000000000001'::uuid
     and request.source_document_id = original_source_id;
 
-  next_revision_result := public.begin_project_analysis(
+  next_revision_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting(
@@ -385,7 +388,8 @@ begin
     ),
     'Programme desk capture', 'manual_note', 'Programme desk',
     'Prompt 13 provenance verifier: summit update.', normalized_hash,
-    '2026-07-19 09:00:00+00'::timestamptz, null, 'gpt-5.6-luna'
+    '2026-07-19 09:00:00+00'::timestamptz, null,
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
 
   if next_revision_result ->> 'status' <> 'claimed'

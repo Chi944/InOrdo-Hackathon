@@ -8,10 +8,25 @@ This guide gives Deston on Windows and Andres on macOS repeatable, role-appropri
 - Never commit, paste, screenshot, or send `.env.local`, passwords, API keys, cookies, service-role values, or reset secrets.
 - Grant only the provider access required for the assigned work. Deston owns privileged database, deployment, reset, and model configuration. Andres's normal interface QA does not require a service-role key, reset secret, OpenAI key, or Vercel Production-secret access.
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are browser-configured values. Every other configured name is server-only.
-- Deston's local and Vercel Production environments contain all seven required names. The health route is ready, but the OpenAI organization currently has no credits; the single production analysis attempt failed closed and live model output must remain unclaimed.
+- Provider readiness is mode-specific. Disabled mode performs no provider request; recording and Gateway fallback remain unavailable until their separately documented configuration and authorization gates pass.
 - Use only the fictional Regional Climate Action Summit workspace and the operator-provisioned demo Auth account.
 
-Deston's privileged local setup uses all seven documented names. Their values remain only in the ignored local file and provider secret stores. Andres should prefer the deployed production application for authenticated interface QA. When local Auth/UI inspection is necessary, he needs only the two browser-safe `NEXT_PUBLIC_` values, the non-secret server-only `DEMO_PROJECT_SLUG=regional-climate-action-summit-2026`, the non-secret `OPENAI_MODEL=gpt-5.6-luna` default retained from `.env.example`, and his own operator-provisioned demo account. Every credential and privileged server value remains blank in Andres's least-privilege setup.
+The current environment contract is the following ten names from `.env.example`; this names-only inventory is not evidence that any value is configured locally or on Vercel:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+OPENAI_API_KEY
+OPENAI_MODEL
+DEMO_PROJECT_SLUG
+DEMO_RESET_SECRET
+ANALYSIS_MODE
+AI_GATEWAY_API_KEY
+AI_GATEWAY_MODEL
+```
+
+Deston's privileged local values remain only in the ignored local file and approved provider secret stores. Andres should prefer the deployed production application for authenticated interface QA. For local read-only inspection, configure only the two browser-safe Supabase names and the demo-project selector through an authorized private source, retain disabled analysis mode, and use an operator-provisioned account. Provider model names in `.env.example` do not enable a request without the matching mode and credential. Every credential and privileged server value remains absent from Andres's least-privilege setup.
 
 A Vercel CLI-managed `VERCEL_OIDC_TOKEN`, if present, is also a secret: do not inspect, copy, document, or commit it. If Andres is later assigned a specific privileged local operation, the project owner must approve the narrow access and deliver each required server value through the approved secret manager; never grant the full secret set merely for environment parity.
 
@@ -49,7 +64,7 @@ git check-ignore -q .env.local
 git status --short
 ```
 
-Deston's existing machine has all seven authorized values in the ignored `.env.local`. On a fresh Windows machine, populate the names through a private editor from the authorized Supabase/OpenAI source or approved secret manager. `git check-ignore -q` must exit successfully and `git status --short` must not list the file. Never use `Get-Content`, `type`, `echo`, or a shell argument to inspect or set a value.
+Populate only the names authorized for the intended local role through a private editor or approved secret manager. Full local configuration and a ready health response need the two public Supabase values plus the server-only Supabase, project-selector, and reset configuration; provider credentials are optional and must remain absent unless the corresponding recording or Gateway gate is deliberately being exercised. `git check-ignore -q` must exit successfully and `git status --short` must not list the file. Never use `Get-Content`, `type`, `echo`, or a shell argument to inspect or set a value.
 
 ## Andres: macOS setup
 
@@ -82,7 +97,7 @@ git check-ignore -q .env.local
 git status --short
 ```
 
-Populate `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `DEMO_PROJECT_SLUG=regional-climate-action-summit-2026`. Retain `OPENAI_MODEL=gpt-5.6-luna` from `.env.example`; it is non-secret and is not used by the protected read-only workspace path. The slug identifies the checked-in synthetic project; it is server-only but not a credential. Leave `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, and `DEMO_RESET_SECRET` blank. Do not create an explicit empty `OPENAI_MODEL=` entry because the environment contract rejects blank values. Do not send Andres Deston's `.env.local`, service-role/reset values, or OpenAI credential, and do not temporarily demote Production secrets into Preview or Development merely to make them pullable.
+Populate only `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `DEMO_PROJECT_SLUG` through an authorized private source. Keep `ANALYSIS_MODE` disabled, retain the non-secret model defaults from `.env.example`, and leave both provider credentials plus `SUPABASE_SERVICE_ROLE_KEY` and `DEMO_RESET_SECRET` blank. The project selector is server-only but is not a credential. This least-privilege setup can browse the authenticated project through the user's RLS-scoped session, but health may report base configuration as not ready and reset, analysis, and privileged persistence remain unavailable. Do not send Andres Deston's `.env.local` or privileged values, and do not temporarily demote Production secrets into Preview or Development merely to make them pullable.
 
 ## Confirm the hosted Supabase link
 
@@ -94,7 +109,9 @@ npx --no-install supabase link --project-ref hctvqaxkxqmqodzeshjm
 npx --no-install supabase migration list --linked
 ```
 
-The local and remote migration columns must match exactly through the current tracked tail, `20260719140000`. Do not accept an older remote tail, a remote-only version, or a gap. Do not run `supabase db reset` against the hosted project. Run `supabase db push` only through the reviewed, fail-closed production sequence in `docs/deployment-runbook.md` when those migrations are intentionally being released.
+The historical hosted rollout is complete through `20260720190000`. Migration `20260721100000` is a separate policy change that remains pending until its own target check, one-element pending-set proof, dry run, fresh action-time approval, push, parity check, and SQL verifier all pass. Before that gate, the linked ledger must show the hosted tail at `20260720190000` and only `20260721100000` as the expected local-only migration; after an authorized rollout it must show exact parity through `20260721100000`. Do not accept an older remote tail, a remote-only version, a gap, or any additional pending migration.
+
+Never run `supabase db reset` against the hosted project. `npx --no-install supabase db reset` is only for a disposable local Supabase stack started with the repository configuration and Docker; it reconstructs the checked-in synthetic fixture and is unrelated to the application's history-preserving demo-reset operation. The application reset requires an authorized owner/admin, the configured synthetic project, privileged server configuration, and the server-held reset guard. Andres's least-privilege setup intentionally cannot reset. Run `supabase db push` only through the reviewed, fail-closed production sequence in `docs/deployment-runbook.md` when the exact migration is intentionally being released.
 
 ## Start the application
 
@@ -151,11 +168,11 @@ With the account configured:
 3. Sign out and confirm `/app` no longer returns workspace data.
 4. Try an invalid password and confirm the error is useful but reveals no Supabase detail.
 
-## Full live workflow after OpenAI is enabled
+## Full live workflow after an analysis route is authorized
 
-This section targets **`https://inordo.vercel.app`**, not the local server. Do not run it until `OPENAI_API_KEY` is stored through Vercel's hidden secret input, a new production deployment is ready, and `https://inordo.vercel.app/api/health` returns `200 ready`. Open the production URL in a fresh private/incognito browser and sign in with the operator-provisioned synthetic account.
+This section targets **`https://inordo.vercel.app`**, not the local server. Do not run it until the release operator has selected exactly one bounded route, completed that route's credential and authorization gates, deployed the reviewed artifact, and confirmed `https://inordo.vercel.app/api/health` returns `200 ready` with the expected generic analysis state. Recording mode requires its exact one-use grant and recording-only provider setup. Auto mode requires the separately capped Gateway configuration. Disabled mode must present an honest unavailable message and perform no provider request. Open the production URL in a fresh private/incognito browser and sign in with the operator-provisioned synthetic account.
 
-The Production secret is intentionally not present in either teammate's `.env.local` right now. If authorized local live-provider testing is needed later, each tester must enter their own approved key directly into the ignored `.env.local` through a private editor, restart `npm run dev`, and require `http://localhost:3000/api/health` to return `200 ready`. Never transmit that key through Git, chat, email, terminal history, screenshots, or logs; remove it again when the local live test is complete.
+Provider secrets do not belong in a teammate's local setup by default. If authorized local live-provider testing is needed later, each tester must enter only the approved route's credential directly into the ignored `.env.local` through a private editor, select the matching mode, restart `npm run dev`, and require `http://localhost:3000/api/health` to return `200 ready` with the expected generic analysis state. Configuration readiness does not prove a recording grant, provider validity, funding, or quota. Never transmit a credential through Git, chat, email, terminal history, screenshots, or logs; remove it again when the local live test is complete.
 
 Use the exact synthetic update from `docs/demo-scenario.md`:
 

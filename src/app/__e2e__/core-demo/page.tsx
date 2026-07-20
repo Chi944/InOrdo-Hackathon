@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { ImpactWorkflow } from "@/app/app/impact-workflow";
+import type { AnalysisAvailability } from "@/features/analysis/provider-policy";
 import { isCoreDemoFixtureEnabled } from "@/lib/e2e/core-demo-access";
 import { coreDemoFixtureIds } from "@/lib/e2e/core-demo-contract";
 import { coreDemoWorkflowData } from "@/lib/e2e/core-demo-fixtures";
@@ -13,6 +14,15 @@ import {
 } from "@/lib/e2e/core-demo-stage";
 
 export const dynamic = "force-dynamic";
+
+const fixtureAnalysisAvailability = {
+  mode: "auto",
+  status: "fallback_configured",
+  canAnalyze: true,
+  provider: "Vercel AI Gateway",
+  model: "openai/gpt-oss-20b",
+  message: "The capped GPT-OSS fallback is available for authorized contributors.",
+} satisfies AnalysisAvailability;
 
 export default async function CoreDemoFixturePage() {
   if (!isCoreDemoFixtureEnabled()) {
@@ -47,6 +57,7 @@ export default async function CoreDemoFixturePage() {
           </p>
         </header>
         <ImpactWorkflow
+          analysisAvailability={fixtureAnalysisAvailability}
           data={coreDemoWorkflowData(stage)}
           projectId={coreDemoFixtureIds.project}
           refreshPath="/__e2e__/core-demo"

@@ -11,7 +11,7 @@ No analytics, paid monitoring, custom domain, background worker, scheduled job, 
 - Deploy only a reviewed commit whose full SHA equals both `HEAD` and `origin/main`; a clean working tree alone is insufficient.
 - Use Node.js 22 and npm. Do not deploy if `git status --short` prints anything.
 - Keep `.env.local`, `.vercel/`, credentials, cookies, tokens, provider payloads, and private project data out of Git, tickets, screenshots, and copied command output.
-- The browser may receive only the two `NEXT_PUBLIC_` values. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET` are server-only.
+- The browser may receive only the two `NEXT_PUBLIC_` values. `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, `DEMO_RESET_SECRET`, `ANALYSIS_MODE`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` are server-only.
 - Model output never mutates project data. Authorization, deterministic traversal, selective approval, mutation, history, undo, and reset remain application/database responsibilities.
 - The production artifact must build without calling OpenAI. `/api/health` is a configuration-readiness check and must not spend model tokens or disclose values.
 - Record the full Git SHA and the deployment URL privately in the release evidence. Do not claim the live provider or authenticated workflow passed until its smoke step has actually run.
@@ -25,14 +25,17 @@ Configure values interactively in Vercel's secret store. The commands below cont
 | `NEXT_PUBLIC_SUPABASE_URL` | Production | Browser-safe | Exact hosted Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production | Browser-safe | Publishable/anonymous browser key used with Auth and RLS. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, sensitive | Server only | Used only after request-scoped authorization by constrained persistence/operation services. |
-| `OPENAI_API_KEY` | Production, sensitive | Server only | Required for live analysis; configured through one-way secret handling and never exposed to client code. |
-| `OPENAI_MODEL` | Production | Server only | Use `gpt-5.6-luna` unless a reviewed release explicitly changes it. |
+| `OPENAI_API_KEY` | Recording deployment only, sensitive | Server only | Ignored outside `recording`; enables only an approved exact recording grant and is removed immediately after the recording attempt. |
+| `OPENAI_MODEL` | Recording deployment only | Server only | Must be exactly `gpt-5.6-luna`; recording never falls back. |
 | `DEMO_PROJECT_SLUG` | Production | Server only | Selects the synthetic project for protected workspace lookup and reset. |
 | `DEMO_RESET_SECRET` | Production, sensitive | Server only | Server-held reset guard; never accepted from a browser request. |
+| `ANALYSIS_MODE` | Production | Server only | Exactly `disabled`, `recording`, or `auto`; absent/invalid is disabled. |
+| `AI_GATEWAY_API_KEY` | Auto deployment only, sensitive | Server only | Dedicated key with a nonrenewing hard quota of USD 1 or less and automatic top-up disabled. |
+| `AI_GATEWAY_MODEL` | Auto deployment only | Server only | Must be exactly `openai/gpt-oss-20b`. |
 
-Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave the seven application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
+Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave all application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
 
-Production currently has all seven names and `/api/health` returns `200 ready`. That endpoint proves configuration shape only, not provider funding or a successful model call. The OpenAI organization must be funded before the one remaining synthetic analysis retry; never retry repeatedly to diagnose billing.
+Base application readiness no longer requires either provider credential. `/api/health` may return `200 ready` while its generic analysis status is disabled or unavailable. A configured status proves environment shape only, not an exact recording grant, Gateway quota, provider funding, or a successful model call. This branch makes no claim about the current Vercel values.
 
 ### Interactive production configuration
 
@@ -45,12 +48,20 @@ npx --yes vercel@56.3.2 env add SUPABASE_SERVICE_ROLE_KEY production --sensitive
 npx --yes vercel@56.3.2 env add OPENAI_MODEL production
 npx --yes vercel@56.3.2 env add DEMO_PROJECT_SLUG production
 npx --yes vercel@56.3.2 env add DEMO_RESET_SECRET production --sensitive
+npx --yes vercel@56.3.2 env add ANALYSIS_MODE production
 ```
 
 When Deston is ready to enable live analysis:
 
 ```bash
 npx --yes vercel@56.3.2 env add OPENAI_API_KEY production --sensitive --scope chi944s-projects
+```
+
+For the capped fallback, create a dedicated Vercel AI Gateway key in its console, set a hard quota of USD 1 or less, choose no refresh period, disable automatic top-up, and verify those settings before adding it interactively. Do not use Vercel OIDC fallback.
+
+```bash
+npx --yes vercel@56.3.2 env add AI_GATEWAY_API_KEY production --sensitive --scope chi944s-projects
+npx --yes vercel@56.3.2 env add AI_GATEWAY_MODEL production --scope chi944s-projects
 ```
 
 Use `npx --yes vercel@56.3.2 env ls production --scope chi944s-projects` to verify names and scopes only. Do not print, pull, or copy values as release evidence. A changed environment variable affects only a new deployment, so redeploy after every required configuration change. The CLI version is pinned here so a release does not silently resolve a different command contract.
@@ -128,7 +139,7 @@ Stop if either status command prints a path, a gate fails, either pair of full S
 
 ## Production sequence
 
-Production deployment starts over from a clean, current `main`. Do not reuse an old preview working tree or deploy a feature branch. Generation-fenced native mutations use an explicit expand/deploy/contract rollout: `20260719140000` adds the receipt ledger and RPCs while temporarily retaining the legacy contributor DML path, the RPC-capable application is deployed and exercised, and only a later separately reviewed contract migration removes the legacy policies/grants. Never put the expand and contract migrations in the same pending `db push`.
+Production deployment starts over from a clean, current `main`. Do not reuse an old preview working tree or deploy a feature branch. The generation-fenced mutation expand/deploy/contract rollout is already complete through `20260720190000`. The next authorized database change is only `20260721100000_add_analysis_access_policy.sql`, and it requires its own fresh target, pending-set, dry-run, and action-time approval gate. Do not use an older migration approval to authorize this push.
 
 ```bash
 set -euo pipefail
@@ -158,20 +169,101 @@ git fetch --prune origin main
 test "$(git rev-parse --verify HEAD)" = "$RELEASE_SHA"
 test "$(git rev-parse --verify origin/main)" = "$RELEASE_SHA"
 test "$(git rev-list --left-right --count origin/main...HEAD | tr '\t' ' ')" = "0 0"
-EXPAND_MIGRATION_TAIL="20260719140000"
-npx --no-install supabase migration list --linked
-npx --no-install supabase db push --dry-run
+POLICY_MIGRATION_TAIL="20260721100000"
+POLICY_MIGRATION_FILENAME="${POLICY_MIGRATION_TAIL}_add_analysis_access_policy.sql"
+EXPECTED_REMOTE_TAIL="20260720190000"
+test -f "supabase/migrations/$POLICY_MIGRATION_FILENAME"
+
+# Compare the existing local link with the intended dashboard target without
+# printing either private project reference.
+test -r supabase/.temp/project-ref
+read -r -s -p 'Privately enter the intended linked Supabase project ref: ' \
+  EXPECTED_LINKED_PROJECT_REF
+printf '\n'
+test -n "$EXPECTED_LINKED_PROJECT_REF"
+LINKED_PROJECT_REF="$(tr -d '\r\n' < supabase/.temp/project-ref)"
+test -n "$LINKED_PROJECT_REF"
+test "$LINKED_PROJECT_REF" = "$EXPECTED_LINKED_PROJECT_REF"
+unset EXPECTED_LINKED_PROJECT_REF LINKED_PROJECT_REF
+
+policy_pending_set() {
+  LEDGER_JSON="$1" node <<'NODE'
+const ledger = JSON.parse(process.env.LEDGER_JSON ?? "");
+if (
+  ledger === null ||
+  typeof ledger !== "object" ||
+  Array.isArray(ledger) ||
+  Object.keys(ledger).sort().join(",") !== "message,migrations" ||
+  ledger.message !== "Migrations listed" ||
+  !Array.isArray(ledger.migrations) ||
+  ledger.migrations.length > 1000
+) process.exit(4);
+let previousTail = "";
+for (const row of ledger.migrations) {
+  if (
+    row === null ||
+    typeof row !== "object" ||
+    Array.isArray(row) ||
+    Object.keys(row).sort().join(",") !== "local,remote,time" ||
+    typeof row.local !== "string" ||
+    typeof row.remote !== "string" ||
+    (row.local !== "" && !/^\d{14}$/.test(row.local)) ||
+    (row.remote !== "" && !/^\d{14}$/.test(row.remote)) ||
+    (row.local === "" && row.remote === "") ||
+    (row.remote !== "" && row.local !== row.remote)
+  ) process.exit(4);
+  const currentTail = row.local || row.remote;
+  if (currentTail <= previousTail) process.exit(4);
+  previousTail = currentTail;
+}
+const remote = ledger.migrations.filter((row) => row.remote !== "");
+const pending = ledger.migrations.filter(
+  (row) => row.local !== "" && row.remote === "",
+);
+process.stdout.write(
+  `${remote.at(-1)?.remote ?? ""}\t${pending.map((row) => row.local).join(",")}\n`,
+);
+NODE
+}
+
+PRE_PUSH_LEDGER_JSON="$(
+  npx --no-install supabase --output-format json migration list --linked
+)"
+IFS=$'\t' read -r REMOTE_TAIL PENDING_TAILS <<< "$(
+  policy_pending_set "$PRE_PUSH_LEDGER_JSON"
+)"
+test "$REMOTE_TAIL" = "$EXPECTED_REMOTE_TAIL"
+test "$PENDING_TAILS" = "$POLICY_MIGRATION_TAIL"
+
+POLICY_DRY_RUN="$(npx --no-install supabase db push --dry-run 2>&1)"
+DRY_RUN_MIGRATIONS="$(
+  printf '%s\n' "$POLICY_DRY_RUN" |
+    grep -Eo '[0-9]{14}_[A-Za-z0-9_]+\.sql' |
+    sort -u
+)"
+test "$DRY_RUN_MIGRATIONS" = "$POLICY_MIGRATION_FILENAME"
+
+# Re-read the linked ledger at the action boundary. Any concurrent or
+# unexpected local/remote migration stops this procedure before confirmation.
+ACTION_LEDGER_JSON="$(
+  npx --no-install supabase --output-format json migration list --linked
+)"
+IFS=$'\t' read -r REMOTE_TAIL PENDING_TAILS <<< "$(
+  policy_pending_set "$ACTION_LEDGER_JSON"
+)"
+test "$REMOTE_TAIL" = "$EXPECTED_REMOTE_TAIL"
+test "$PENDING_TAILS" = "$POLICY_MIGRATION_TAIL"
 printf '%s\n' \
-  "STOP: review the linked ledger and dry-run above." \
-  "Type apply-$EXPAND_MIGRATION_TAIL only if every pending migration is reviewed."
+  "Validated exact pending migration: $POLICY_MIGRATION_FILENAME" \
+  "Type apply-$POLICY_MIGRATION_TAIL to authorize only this hosted mutation."
 read -r MIGRATION_APPROVAL
-test "$MIGRATION_APPROVAL" = "apply-$EXPAND_MIGRATION_TAIL"
+test "$MIGRATION_APPROVAL" = "apply-$POLICY_MIGRATION_TAIL"
 npx --no-install supabase db push
 LEDGER_JSON="$(
   npx --no-install supabase --output-format json migration list --linked
 )"
 LEDGER_JSON="$LEDGER_JSON" \
-EXPECTED_MIGRATION_TAIL="$EXPAND_MIGRATION_TAIL" \
+EXPECTED_MIGRATION_TAIL="$POLICY_MIGRATION_TAIL" \
   node scripts/verify-migration-parity.mjs
 git status --short
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
@@ -184,7 +276,7 @@ npx --yes vercel@56.3.2 inspect <PRODUCTION_DEPLOYMENT_URL>
 npx --yes vercel@56.3.2 logs <PRODUCTION_DEPLOYMENT_URL>
 ```
 
-Every status check must be empty, every full-SHA comparison must be identical, and every divergence count must be exactly `0 0`. The remote checks before and after the database gate catch `origin/main` moving during either phase; if it moved, stop and restart from the new reviewed commit instead of deploying the stale application. `migration list` and `db push --dry-run` are review evidence, not authorization to mutate the hosted schema. Stop on an unexpected remote-only migration, a gap, an unreviewed pending migration, or any dry-run error. The typed confirmation authorizes only the reviewed expand push through `20260719140000`; after the push, `scripts/verify-migration-parity.mjs` consumes the captured `LEDGER_JSON` and must prove exact local/remote parity before Vercel is contacted. If the push or parity check fails, the still-live direct-DML application remains compatible; contain the release and use a new forward migration for correction. Never edit or delete an applied migration. Record the identical full Git SHA as the release SHA before the pinned Vercel production command and compare it with deployment metadata after the build. Review logs only for status and safe error codes/configuration names. Never paste a log containing a credential, request body, source evidence, human response, provider payload, authorization header, or cookie.
+Every status check must be empty, every full-SHA comparison must be identical, and every divergence count must be exactly `0 0`. The remote checks before and after the database gate catch `origin/main` moving during either phase; if it moved, stop and restart from the new reviewed commit instead of deploying the stale application. The private linked-target comparison must succeed without printing either project reference. Both ledger checks must prove remote tail `20260720190000` and the one-element pending set `20260721100000`; the dry run must name only `20260721100000_add_analysis_access_policy.sql`. Stop on an unexpected remote-only migration, a gap, any other local pending migration, a malformed ledger, a changed target, or any dry-run error. Inventory and dry-run evidence are not authorization: only the fresh action-time text `apply-20260721100000` authorizes that exact policy migration. After the push, `scripts/verify-migration-parity.mjs` must prove exact local/remote parity through `20260721100000` before Vercel is contacted. If the push or parity check fails, keep analysis disabled, contain the release, and use a new reviewed forward migration for correction. Never edit or delete an applied migration. Record the identical full Git SHA as the release SHA before the pinned Vercel production command and compare it with deployment metadata after the build. Review logs only for status and safe error codes/configuration names. Never paste a log containing a credential, request body, source evidence, human response, provider payload, authorization header, or cookie.
 
 The project explicitly enables Fluid Compute in `vercel.json`. The analysis route sets a conservative 90-second function duration, below the currently supported 300-second Hobby Fluid maximum; 90 seconds is the application's release budget, not the plan maximum. Its two sequential OpenAI calls each have a 30-second internal limit with SDK/request retries disabled, leaving about 30 seconds for authorization, graph work, persistence, and safe failure handling. The database assigns a fixed three-minute claim lease, providing a second full route-runtime margin. Active duplicate responses expose the remaining bounded delay; resubmitting the exact update after expiry terminalizes the existing claim without another provider call. A late success is rejected transactionally. Other mutation/history routes use a 30-second duration. A deployment-time function limit is not permission to wait indefinitely or add background work. OpenAI must never be contacted during `npm run build` or the Vercel build phase.
 
@@ -196,22 +288,43 @@ Use a fresh private/incognito browser and the operator-provisioned synthetic acc
 2. Check `npx --yes vercel@56.3.2 logs <PRODUCTION_DEPLOYMENT_URL>` for configuration-name-only failures, route timeouts, server/client boundary violations, or build-time provider activity. Any credential/value leak is an incident and blocks release.
 3. Open `/`, `/login`, and the protected `/app` path signed out. Confirm the protected path redirects safely to login and no tenant data appears.
 4. Sign in with the out-of-band synthetic owner/admin account. Confirm session refresh and logout, then verify the seeded dashboard, 24 active records, 26 edges, decision/risk/item/dependency pages, and documented dependency direction.
-5. Before contracting legacy DML, use the deployed UI to create and edit one synthetic item, add and remove one dependency, and repeat each unchanged ambiguous retry with its original key when applicable. Confirm the four RPCs succeed, exact replay does not double-write, and the deployed SHA matches the inspected artifact.
+5. Verify the already-contracted RPC-only mutation path: use the deployed UI to create and edit one synthetic item, add and remove one dependency, and repeat each unchanged ambiguous retry with its original key when applicable. Confirm the four RPCs succeed, exact replay does not double-write, authenticated direct table DML remains denied, and the deployed SHA matches the inspected artifact.
 6. After health is ready, submit the canonical synthetic venue update exactly once. Confirm preserved evidence, the actual model name in safe response/persisted metadata, deterministic direct/indirect paths, inert recovery actions, and no item mutation before approval.
 7. Select only a reversible field update, leave a sensitive/human-input action pending, apply once, inspect actor-attributed ordered history, and undo through the compensating operation. Exercise a stale conflict and confirm it applies nothing.
 8. Open the reset review as owner/admin, explicitly confirm the named synthetic project, reset once, and verify 24 records, 26 edges, baseline event date, one workflow-generation advance, and retained archived history. Confirm viewer/nonmember/cross-project attempts fail closed and duplicate/rate-limit behavior is safe.
 9. Repeat the real interface at approximately 375, 768, and 1440 pixels with keyboard-only navigation, visible focus, status announcements, and no horizontal overflow.
 10. Record only date/time, full release SHA, deployment URL, browser/viewport, HTTP status, safe IDs/counts, actual model name, and pass/fail. Update public claims only for steps that passed.
 
-## Native-mutation contract phase
+## Analysis-policy rollout and containment
 
-Do not begin this phase until production step 5 has passed on the exact deployed RPC-capable SHA. From that deployed `main`, create a new branch and a single later migration that drops the six legacy contributor write policies and revokes authenticated `INSERT`, `UPDATE`, and `DELETE` on `project_items` and `item_dependencies`. Because `project_items` also has column-level grants, the migration must explicitly revoke `INSERT` on `(id, workspace_id, project_id, item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata, created_by)` and `UPDATE` on `(item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata)`. Move the direct-DML-denial assertions into a focused contract verifier that proves table privileges and every listed column privilege are absent, then behaviorally proves direct DML is denied while all four RPCs still work. Review and merge that migration in its own PR; it must not be amended into `20260719140000` or bundled with an application rollback.
+Migration `20260721100000_add_analysis_access_policy.sql` and `supabase/tests/verify_analysis_access_policy.sql` are committed local artifacts only. No linked/hosted migration, policy verifier, provider request, or credential change is claimed by their implementation. Before enabling either provider route, the release operator must review the linked ledger and dry run, obtain the separate migration approval required by the release plan, apply only the reviewed migration, prove exact parity, and run the rollback-wrapped policy verifier. Then verify health and a real viewer-denial path before any recording grant is issued.
 
-On the merged contract commit, repeat the clean Node 22/local Supabase gate, linked inventory, dry-run, and exact parity procedure. Set `CONTRACT_MIGRATION_TAIL` to that reviewed 14-digit tail, require the operator to type exactly `apply-$CONTRACT_MIGRATION_TAIL`, push only that migration, and prove parity again. Then verify all four deployed RPC mutations still work and that authenticated direct table DML is denied. Record the first exact RPC-capable Vercel deployment as the minimum rollback artifact after contract.
+For normal public availability, prefer `ANALYSIS_MODE=disabled`, or `auto` only after the dedicated Gateway key's nonrenewing hard quota and disabled auto-top-up are verified. Recording is an exceptional one-attempt window: issue one private grant for the exact actor/project/normalized-source tuple, set `ANALYSIS_MODE=recording`, deploy, submit that exact source once, verify the grant/request link through the owner-only metadata boundary, and immediately perform the credential teardown in the release plan. Recording never falls back, and auto never uses the OpenAI key.
+
+If either provider path is suspect, execute this forward-containment sequence in order:
+
+1. Revoke the OpenAI recording key in the provider console.
+2. Remove `OPENAI_API_KEY` from every Vercel scope where it exists.
+3. Revoke or disable the dedicated Gateway key at the provider and remove `AI_GATEWAY_API_KEY` from every Vercel scope where it exists. If no dedicated key exists, record only that name-level absence.
+4. Set `ANALYSIS_MODE=disabled`, create a new deployment, and verify that its analysis status is disabled.
+5. Create, review, and apply a new forward containment migration that revokes execution on `public.begin_project_analysis_with_policy` and marks every still-`available` private recording grant `revoked` with truthful owner/operator attribution. Do not edit the applied policy migration or delete grant/request/evidence history.
+6. Prove exact migration parity, run the rollback-wrapped policy SQL verifier (or a reviewed containment-specific successor if wrapper denial changes its expected contract), check health, and verify viewer denial before reopening any route.
+7. Test the canonical Production URL and every accessible older immutable deployment URL after both provider credentials are revoked or disabled, removed from every Vercel scope, and the disabled-mode deployment is ready. Each URL must show disabled/no-provider-call behavior, and no older URL may retain a usable provider credential.
+8. Never assign or restore the production alias to an old deployment while any provider credential remains valid.
+
+Containment is not complete merely because the UI hides analysis. Keep the analyze route closed until the database execution grants, environment names, deployment identity, and viewer-denial result all match the intended disabled state.
+
+## Archived native-mutation contract verification
+
+The native-DML contract rollout is complete through `20260720190000_contract_project_record_mutations.sql`. Do not create or apply another native-DML contract migration as part of this release. The only live database action pending in this runbook is the separately reviewed analysis-policy migration `20260721100000_add_analysis_access_policy.sql`.
+
+Keep the completed contract as a verification boundary: prove authenticated direct `INSERT`, `UPDATE`, and `DELETE` remain denied on `project_items` and `item_dependencies`, including the contracted column privileges, while all four project-record RPC mutations still work and exact replays do not double-write. A contract regression requires a new reviewed forward repair migration; never edit or replay the completed contract migration.
 
 ## Rollback
 
 Contain a bad release before investigating it. For a pure application/runtime/config regression, return the production alias to the last known-good Vercel deployment:
+
+**Hard precondition:** do not run `vercel rollback`, assign an alias, or otherwise serve an old deployment until credential-first containment is complete. Start the seven-step analysis containment sequence above; revoke every OpenAI recording key and Gateway key that could authorize this deployment, remove `OPENAI_API_KEY` and `AI_GATEWAY_API_KEY` from every Vercel scope where present, and privately verify both provider-side invalidation and name-only Vercel absence without displaying a value. If either credential can still work or its removal cannot be proved, keep the current route contained and do not change the production alias.
 
 ```bash
 npx --yes vercel@56.3.2 ls
@@ -220,7 +333,7 @@ npx --yes vercel@56.3.2 rollback <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>
 npx --yes vercel@56.3.2 inspect <PRODUCTION_DEPLOYMENT_URL>
 ```
 
-Before the contract migration, the retained contributor path makes the prior direct-DML artifact schema-compatible, but that artifact is not generation-safe because its native writes do not check `workflow_generation`. Before serving it, block the reset route at the deployment layer for the whole rollback window; if that containment cannot be proved, block all native mutation surfaces instead. After contract, never roll back to a pre-RPC artifact: it will render reads but cannot write. Roll back only to an inspected RPC-capable deployment, or contain native mutation routes and ship a reviewed forward compatibility migration before serving an older artifact. Recheck `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected read/write route after rollback. A Vercel rollback changes the served artifact; it does not reverse an applied database migration or user operation. Keep the database ledger forward-only and use the domain compensation/containment procedures in `docs/rollback-plan.md`.
+The native-DML contract is already applied, so never roll back to a pre-RPC artifact: it will render reads but cannot write. Roll back only to an inspected RPC-capable deployment, or contain native mutation routes and ship a reviewed forward compatibility migration before serving an older artifact. Recheck `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected read/write route after rollback. A Vercel rollback changes the served artifact; it does not reverse an applied database migration or user operation. Keep the database ledger forward-only and use the domain compensation/containment procedures in `docs/rollback-plan.md`.
 
 If the last known-good deployment is unavailable or the defect requires a source correction, use the following fail-closed preparation in one Bash, Git Bash, or macOS shell. It resolves the exact commit, requires clean synchronized `main`, rejects roots and octopus merges, requires an explicit reviewed mainline for a two-parent merge, reads the linked migration ledger, and automatically chooses the safe path. It never places a credential in an argument or file:
 
@@ -338,8 +451,8 @@ test -z "$(git status --porcelain=v1 --untracked-files=all)"
 git push -u origin HEAD
 ```
 
-Open and review a PR, merge it without force, then return to `main`, pull with `--ff-only`, prove `HEAD == origin/main` with the SHA/divergence guard, rerun the complete gate, and run `npx --yes vercel@56.3.2 --prod`. Do not bypass review for a non-containment repair, do not force-push, and do not delete or edit an applied migration. The provider-model metadata validator intentionally accepts both the prior artifact's exact legacy envelope and the current exact envelope during the rollback window; new writes still persist the provider-returned model name. Rotate a key only in the provider and Vercel secret stores if exposure is suspected; never put the replacement in Git or a command argument.
+Open and review a PR, merge it without force, then return to `main`, pull with `--ff-only`, prove `HEAD == origin/main` with the SHA/divergence guard, rerun the complete gate, and run `npx --yes vercel@56.3.2 --prod`. Do not bypass review for a non-containment repair, do not force-push, and do not delete or edit an applied migration. The provider-model metadata validator intentionally accepts both the prior artifact's exact legacy envelope and the current exact envelope during the rollback window; new writes still persist the provider-returned model name. Credential invalidation and removal are mandatory before any old artifact or alias can be served, regardless of whether exposure is suspected. Add a replacement only after the reviewed current artifact, mode, quota, grant, and containment gates are ready; never put a key in Git or a command argument.
 
 ## Evidence that remains human-owned
 
-The production alias/deployment identity, linked Supabase project, hosted Auth URLs, seven Production variable names, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The team must still fund the OpenAI API organization, complete the successful analysis-to-undo smoke, apply the separately approved contract migration, finish deployed accessibility and signed-out judge-access checks, and supply the public video/Devpost links, team/legal details, and primary `/feedback` Session ID. Placeholders are not release evidence and must never be filled with invented values.
+The production alias/deployment identity, linked Supabase project, hosted Auth URLs, prior seven-name Production inventory, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The new `ANALYSIS_MODE`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` state, linked policy migration/verifier, one-use recording grant, capped-Gateway controls, successful analysis-to-undo smoke, final deployed accessibility and judge-access checks, public video/Devpost links, team/legal details, and primary `/feedback` Session ID remain later release-plan evidence. Placeholders are not release evidence and must never be filled with invented values.

@@ -171,6 +171,22 @@ describe("client bundle boundaries", () => {
     }
   });
 
+  it("keeps provider selection behind authorization and the atomic claim", () => {
+    const source = readFileSync(
+      resolve(sourceRoot, "features", "analysis", "service.ts"),
+      "utf8",
+    );
+    const authorization = source.indexOf("await authorize(client, projectId)");
+    const policy = source.indexOf("resolveProviderPolicy()");
+    const claim = source.indexOf("await persistence.begin({");
+    const adapter = source.indexOf("resolveModel({");
+
+    expect(authorization).toBeGreaterThanOrEqual(0);
+    expect(policy).toBeGreaterThan(authorization);
+    expect(claim).toBeGreaterThan(policy);
+    expect(adapter).toBeGreaterThan(claim);
+  });
+
   it("keeps the privileged client outside the reviewed analysis persistence boundary", () => {
     const allowedModules = new Set([
       "features/analysis/runtime.ts",

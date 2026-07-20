@@ -25,6 +25,7 @@ import {
 } from "react";
 
 import { DemoResetControl } from "@/app/app/demo-reset-control";
+import { analysisProviderLabel } from "@/app/app/analysis-provider-label";
 import type {
   AnalysisReview,
   ChangeReview,
@@ -46,12 +47,15 @@ import {
   type AnalysisSubmitResult,
   SourceUpdateForm,
 } from "@/app/app/source-update-form";
+import type { AnalysisAvailability } from "@/features/analysis/provider-policy";
+import type { WorkspaceRole } from "@/lib/auth/membership";
 
 type ImpactWorkflowProps = {
   projectId: string;
-  role: string;
+  role: WorkspaceRole;
   syntheticWorkspace: boolean;
   data: ImpactWorkflowData;
+  analysisAvailability: AnalysisAvailability;
   refreshPath?: string;
 };
 
@@ -260,7 +264,7 @@ function ChangeReviewCard({ analysis }: { analysis: AnalysisReview }) {
         <div>
           <p className="flex items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[#AEBEFF]">
             <Bot aria-hidden="true" className="size-3.5" />
-            GPT-5.6 inference · not a source fact
+            Model inference · not a source fact
           </p>
           <h3 className="mt-1 break-words text-lg font-semibold tracking-[-0.025em] [overflow-wrap:anywhere]">
             {change.item.itemKey} — {change.item.title}
@@ -397,7 +401,7 @@ function ImpactCard({ impact }: { impact: ImpactReviewItem }) {
       <div className="mt-4 border-l-2 border-signal bg-[#f4f6ff] px-3 py-3">
         <p className="flex items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.1em] text-signal">
           <Sparkles aria-hidden="true" className="size-3.5" />
-          GPT-generated explanation
+          Model-generated explanation
         </p>
         <p className="mt-1 break-words text-sm leading-6 text-ink [overflow-wrap:anywhere]">{impact.explanation}</p>
       </div>
@@ -416,7 +420,7 @@ function ImpactReview({ analysis }: { analysis: AnalysisReview }) {
           Impact review
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Paths come from explicit dependency traversal. Severity and explanations are GPT-generated annotations over those paths.
+          Paths come from explicit dependency traversal. Severity and explanations are model-generated annotations over those paths.
         </p>
       </div>
       <div className="grid gap-6 p-5 lg:p-6">
@@ -812,6 +816,7 @@ export function ImpactWorkflow({
   role,
   syntheticWorkspace,
   data,
+  analysisAvailability,
   refreshPath = "/app",
 }: ImpactWorkflowProps) {
   const prefix = useId();
@@ -820,7 +825,7 @@ export function ImpactWorkflow({
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
   const awaitedAnalysisId = useRef<string | null>(null);
   const awaitedOperationId = useRef<string | null>(null);
-  const canAnalyze = role !== "viewer";
+  const canAnalyze = role !== "viewer" && analysisAvailability.canAnalyze;
   const canApprove = role === "owner" || role === "admin";
   const analysis = data.analysis;
 
@@ -882,7 +887,9 @@ export function ImpactWorkflow({
       {syntheticWorkspace ? <DemoGuide analysis={analysis} operations={data.operations} /> : null}
 
       <SourceUpdateForm
+        analysisAvailability={analysisAvailability}
         canAnalyze={canAnalyze}
+        isReadOnly={role === "viewer"}
         onAnalysisFinished={refreshAfterAnalysis}
         projectId={projectId}
       />
@@ -914,6 +921,16 @@ export function ImpactWorkflow({
             {analysis.loadWarning ? (
               <p className="border-l-2 border-caution bg-caution-soft px-4 py-3 text-sm text-ink" role="alert">{analysis.loadWarning}</p>
             ) : null}
+            <dl className="border border-rule bg-white px-4 py-3 text-sm">
+              <div>
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-muted">
+                  Recorded analysis provider
+                </dt>
+                <dd className="mt-1 font-semibold text-ink">
+                  {analysisProviderLabel(analysis.modelName)}
+                </dd>
+              </div>
+            </dl>
             <div className="grid gap-4 xl:grid-cols-2">
               <SourceEvidenceCard analysis={analysis} />
               {analysis.state === "succeeded" ? <ChangeReviewCard analysis={analysis} /> : (

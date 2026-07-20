@@ -94,15 +94,38 @@ describe("production route runtime configuration", () => {
       "npx --no-install supabase --output-format json migration list --linked",
     );
     expect(runbook).not.toContain("migration list --linked --output json");
+    expect(runbook).not.toContain('EXPAND_MIGRATION_TAIL="20260719140000"');
+    expect(runbook).not.toContain("## Native-mutation contract phase");
     expect(runbook).toContain(
-      'EXPAND_MIGRATION_TAIL="20260719140000"',
+      "## Archived native-mutation contract verification",
     );
+    expect(runbook).toContain(
+      "Do not create or apply another native-DML contract migration",
+    );
+    expect(runbook).toContain('POLICY_MIGRATION_TAIL="20260721100000"');
+    expect(runbook).toContain(
+      'EXPECTED_REMOTE_TAIL="20260720190000"',
+    );
+    expect(runbook).toContain(
+      "Privately enter the intended linked Supabase project ref",
+    );
+    expect(runbook).toContain(
+      'test "$LINKED_PROJECT_REF" = "$EXPECTED_LINKED_PROJECT_REF"',
+    );
+    expect(
+      runbook.match(
+        /test "\$PENDING_TAILS" = "\$POLICY_MIGRATION_TAIL"/g,
+      )?.length,
+    ).toBe(2);
     expect(runbook).toContain("npx --no-install supabase db push --dry-run");
     expect(runbook).toContain(
-      'test "$MIGRATION_APPROVAL" = "apply-$EXPAND_MIGRATION_TAIL"',
+      'test "$DRY_RUN_MIGRATIONS" = "$POLICY_MIGRATION_FILENAME"',
     );
     expect(runbook).toContain(
-      'EXPECTED_MIGRATION_TAIL="$EXPAND_MIGRATION_TAIL"',
+      'test "$MIGRATION_APPROVAL" = "apply-$POLICY_MIGRATION_TAIL"',
+    );
+    expect(runbook).toContain(
+      'EXPECTED_MIGRATION_TAIL="$POLICY_MIGRATION_TAIL"',
     );
     expect(runbook).toContain("node scripts/verify-migration-parity.mjs");
     expect(
@@ -113,6 +136,17 @@ describe("production route runtime configuration", () => {
     expect(
       runbook.indexOf("node scripts/verify-migration-parity.mjs"),
     ).toBeLessThan(runbook.indexOf("npx --yes vercel@56.3.2 --prod"));
+    expect(runbook).toContain(
+      "do not run `vercel rollback`, assign an alias, or otherwise serve an old deployment",
+    );
+    expect(runbook.indexOf("**Hard precondition:**")).toBeLessThan(
+      runbook.indexOf(
+        "npx --yes vercel@56.3.2 rollback <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>",
+      ),
+    );
+    expect(runbook).not.toContain(
+      "Rotate a key only in the provider and Vercel secret stores if exposure is suspected",
+    );
     expect(runbook).toContain("node scripts/applied-migration-paths.mjs");
     expect(runbook).toContain('REVERT_MAINLINE=""');
     expect(runbook).toContain(

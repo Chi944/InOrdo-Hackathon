@@ -1,5 +1,20 @@
 # QA checklist
 
+## 2026-07-21 read-only judge handoff gate
+
+- [x] The credential-safe procedure defines three distinct real Supabase Auth identities: a real `owner` as audited recording-grant issuer, an `admin` recording operator as target actor, and a `viewer` judge.
+- [x] The procedure requires Dashboard-based creation, `public.profiles` verification before `public.workspace_members`, and no actual email, password, Auth UUID, session, token, or project reference in Git or terminal arguments.
+- [x] The non-secret Devpost body records the complete read-only path: sign in → Projects → synthetic summit → Items → Dependencies → latest impact review/proposal → Operation history → ordinary-project informational preview.
+- [x] The handoff stores exactly two allowlisted recording-outcome variants and marks them mutually exclusive. Final release must replace the instruction line with one truthful variant; a fixture, readiness check, or failed provider request cannot select the success variant.
+- [x] Public claims state that input is typed/pasted updates, manual notes, meeting minutes, and meeting summaries; files, CSV, URLs, voice, email, Slack, Teams, Drive, and other connectors are not implemented.
+- [x] Public claims state that ordinary project provisioning is not implemented, the ordinary route is informational, the judge is read-only, Gateway GPT-OSS is capped but not guaranteed free forever, and ChatGPT subscriptions cannot fund external application API calls.
+- [x] Node `22.23.1` and npm `10.9.8` completed lint, typecheck, 513 Vitest tests across 64 files, two guarded Chromium journeys, and the Next.js `16.2.10` production build for the settled handoff documentation.
+- [ ] In the authoritative Supabase Dashboard, verify the real owner's Auth user, matching profile, and `owner` membership. If absent, complete the existing controlled owner bootstrap before any recording grant is issued; never substitute a seeded fictional UUID.
+- [ ] Verify the distinct operator's Auth user, profile, and `admin` membership; verify the distinct judge's Auth user, profile, and `viewer` membership. Do not record any identifier or credential.
+- [ ] In a fresh private browser, sign in as the judge and follow every documented read surface. Confirm analysis, create/edit, dependency add/remove, apply, undo, reset, and delete are unavailable or denied and leave all data/counts unchanged.
+- [ ] Select the truthful recording-outcome variant, enter the judge email/password only in Devpost's private fields, and verify the saved instructions and credential in a signed-out browser.
+- [ ] After **10 August 2026 00:00 UTC**, disable the judge Auth user, remove only its workspace membership, invalidate or rotate the shared password, verify access is closed, and preserve the profile plus every actor, analysis, operation, and audit reference.
+
 ## 2026-07-20 production release execution and follow-up hardening
 
 - [x] Existing manual Vercel project is `chi944s-projects/inordo`; project ID and Git remote are unchanged; canonical alias is `https://inordo.vercel.app`; the final leftover `inordo-hackathon.vercel.app` alias was removed.

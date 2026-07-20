@@ -81,7 +81,7 @@ begin
   ) then
     raise exception 'private Prompt 9 hardening helpers are executable';
   end if;
-  if not has_function_privilege(
+  if has_function_privilege(
     'service_role',
     'private.begin_project_analysis_internal(uuid,text,text,text,text,text,text,timestamptz,text,text)',
     'EXECUTE'
@@ -90,7 +90,7 @@ begin
     'private.undo_project_operation_internal(uuid,uuid,text)',
     'EXECUTE'
   ) then
-    raise exception 'server wrappers cannot invoke hardened implementations';
+    raise exception 'private hardened implementation privileges are unsafe';
   end if;
   if not exists (
     select 1
@@ -1089,7 +1089,7 @@ begin
   from public.projects
   where id = '20000000-0000-4000-8000-000000000001'::uuid;
 
-  analysis_result := public.begin_project_analysis(
+  analysis_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     current_setting('inordo.verify_revision_after_reset'),
@@ -1100,7 +1100,7 @@ begin
     current_setting('inordo.verify_source_hash'),
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
   current_source_id := (analysis_result ->> 'source_document_id')::uuid;
   if analysis_result ->> 'status' <> 'claimed'

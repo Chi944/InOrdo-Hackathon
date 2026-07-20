@@ -282,3 +282,36 @@ The implementation entries above correspond to these Git commits. Merge commits 
 Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
 
 Replace this placeholder only after running `/feedback` in the primary Codex task. Commit the identifier only—never a private transcript, credential, or unrelated session record.
+
+## 2026-07-21 — Analysis access policy and containment documentation
+
+- Documented the fail-closed `recording`, `auto`, and `disabled` modes, with exact route/model separation: recording uses only `gpt-5.6-luna`, auto uses only `openai/gpt-oss-20b` through a dedicated capped Vercel AI Gateway key, and disabled makes no provider request or evidence claim.
+- Recorded the atomic one-use grant boundary: exact actor/project/normalized-source tuple, owner-only issuance/revocation/verification, duplicate and provenance behavior, mismatch rollback, and the policy-aware public-wrapper/legacy-private privilege split.
+- Recorded the application/database/provider ordering and truthful post-claim failure state. Provider clients are constructed only after authorization and an atomic claimed route; a later provider failure may leave immutable evidence plus a failed analysis claim, but no proposal or project-item mutation.
+- Added the exact forward-containment order for revoking provider credentials, deploying disabled mode, applying a new forward wrapper/grant containment migration, and rerunning parity, SQL, health, and viewer-denial checks. An old deployment must never be aliased while a provider credential remains valid.
+- Node `22.23.1` and npm `10.9.8` passed lint, typecheck, 473 Vitest tests across 60 files, the Next.js `16.2.10` production build, and two guarded Chromium journeys. The browser suite used the repository's synthetic fixture and intercepted API seams; it did not call a live provider or hosted database.
+- This entry records code-documentation reconciliation and local verification only. Migration `20260721100000_add_analysis_access_policy.sql` has not been applied to the linked/hosted project, and its linked policy verifier remains a release-plan gate. No hosted database action, provider request, deployment mutation, environment value, credential, Auth identifier, private transcript, or private payload was accessed.
+
+## 2026-07-21 — Read-only judge handoff preparation
+
+- Added a credential-safe Dashboard procedure for three distinct real identities: the `owner` recording-grant issuer, the `admin` recording operator/target actor, and the read-only `viewer` judge. Every user requires its Auth-backed profile before workspace membership; a seeded fictional identity cannot issue the grant.
+- Added the exact non-secret Devpost testing body, a complete judge navigation path, mutually exclusive verified-result/no-verified-result sentences, and private credential-entry rules. The source-controlled documentation does not select the success variant without release evidence.
+- Documented judge retirement after 10 August 2026 00:00 UTC: disable Auth access, remove only the judge membership, invalidate or rotate the shared password, and preserve durable profile/actor references plus analysis, operation, and audit history.
+- Reconciled public claims: text paste/manual notes/meeting minutes/summaries are available; files, CSV, URLs, voice, email, and connectors are not; ordinary project provisioning is unavailable; judge access is read-only; Gateway GPT-OSS is capped but not guaranteed free forever; and ChatGPT subscriptions cannot fund external application API calls.
+- Node `22.23.1` and npm `10.9.8` completed lint, typecheck, 513 Vitest tests across 64 files, two guarded Chromium journeys, and the Next.js `16.2.10` production build. Final diff and filename-only secret/environment checks ran before commit.
+- This work package created no account, password, recording grant, provider request, hosted mutation, deployment change, or Devpost edit. No environment file, credential, Auth identifier, private transcript, or secret value was read or recorded.
+
+## 2026-07-21 — Production video documentation package
+
+- Replaced the earlier draft storyboard with the approved exact 2:47 Production timeline and separate verbatim voiceover masters for Andres sections A1–A5 and Deston sections D1–D4.
+- Added the seven-file Production capture map, 1920×1080 privacy-safe recording procedure, caption/edit guidance, voice recording specifications and external media paths, immediate post-capture recording-key revocation gate, and exact 1280×720 genuine-frame thumbnail brief.
+- Preserved the product truth boundary: GPT-5.6 has bounded server-only extraction/drafting jobs, deterministic TypeScript owns dependency reach, synthetic data is used throughout, human approval remains required, and model output never directly mutates project records.
+- The documentation explicitly excludes test routes, generated interfaces, private Codex transcripts, terminal or environment output, browser/account details, committed raw media, and paid premium media generation.
+- No media file, browser state, credential, identifier, provider request, deployment, hosted database, Devpost entry, GitHub issue, or private transcript was accessed or changed by this work package. Capture, voice delivery, editing, key revocation, final export, upload, and publication remain release gates.
+
+## 2026-07-21 — Video failure-branch and pacing reconciliation
+
+- Added mutually exclusive post-classification/post-revocation verified-success and no-retry editorial branches. The no-retry path replaces only D1, retains every other approved line and the exact 2:47 timeline, and covers 0:54–2:28 with genuine Production fail-closed or preserved synthetic states explicitly labeled as not a new paid result.
+- Defined a complete no-retry thumbnail using the exact `Bounded AI contract + deterministic dependency graph` badge and a genuine fail-closed/preserved Production frame. It cannot reuse the success crop or imply that a failed, seeded, or preserved result was newly paid and recorded.
+- Added a blocking timed-pickup gate for Deston's unchanged 29-word D4: it must remain intelligible within 10 seconds without rushing, or recording pauses for specification-owner resolution rather than silently changing approved text or timing.
+- No media, environment file, browser state, credential, identifier, provider request, deployment, hosted mutation, or publication was accessed or performed during this documentation correction.

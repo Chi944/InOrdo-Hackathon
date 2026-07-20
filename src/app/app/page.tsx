@@ -15,9 +15,12 @@ import { buildGuidedDemoTargets } from "@/app/app/demo-targets";
 import { GuidedDemoCallout } from "@/app/app/guided-demo-callout";
 import { ImpactWorkflow } from "@/app/app/impact-workflow";
 import { buildWorkflowOverview } from "@/app/app/workflow-overview";
+import { buildAnalysisAvailability } from "@/features/analysis/provider-policy";
 import { createProjectRecordOperations } from "@/features/project-records/operations";
 import { AuthorizationError } from "@/lib/auth/errors";
 import { requireProjectToWorkspace, requireUser } from "@/lib/auth/guards";
+import type { WorkspaceRole } from "@/lib/auth/membership";
+import { getAnalysisRuntimeEnv } from "@/lib/env/server";
 import {
   getDemoWorkspaceProject,
   getProjectOverview,
@@ -46,6 +49,9 @@ function words(value: string) {
 export default async function DemoWorkspacePage({
   searchParams,
 }: DemoWorkspacePageProps) {
+  const analysisAvailability = buildAnalysisAvailability(
+    getAnalysisRuntimeEnv().policy,
+  );
   const query = await searchParams;
   const requestedAnalysisId =
     typeof query.analysisRequestId === "string" &&
@@ -63,7 +69,7 @@ export default async function DemoWorkspacePage({
             ReturnType<typeof createProjectRecordOperations>["listDependencies"]
           >
         >;
-        role: string;
+        role: WorkspaceRole;
       }
     | undefined;
 
@@ -251,6 +257,7 @@ export default async function DemoWorkspacePage({
 
       <div className="mt-6">
         <ImpactWorkflow
+          analysisAvailability={analysisAvailability}
           data={workflow}
           projectId={overview.project.id}
           role={role}

@@ -252,6 +252,27 @@ describe("analysis POST handler", () => {
   });
 
   it.each([
+    "analysis_disabled",
+    "recording_unavailable",
+    "fallback_unavailable",
+    "fallback_quota_exhausted",
+  ] as const)("returns safe 503 copy for %s", async (code) => {
+    const domainError = new AnalysisError(code);
+    const execute = vi.fn(async () => {
+      throw domainError;
+    });
+    const response = await handleAnalyzeProjectPost({
+      request: request(JSON.stringify(validBody)),
+      projectId,
+      execute,
+    });
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual(domainError.toResponseBody());
+    expect(response.headers.get("retry-after")).toBeNull();
+  });
+
+  it.each([
     [new AuthorizationError("unauthenticated"), 401],
     [new AuthorizationError("forbidden"), 403],
     [new AuthorizationError("not_found"), 404],

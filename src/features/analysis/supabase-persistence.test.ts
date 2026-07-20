@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
 import { AnalysisError } from "@/features/analysis/errors";
+import type { AnalysisProviderPolicy } from "@/features/analysis/provider-policy";
 import {
   createSupabaseAnalysisPersistence,
   type AnalysisRpcExecutor,
@@ -16,6 +17,33 @@ const changedItemId = "3e14b4a4-421d-4d6d-8a7e-01d5a22e3002";
 const impactedItemId = "b993a2d1-8060-4c96-a7d0-e79f4cd43303";
 const ownerId = "6519012e-13a6-4e3e-9ae5-d09bd3054401";
 const sourceText = "  Caf\u0065\u0301 update\r\nThe due date moved.  ";
+const recordingPolicy: AnalysisProviderPolicy = {
+  mode: "recording",
+  recordingReady: true,
+  gatewayReady: false,
+  recordingModelName: "gpt-5.6-luna",
+  gatewayModelName: "openai/gpt-oss-20b",
+};
+const gatewayPolicy: AnalysisProviderPolicy = {
+  ...recordingPolicy,
+  mode: "auto",
+  recordingReady: false,
+  gatewayReady: true,
+};
+const disabledPolicy: AnalysisProviderPolicy = {
+  ...recordingPolicy,
+  mode: "disabled",
+  recordingReady: false,
+  gatewayReady: false,
+};
+const unreadyRecordingPolicy: AnalysisProviderPolicy = {
+  ...recordingPolicy,
+  recordingReady: false,
+};
+const unreadyGatewayPolicy: AnalysisProviderPolicy = {
+  ...gatewayPolicy,
+  gatewayReady: false,
+};
 
 function executor(result: {
   data: unknown;
@@ -48,6 +76,8 @@ describe("Supabase analysis persistence", () => {
         impact_run_id: null,
         proposal_id: null,
         retry_after_seconds: null,
+        provider_route: "openai_recording",
+        model_name: "gpt-5.6-luna",
       },
       error: null,
     });
@@ -58,7 +88,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: recordingPolicy,
         source: {
           title: "Programme update",
           type: "pasted_update",
@@ -67,12 +97,18 @@ describe("Supabase analysis persistence", () => {
           text: sourceText,
         },
       }),
-    ).resolves.toEqual({ kind: "claimed", requestId, sourceDocumentId });
+    ).resolves.toEqual({
+      kind: "claimed",
+      requestId,
+      sourceDocumentId,
+      providerRoute: "openai_recording",
+      modelName: "gpt-5.6-luna",
+    });
 
     const expectedHash = createHash("sha256")
       .update(normalizeSourceTextForHash(sourceText), "utf8")
       .digest("hex");
-    expect(rpc.execute).toHaveBeenCalledWith("begin_project_analysis", {
+    expect(rpc.execute).toHaveBeenCalledWith("begin_project_analysis_with_policy", {
       p_actor_id: ownerId,
       p_project_id: projectId,
       p_expected_project_revision: "a".repeat(64),
@@ -83,8 +119,168 @@ describe("Supabase analysis persistence", () => {
       p_normalized_content_sha256: expectedHash,
       p_occurred_at: null,
       p_source_url: null,
-      p_model_name: "gpt-5.6-luna",
+      p_analysis_mode: "recording",
+      p_recording_ready: true,
+      p_gateway_ready: false,
+      p_recording_model_name: "gpt-5.6-luna",
+      p_gateway_model_name: "openai/gpt-oss-20b",
     });
+  });
+
+  it("returns a claimed Gateway route and model", async () => {
+    const rpc = executor({
+      data: {
+        status: "claimed",
+        analysis_request_id: requestId,
+        source_document_id: sourceDocumentId,
+        state: "processing",
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: null,
+        provider_route: "gateway_fallback",
+        model_name: "openai/gpt-oss-20b",
+      },
+      error: null,
+    });
+
+    await expect(
+      createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        providerPolicy: gatewayPolicy,
+        source: {
+          title: "Update",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Changed date",
+        },
+      }),
+    ).resolves.toMatchObject({
+      kind: "claimed",
+      providerRoute: "gateway_fallback",
+      modelName: "openai/gpt-oss-20b",
+    });
+  });
+
+  it.each([
+    {
+      name: "a Gateway claim for recording policy",
+      policy: recordingPolicy,
+      providerRoute: "gateway_fallback",
+      modelName: "openai/gpt-oss-20b",
+    },
+    {
+      name: "a recording claim for auto policy",
+      policy: gatewayPolicy,
+      providerRoute: "openai_recording",
+      modelName: "gpt-5.6-luna",
+    },
+    {
+      name: "a recording claim while analysis is disabled",
+      policy: disabledPolicy,
+      providerRoute: "openai_recording",
+      modelName: "gpt-5.6-luna",
+    },
+    {
+      name: "a recording claim while recording is unready",
+      policy: unreadyRecordingPolicy,
+      providerRoute: "openai_recording",
+      modelName: "gpt-5.6-luna",
+    },
+    {
+      name: "a Gateway claim while fallback is unready",
+      policy: unreadyGatewayPolicy,
+      providerRoute: "gateway_fallback",
+      modelName: "openai/gpt-oss-20b",
+    },
+  ] as const)("rejects $name as a safe persistence failure", async ({
+    policy,
+    providerRoute,
+    modelName,
+  }) => {
+    const rpc = executor({
+      data: {
+        status: "claimed",
+        analysis_request_id: requestId,
+        source_document_id: sourceDocumentId,
+        state: "processing",
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: null,
+        provider_route: providerRoute,
+        model_name: modelName,
+      },
+      error: null,
+    });
+
+    await expect(
+      createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        providerPolicy: policy,
+        source: {
+          title: "Update",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Changed date",
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "persistence",
+      message: "The analysis could not be saved. Try again safely.",
+    });
+  });
+
+  it.each([
+    "analysis_disabled",
+    "recording_unavailable",
+    "fallback_unavailable",
+  ] as const)("maps %s before a claim without leaking database detail", async (status) => {
+    const rpc = executor({
+      data: {
+        status,
+        analysis_request_id: null,
+        source_document_id: null,
+        state: null,
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: null,
+        provider_route: null,
+        model_name: null,
+      },
+      error: null,
+    });
+
+    try {
+      await createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        providerPolicy:
+          status === "recording_unavailable" ? recordingPolicy : gatewayPolicy,
+        source: {
+          title: "Update",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Changed date",
+        },
+      });
+      throw new Error("Expected unavailable analysis failure");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AnalysisError);
+      expect(error).toMatchObject({ code: status });
+      expect(
+        JSON.stringify((error as AnalysisError).toResponseBody()),
+      ).not.toContain("database");
+    }
   });
 
   it("maps duplicate and rate-limit results without creating a model opportunity", async () => {
@@ -98,6 +294,8 @@ describe("Supabase analysis persistence", () => {
         impact_run_id: "57a7c6b7-a3bd-4c2e-8153-219010df1502",
         proposal_id: "5bf63e7d-c8db-4c2d-a3cc-20107cb91503",
         retry_after_seconds: null,
+        provider_route: "openai_recording",
+        model_name: "gpt-5.6-luna",
       },
       error: null,
     });
@@ -106,7 +304,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: gatewayPolicy,
         source: {
           title: "Update",
           type: "pasted_update",
@@ -131,6 +329,8 @@ describe("Supabase analysis persistence", () => {
         impact_run_id: null,
         proposal_id: null,
         retry_after_seconds: 60,
+        provider_route: null,
+        model_name: null,
       },
       error: null,
     });
@@ -139,7 +339,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: recordingPolicy,
         source: {
           title: "Update",
           type: "manual_note",
@@ -162,6 +362,8 @@ describe("Supabase analysis persistence", () => {
         impact_run_id: null,
         proposal_id: null,
         retry_after_seconds: 117,
+        provider_route: null,
+        model_name: null,
       },
       error: null,
     });
@@ -171,7 +373,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: recordingPolicy,
         source: {
           title: "Update",
           type: "manual_note",
@@ -198,6 +400,8 @@ describe("Supabase analysis persistence", () => {
         impact_run_id: null,
         proposal_id: null,
         retry_after_seconds: null,
+        provider_route: null,
+        model_name: null,
       },
       error: null,
     });
@@ -207,7 +411,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: recordingPolicy,
         source: {
           title: "Update",
           type: "manual_note",
@@ -414,7 +618,7 @@ describe("Supabase analysis persistence", () => {
         actorId: ownerId,
         projectId,
         projectRevision: "a".repeat(64),
-        modelName: "gpt-5.6-luna",
+        providerPolicy: recordingPolicy,
         source: {
           title: "Update",
           type: "manual_note",
@@ -443,5 +647,65 @@ describe("Supabase analysis persistence", () => {
       expect(error).toBeInstanceOf(AnalysisError);
       expect((error as Error).message).not.toContain(privateMessage);
     }
+  });
+
+  it("accepts normalized metadata for a legacy-model duplicate", async () => {
+    const rpc = executor({
+      data: {
+        status: "duplicate",
+        analysis_request_id: requestId,
+        source_document_id: sourceDocumentId,
+        state: "failed",
+        change_event_id: null,
+        impact_run_id: null,
+        proposal_id: null,
+        retry_after_seconds: null,
+        provider_route: null,
+        model_name: null,
+      },
+      error: null,
+    });
+
+    await expect(
+      createSupabaseAnalysisPersistence(rpc).begin({
+        actorId: ownerId,
+        projectId,
+        projectRevision: "a".repeat(64),
+        providerPolicy: recordingPolicy,
+        source: {
+          title: "Legacy provider duplicate retry",
+          type: "manual_note",
+          author: "Team",
+          timestamp: null,
+          text: "Legacy provider duplicate verification.",
+        },
+      }),
+    ).resolves.toEqual({
+      kind: "duplicate",
+      state: "failed",
+      requestId,
+      sourceDocumentId,
+      changeEventId: null,
+      impactRunId: null,
+      proposalId: null,
+      retryAfterSeconds: null,
+    });
+  });
+
+  it("stores a fallback quota exhaustion only as model unavailable", async () => {
+    const rpc = executor({ data: null, error: null });
+
+    await createSupabaseAnalysisPersistence(rpc).fail({
+      actorId: ownerId,
+      requestId,
+      failureCode: "fallback_quota_exhausted",
+      failureStage: "extraction",
+      providerRequestId: null,
+    });
+
+    expect(rpc.execute).toHaveBeenCalledWith(
+      "fail_project_analysis",
+      expect.objectContaining({ p_failure_code: "model_unavailable" }),
+    );
   });
 });

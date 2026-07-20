@@ -56,14 +56,22 @@ function parseInput<Result>(schema: ZodType<Result>, input: unknown): Result {
 type CreateProjectRecordOperationsOptions = {
   client: ServerSupabaseClient;
   store?: ProjectRecordStore;
+  getStore?: () => ProjectRecordStore;
   authorize?: ProjectRecordAuthorizer;
 };
 
 export function createProjectRecordOperations({
   client,
-  store = createSupabaseProjectRecordStore(client),
+  store,
+  getStore,
   authorize = authorizeProjectRecord,
 }: CreateProjectRecordOperationsOptions) {
+  let initializedStore = store ?? null;
+  const resolveStore = () => {
+    initializedStore ??= getStore?.() ?? createSupabaseProjectRecordStore(client);
+    return initializedStore;
+  };
+
   return {
     async createItem(input: unknown) {
       const record = parseInput(createProjectItemSchema, input);
@@ -73,7 +81,7 @@ export function createProjectRecordOperations({
         workspaceContributorRoles,
       );
 
-      return store.createItem(authorization.scope, record);
+      return resolveStore().createItem(authorization.scope, record);
     },
 
     async updateItem(input: unknown) {
@@ -83,7 +91,7 @@ export function createProjectRecordOperations({
         record.projectId,
         workspaceContributorRoles,
       );
-      return store.updateItem(authorization.scope, record);
+      return resolveStore().updateItem(authorization.scope, record);
     },
 
     async listItems(projectId: unknown, input: unknown = {}) {
@@ -94,7 +102,7 @@ export function createProjectRecordOperations({
         parsedProjectId,
         workspaceReadRoles,
       );
-      return store.listItems(authorization.scope, filters);
+      return resolveStore().listItems(authorization.scope, filters);
     },
 
     async createDependency(input: unknown) {
@@ -104,7 +112,7 @@ export function createProjectRecordOperations({
         dependency.projectId,
         workspaceContributorRoles,
       );
-      return store.createDependency(authorization.scope, dependency);
+      return resolveStore().createDependency(authorization.scope, dependency);
     },
 
     async removeDependency(input: unknown) {
@@ -114,7 +122,7 @@ export function createProjectRecordOperations({
         dependency.projectId,
         workspaceContributorRoles,
       );
-      return store.removeDependency(authorization.scope, dependency);
+      return resolveStore().removeDependency(authorization.scope, dependency);
     },
 
     async listDependencies(projectId: unknown) {
@@ -124,7 +132,7 @@ export function createProjectRecordOperations({
         parsedProjectId,
         workspaceReadRoles,
       );
-      return store.listDependencies(authorization.scope);
+      return resolveStore().listDependencies(authorization.scope);
     },
   };
 }

@@ -15,6 +15,9 @@ const validEnvironment = {
   OPENAI_MODEL: "gpt-5.6-luna",
   DEMO_PROJECT_SLUG: "test-only-demo",
   DEMO_RESET_SECRET: "test-only-reset-secret",
+  ANALYSIS_MODE: "disabled",
+  AI_GATEWAY_API_KEY: "",
+  AI_GATEWAY_MODEL: "openai/gpt-oss-20b",
 };
 
 function stubEnvironment(
@@ -54,7 +57,81 @@ describe("GET /api/health", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(await response.json()).toEqual({
       status: "ready",
-      checks: { configuration: "ready" },
+      checks: { configuration: "ready", analysis: "disabled" },
+    });
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      {
+        ANALYSIS_MODE: "recording",
+        OPENAI_API_KEY: "test-only-openai-key",
+        OPENAI_MODEL: "gpt-5.6-luna",
+      },
+      "recording_configured",
+    ],
+    [
+      {
+        ANALYSIS_MODE: "recording",
+        OPENAI_API_KEY: "",
+        OPENAI_MODEL: "gpt-5.6-luna",
+      },
+      "recording_unavailable",
+    ],
+    [
+      {
+        ANALYSIS_MODE: "auto",
+        AI_GATEWAY_API_KEY: "test-only-gateway-key",
+        AI_GATEWAY_MODEL: "openai/gpt-oss-20b",
+      },
+      "fallback_configured",
+    ],
+    [
+      {
+        ANALYSIS_MODE: "auto",
+        AI_GATEWAY_API_KEY: "",
+        AI_GATEWAY_MODEL: "openai/gpt-oss-20b",
+      },
+      "fallback_unavailable",
+    ],
+    [{ ANALYSIS_MODE: "disabled" }, "disabled"],
+  ] as const)(
+    "reports capability status %s without making an external call",
+    async (overrides, expectedStatus) => {
+      stubEnvironment(overrides);
+      const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        status: "ready",
+        checks: {
+          configuration: "ready",
+          analysis: expectedStatus,
+        },
+      });
+      expect(errorLog).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps navigation ready when the selected AI credential is absent", async () => {
+    stubEnvironment({
+      ANALYSIS_MODE: "recording",
+      OPENAI_API_KEY: "",
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "ready",
+      checks: {
+        configuration: "ready",
+        analysis: "recording_unavailable",
+      },
     });
     expect(errorLog).not.toHaveBeenCalled();
   });
@@ -63,7 +140,7 @@ describe("GET /api/health", () => {
     const sensitiveValue = "must-never-appear-in-health-output";
     stubEnvironment({
       SUPABASE_SERVICE_ROLE_KEY: sensitiveValue,
-      OPENAI_API_KEY: "",
+      DEMO_RESET_SECRET: "",
     });
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -78,10 +155,10 @@ describe("GET /api/health", () => {
       checks: { configuration: "not_ready" },
       message: "Service configuration is incomplete.",
     });
-    expect(responseText).not.toContain("OPENAI_API_KEY");
+    expect(responseText).not.toContain("DEMO_RESET_SECRET");
     expect(responseText).not.toContain(sensitiveValue);
     expect(errorLog).toHaveBeenCalledOnce();
-    expect(logText).toContain("OPENAI_API_KEY");
+    expect(logText).toContain("DEMO_RESET_SECRET");
     expect(logText).not.toContain(sensitiveValue);
     expect(logText).not.toContain("Error:");
   });

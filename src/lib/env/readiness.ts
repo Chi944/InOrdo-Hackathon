@@ -1,6 +1,6 @@
 import "server-only";
 
-import { serverEnvSchema } from "@/lib/env/server";
+import { applicationEnvSchema } from "@/lib/env/server";
 
 export const readinessVariableNames = [
   "NEXT_PUBLIC_SUPABASE_URL",
@@ -10,6 +10,9 @@ export const readinessVariableNames = [
   "OPENAI_MODEL",
   "DEMO_PROJECT_SLUG",
   "DEMO_RESET_SECRET",
+  "ANALYSIS_MODE",
+  "AI_GATEWAY_API_KEY",
+  "AI_GATEWAY_MODEL",
 ] as const;
 
 export type ReadinessVariableName = (typeof readinessVariableNames)[number];
@@ -30,7 +33,7 @@ const readinessVariableSet = new Set<string>(readinessVariableNames);
 export function evaluateDeploymentReadiness(
   values: DeploymentEnvironment,
 ): DeploymentReadiness {
-  const result = serverEnvSchema.safeParse(values);
+  const result = applicationEnvSchema.safeParse(values);
   if (result.success) {
     return { status: "ready", invalidVariables: [] };
   }

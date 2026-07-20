@@ -1,8 +1,16 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ImpactWorkflowData } from "@/app/app/impact-workflow-types";
+import type { AnalysisAvailability } from "@/features/analysis/provider-policy";
 
 const router = vi.hoisted(() => ({
   refresh: vi.fn(),
@@ -17,6 +25,14 @@ import { ImpactWorkflow } from "@/app/app/impact-workflow";
 
 const projectId = "8d2baf13-b687-4987-83a0-0b1294b0f001";
 const operationId = "d1669e0f-604c-4ec2-8ff1-717b2a4d5101";
+const fallbackAvailability = {
+  mode: "auto",
+  status: "fallback_configured",
+  canAnalyze: true,
+  provider: "Vercel AI Gateway",
+  model: "openai/gpt-oss-20b",
+  message: "The capped GPT-OSS fallback is available for authorized contributors.",
+} satisfies AnalysisAvailability;
 const data: ImpactWorkflowData = {
   analysis: null,
   analysisLoadFailed: false,
@@ -91,6 +107,28 @@ const createOperationData = {
   operationsLoadFailed: false,
 } as const satisfies ImpactWorkflowData;
 
+const persistedAnalysisData = {
+  analysis: {
+    requestId: "e7387514-03d0-48ee-a0e1-c183af721100",
+    state: "succeeded",
+    modelName: "provider/model-safe",
+    createdAt: "2026-07-20T10:00:00.000Z",
+    finishedAt: "2026-07-20T10:00:01.000Z",
+    failureCode: null,
+    failureStage: null,
+    source: null,
+    change: null,
+    impacts: [],
+    impactState: "completed",
+    impactError: null,
+    proposal: null,
+    loadWarning: null,
+  },
+  analysisLoadFailed: false,
+  operations: [],
+  operationsLoadFailed: false,
+} satisfies ImpactWorkflowData;
+
 beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
     callback(0);
@@ -139,6 +177,7 @@ describe("impact workflow undo", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(
       <ImpactWorkflow
+        analysisAvailability={fallbackAvailability}
         data={data}
         projectId={projectId}
         role="owner"
@@ -169,6 +208,7 @@ describe("impact workflow undo", () => {
   it("shows the full create receipt in the applied result and audit history", () => {
     render(
       <ImpactWorkflow
+        analysisAvailability={fallbackAvailability}
         data={createOperationData}
         projectId={projectId}
         role="owner"
@@ -191,5 +231,60 @@ describe("impact workflow undo", () => {
         expect(region.getByText(value, { exact: true })).toBeVisible();
       }
     }
+  });
+
+  it("keeps viewer analysis and undo controls disabled without making a request", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { container } = render(
+      <ImpactWorkflow
+        analysisAvailability={fallbackAvailability}
+        data={data}
+        projectId={projectId}
+        role="viewer"
+        syntheticWorkspace={false}
+      />,
+    );
+
+    expect(screen.getByText(/Read-only judge access/i)).toBeVisible();
+    expect(screen.getByLabelText("Source title")).toBeDisabled();
+    expect(screen.getByLabelText("Source type")).toBeDisabled();
+    expect(screen.getByLabelText("Author label")).toBeDisabled();
+    expect(screen.getByLabelText("Occurred at (optional)")).toBeDisabled();
+    expect(screen.getByLabelText("Source text")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Analyze change" })).toBeDisabled();
+    const undo = screen.getByRole("button", {
+      name: `Undo operation ${operationId}`,
+    });
+    expect(undo).toBeVisible();
+    expect(undo).toBeDisabled();
+    await user.click(undo);
+    fireEvent.submit(container.querySelector("form") as HTMLFormElement);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("attributes persisted results from their stored model metadata", () => {
+    render(
+      <ImpactWorkflow
+        analysisAvailability={fallbackAvailability}
+        data={persistedAnalysisData}
+        projectId={projectId}
+        role="owner"
+        syntheticWorkspace={false}
+      />,
+    );
+
+    const persistedAttribution = screen
+      .getByText("Recorded analysis provider")
+      .closest("dl") as HTMLElement;
+    expect(
+      within(persistedAttribution).getByText(
+        "Recorded model · provider/model-safe",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Vercel AI Gateway · GPT-OSS 20B"),
+    ).toBeVisible();
   });
 });

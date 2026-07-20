@@ -1,4 +1,6 @@
+import { buildAnalysisAvailability } from "@/features/analysis/provider-policy";
 import { evaluateDeploymentReadiness } from "@/lib/env/readiness";
+import { getAnalysisRuntimeEnv } from "@/lib/env/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -34,8 +36,18 @@ export async function GET(): Promise<Response> {
     );
   }
 
+  const availability = buildAnalysisAvailability(
+    getAnalysisRuntimeEnv().policy,
+  );
+
   return Response.json(
-    { status: "ready", checks: { configuration: "ready" } },
+    {
+      status: "ready",
+      checks: {
+        configuration: "ready",
+        analysis: availability.status,
+      },
+    },
     { status: 200, headers: responseHeaders },
   );
 }

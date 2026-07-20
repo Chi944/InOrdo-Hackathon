@@ -236,7 +236,8 @@ describe("ProjectItemsView", () => {
     expect(openButton).toHaveFocus();
   });
 
-  it("keeps creation unavailable for read-only viewers and explains a true empty state", () => {
+  it("keeps creation unavailable for read-only viewers without invoking its server action", async () => {
+    const user = userEvent.setup();
     renderView({ canEdit: false, items: [] });
 
     expect(screen.queryByRole("button", { name: "Create item" })).not.toBeInTheDocument();
@@ -247,6 +248,8 @@ describe("ProjectItemsView", () => {
     expect(
       screen.getByText("This project does not have any visible records."),
     ).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Search items"), "summit");
+    expect(actionMocks.createProjectItemAction).not.toHaveBeenCalled();
   });
 
   it("keeps every create control and dialog exit locked while creation is pending", async () => {

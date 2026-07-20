@@ -3,6 +3,12 @@ import "server-only";
 import { z } from "zod";
 
 import {
+  analysisModes,
+  type AnalysisProviderPolicy,
+  type GatewayModel,
+  type RecordingModel,
+} from "@/features/analysis/provider-policy";
+import {
   EnvironmentConfigurationError,
   exactNonBlankEnvironmentValueSchema,
   publicEnvSchema,
@@ -14,12 +20,15 @@ const openAIModelSchema = z
   .min(1)
   .default("gpt-5.6-luna");
 
-export const serverEnvSchema = publicEnvSchema.extend({
+export const applicationEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: exactNonBlankEnvironmentValueSchema,
-  OPENAI_API_KEY: exactNonBlankEnvironmentValueSchema,
-  OPENAI_MODEL: openAIModelSchema,
   DEMO_PROJECT_SLUG: exactNonBlankEnvironmentValueSchema,
   DEMO_RESET_SECRET: exactNonBlankEnvironmentValueSchema,
+});
+
+export const serverEnvSchema = applicationEnvSchema.extend({
+  OPENAI_API_KEY: exactNonBlankEnvironmentValueSchema,
+  OPENAI_MODEL: openAIModelSchema,
 });
 
 const privilegedEnvSchema = z.object({
@@ -41,6 +50,124 @@ export const openAIEnvSchema = z.object({
 });
 
 const openAIModelEnvSchema = openAIEnvSchema.pick({ OPENAI_MODEL: true });
+
+const recordingModelName: RecordingModel = "gpt-5.6-luna";
+const gatewayModelName: GatewayModel = "openai/gpt-oss-20b";
+const gatewayBaseURL = "https://ai-gateway.vercel.sh/v1" as const;
+
+const analysisRuntimeValuesSchema = z.object({
+  ANALYSIS_MODE: z.string().optional(),
+  AI_GATEWAY_API_KEY: z.string().optional(),
+  AI_GATEWAY_MODEL: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().optional(),
+});
+
+export type AnalysisRuntimeEnv =
+  | {
+      mode: "disabled";
+      policy: AnalysisProviderPolicy;
+      credential: null;
+    }
+  | {
+      mode: "recording";
+      policy: AnalysisProviderPolicy;
+      credential: { apiKey: string; model: RecordingModel } | null;
+    }
+  | {
+      mode: "auto";
+      policy: AnalysisProviderPolicy;
+      credential: {
+        apiKey: string;
+        model: GatewayModel;
+        baseURL: typeof gatewayBaseURL;
+      } | null;
+    };
+
+function baseAnalysisPolicy(
+  mode: AnalysisProviderPolicy["mode"],
+): AnalysisProviderPolicy {
+  return {
+    mode,
+    recordingReady: false,
+    gatewayReady: false,
+    recordingModelName,
+    gatewayModelName,
+  };
+}
+
+export function parseAnalysisRuntimeEnv(values: unknown): AnalysisRuntimeEnv {
+  const parsed = analysisRuntimeValuesSchema.safeParse(values);
+  const parsedMode = parsed.success
+    ? z.enum(analysisModes).safeParse(parsed.data.ANALYSIS_MODE)
+    : null;
+  if (!parsedMode?.success || !parsed.success) {
+    return {
+      mode: "disabled",
+      policy: baseAnalysisPolicy("disabled"),
+      credential: null,
+    };
+  }
+
+  const mode = parsedMode.data;
+  if (mode === "recording") {
+    const apiKey = exactNonBlankEnvironmentValueSchema.safeParse(
+      parsed.data.OPENAI_API_KEY,
+    );
+    const configuredModel = parsed.data.OPENAI_MODEL ?? recordingModelName;
+    const ready = apiKey.success && configuredModel === recordingModelName;
+
+    return {
+      mode,
+      policy: {
+        ...baseAnalysisPolicy(mode),
+        recordingReady: ready,
+      },
+      credential: ready
+        ? { apiKey: apiKey.data, model: recordingModelName }
+        : null,
+    };
+  }
+
+  if (mode === "auto") {
+    const apiKey = exactNonBlankEnvironmentValueSchema.safeParse(
+      parsed.data.AI_GATEWAY_API_KEY,
+    );
+    const ready =
+      apiKey.success && parsed.data.AI_GATEWAY_MODEL === gatewayModelName;
+
+    return {
+      mode,
+      policy: {
+        ...baseAnalysisPolicy(mode),
+        gatewayReady: ready,
+      },
+      credential: ready
+        ? {
+            apiKey: apiKey.data,
+            model: gatewayModelName,
+            baseURL: gatewayBaseURL,
+          }
+        : null,
+    };
+  }
+
+  return {
+    mode: "disabled",
+    policy: baseAnalysisPolicy("disabled"),
+    credential: null,
+  };
+}
+
+export function getAnalysisRuntimeEnv(): AnalysisRuntimeEnv {
+  return parseAnalysisRuntimeEnv({
+    ANALYSIS_MODE: process.env.ANALYSIS_MODE,
+    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    AI_GATEWAY_MODEL: process.env.AI_GATEWAY_MODEL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL,
+  });
+}
 
 function parseEnvironment<T extends z.ZodType>(
   scope: string,

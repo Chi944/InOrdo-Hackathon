@@ -124,6 +124,37 @@ afterEach(() => {
 });
 
 describe("recovery action selection", () => {
+  it("keeps proposal context visible but sends no apply request for a viewer", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    const onApplied = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <RecoveryActionReview
+        canApprove={false}
+        onApplied={onApplied}
+        projectId={projectId}
+        proposal={proposal}
+      />,
+    );
+
+    expect(screen.getByText(new RegExp(proposal.title))).toBeVisible();
+    for (const checkbox of screen.getAllByRole("checkbox")) {
+      expect(checkbox).toBeDisabled();
+    }
+    expect(
+      screen.getByRole("button", { name: "Select all safe actions" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Leave all pending" }),
+    ).toBeDisabled();
+    const approve = screen.getByRole("button", { name: "Approve selected" });
+    expect(approve).toBeDisabled();
+    await user.click(approve);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onApplied).not.toHaveBeenCalled();
+  });
+
   it("defaults to pending undo-eligible actions and excludes nonreversible, human-input, or non-pending actions", () => {
     expect(defaultSelectedActionIds(actions)).toEqual([actions[0].id]);
     expect(

@@ -6,8 +6,35 @@ import {
   seededDemoSource,
   SourceUpdateForm,
 } from "@/app/app/source-update-form";
+import type { AnalysisAvailability } from "@/features/analysis/provider-policy";
 
 const projectId = "8d2baf13-b687-4987-83a0-0b1294b0f001";
+const fallbackAvailability = {
+  mode: "auto",
+  status: "fallback_configured",
+  canAnalyze: true,
+  provider: "Vercel AI Gateway",
+  model: "openai/gpt-oss-20b",
+  message: "The capped GPT-OSS fallback is available for authorized contributors.",
+} satisfies AnalysisAvailability;
+const disabledAvailability = {
+  mode: "disabled",
+  status: "disabled",
+  canAnalyze: false,
+  provider: null,
+  model: null,
+  message:
+    "Live AI analysis is disabled. Preserved synthetic results remain available for review.",
+} satisfies AnalysisAvailability;
+const recordingAvailability = {
+  mode: "recording",
+  status: "recording_configured",
+  canAnalyze: true,
+  provider: "OpenAI",
+  model: "gpt-5.6-luna",
+  message:
+    "An approved GPT-5.6 recording window is configured. The exact grant is checked only when the source is submitted.",
+} satisfies AnalysisAvailability;
 
 beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
@@ -27,7 +54,9 @@ describe("SourceUpdateForm", () => {
     const user = userEvent.setup();
     render(
       <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
         canAnalyze
+        isReadOnly={false}
         onAnalysisFinished={vi.fn()}
         projectId={projectId}
       />,
@@ -74,7 +103,9 @@ describe("SourceUpdateForm", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(
       <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
         canAnalyze
+        isReadOnly={false}
         onAnalysisFinished={vi.fn()}
         projectId={projectId}
       />,
@@ -117,7 +148,9 @@ describe("SourceUpdateForm", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(
       <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
         canAnalyze
+        isReadOnly={false}
         onAnalysisFinished={onFinished}
         projectId={projectId}
       />,
@@ -173,7 +206,9 @@ describe("SourceUpdateForm", () => {
     vi.stubGlobal("fetch", fetchMock);
     const { container } = render(
       <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
         canAnalyze
+        isReadOnly={false}
         onAnalysisFinished={onFinished}
         projectId={projectId}
       />,
@@ -242,7 +277,9 @@ describe("SourceUpdateForm", () => {
     );
     render(
       <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
         canAnalyze
+        isReadOnly={false}
         onAnalysisFinished={onFinished}
         projectId={projectId}
       />,
@@ -262,5 +299,89 @@ describe("SourceUpdateForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       /already has a failed analysis/i,
     );
+  });
+
+  it("explains available and planned evidence inputs without fake controls", () => {
+    render(
+      <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
+        canAnalyze
+        isReadOnly={false}
+        onAnalysisFinished={vi.fn()}
+        projectId={projectId}
+      />,
+    );
+
+    const inputs = screen.getByLabelText("Supported evidence inputs");
+    expect(inputs).toHaveAccessibleName("Supported evidence inputs");
+    expect(inputs).toHaveTextContent(
+      "Typed or pasted updates, manual notes, meeting minutes, and meeting summaries.",
+    );
+    expect(inputs).toHaveTextContent(
+      "Text/Markdown files and reviewed CSV import.",
+    );
+    expect(inputs).toHaveTextContent(
+      "URLs, voice, email, Slack, Teams, and Google Drive.",
+    );
+    expect(
+      screen.queryByRole("button", { name: /upload|import|connect/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses provider-neutral privacy and fallback progress copy", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+    render(
+      <SourceUpdateForm
+        analysisAvailability={fallbackAvailability}
+        canAnalyze
+        isReadOnly={false}
+        onAnalysisFinished={vi.fn()}
+        projectId={projectId}
+      />,
+    );
+
+    expect(screen.getByText(fallbackAvailability.message)).toBeVisible();
+    expect(
+      screen.getByText(/configured bounded server-side analysis provider/i),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText("Source title"), "Venue note");
+    await user.type(screen.getByLabelText("Author label"), "Venue team");
+    await user.type(screen.getByLabelText("Source text"), "The event moved.");
+    await user.click(screen.getByRole("button", { name: "Analyze change" }));
+    expect(screen.getByText("Extracting a structured change")).toBeVisible();
+    expect(screen.queryByText(/GPT-5\.6/)).not.toBeInTheDocument();
+  });
+
+  it("shows the approved disabled state and prevents submission", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { container } = render(
+      <SourceUpdateForm
+        analysisAvailability={disabledAvailability}
+        canAnalyze={false}
+        isReadOnly={false}
+        onAnalysisFinished={vi.fn()}
+        projectId={projectId}
+      />,
+    );
+
+    expect(screen.getByText(disabledAvailability.message)).toBeVisible();
+    fireEvent.submit(container.querySelector("form") as HTMLFormElement);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("describes recording readiness as configuration pending a submission grant check", () => {
+    render(
+      <SourceUpdateForm
+        analysisAvailability={recordingAvailability}
+        canAnalyze
+        isReadOnly={false}
+        onAnalysisFinished={vi.fn()}
+        projectId={projectId}
+      />,
+    );
+
+    expect(screen.getByText(recordingAvailability.message)).toBeVisible();
   });
 });

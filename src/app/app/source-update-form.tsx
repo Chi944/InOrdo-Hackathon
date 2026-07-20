@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 
+import type { AnalysisAvailability } from "@/features/analysis/provider-policy";
+
 export const maximumSourceLength = 12_000;
 
 export const seededDemoSource = {
@@ -48,8 +50,23 @@ export type AnalysisSubmitResult =
 type SourceUpdateFormProps = {
   projectId: string;
   canAnalyze: boolean;
+  isReadOnly: boolean;
+  analysisAvailability: AnalysisAvailability;
   onAnalysisFinished(result: AnalysisSubmitResult): void;
 };
+
+const readOnlyJudgeMessage =
+  "Read-only judge access. You can inspect the saved synthetic workspace state and any verified persisted result available in this deployment, but this account cannot start an AI request or change project data.";
+
+function configuredProviderLabel(availability: AnalysisAvailability) {
+  if (availability.status === "recording_configured") {
+    return "OpenAI · GPT-5.6";
+  }
+  if (availability.status === "fallback_configured") {
+    return "Vercel AI Gateway · GPT-OSS 20B";
+  }
+  return null;
+}
 
 const inputClass =
   "mt-2 min-h-11 w-full border border-rule bg-white px-3 text-sm text-ink shadow-[inset_0_1px_0_rgba(23,35,31,0.03)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:bg-paper disabled:text-muted";
@@ -127,6 +144,8 @@ function responseId(body: unknown, key: string) {
 export function SourceUpdateForm({
   projectId,
   canAnalyze,
+  isReadOnly,
+  analysisAvailability,
   onAnalysisFinished,
 }: SourceUpdateFormProps) {
   const prefix = useId();
@@ -155,6 +174,10 @@ export function SourceUpdateForm({
     occurredAt: occurredAtRef,
     text: textRef,
   };
+  const providerLabel = configuredProviderLabel(analysisAvailability);
+  const availabilityMessage = isReadOnly
+    ? readOnlyJudgeMessage
+    : analysisAvailability.message;
 
   function updateField<Key extends keyof SourceFields>(
     key: Key,
@@ -443,15 +466,33 @@ export function SourceUpdateForm({
             Synthetic workspace and privacy
           </p>
           <p className="mt-1">
-            This demo workspace is synthetic. Source text is preserved and sent server-side to GPT-5.6 with provider storage disabled. Do not paste secrets, personal data, or customer content.
+            Source text is preserved and sent only through the configured bounded server-side analysis provider. Do not paste secrets, personal data, or customer content.
           </p>
         </div>
 
-        {!canAnalyze ? (
-          <p className="border border-rule bg-paper px-4 py-3 text-sm leading-6 text-muted">
-            Viewer access is read-only. A workspace owner, admin, or member can analyze a source update.
-          </p>
-        ) : null}
+        <dl
+          aria-label="Supported evidence inputs"
+          className="grid gap-px border border-rule bg-rule text-sm sm:grid-cols-3"
+        >
+          <div className="bg-paper p-3">
+            <dt className="font-semibold text-ink">Available now</dt>
+            <dd className="mt-1 leading-6 text-muted">
+              Typed or pasted updates, manual notes, meeting minutes, and meeting summaries.
+            </dd>
+          </div>
+          <div className="bg-paper p-3">
+            <dt className="font-semibold text-ink">Planned</dt>
+            <dd className="mt-1 leading-6 text-muted">
+              Text/Markdown files and reviewed CSV import.
+            </dd>
+          </div>
+          <div className="bg-paper p-3">
+            <dt className="font-semibold text-ink">Future integrations</dt>
+            <dd className="mt-1 leading-6 text-muted">
+              URLs, voice, email, Slack, Teams, and Google Drive.
+            </dd>
+          </div>
+        </dl>
 
         {submitting ? (
           <div
@@ -468,7 +509,7 @@ export function SourceUpdateForm({
             </p>
             <ul className="mt-3 grid gap-2 text-sm text-ink sm:grid-cols-2">
               <li>Saving source</li>
-              <li>Extracting change with GPT-5.6</li>
+              <li>Extracting a structured change</li>
               <li>Traversing dependencies</li>
               <li>Preparing recovery proposal</li>
             </ul>
@@ -508,6 +549,14 @@ export function SourceUpdateForm({
           </button>
           <p className="text-xs leading-5 text-muted">
             Analysis drafts review records only. It does not mutate project items.
+          </p>
+        </div>
+        <div className="border border-rule bg-paper px-4 py-3 text-sm leading-6 text-muted">
+          {!isReadOnly && providerLabel ? (
+            <p className="font-semibold text-ink">{providerLabel}</p>
+          ) : null}
+          <p className={!isReadOnly && providerLabel ? "mt-1" : undefined}>
+            {availabilityMessage}
           </p>
         </div>
       </form>

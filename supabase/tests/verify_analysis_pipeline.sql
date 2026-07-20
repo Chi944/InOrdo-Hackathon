@@ -50,15 +50,15 @@ begin
   ) as path;
 
   completion_payload := pg_catalog.jsonb_build_object(
-    'model_name', 'gpt-5.6-luna',
+    'model_name', 'openai/gpt-oss-20b',
     'extraction_metadata', pg_catalog.jsonb_build_object(
       'request_id', null,
-      'model_name', 'gpt-5.6-luna-provider-fixture',
+      'model_name', 'openai/gpt-oss-20b-provider-fixture',
       'usage', null
     ),
     'proposal_metadata', pg_catalog.jsonb_build_object(
       'request_id', null,
-      'model_name', 'gpt-5.6-luna-provider-fixture',
+      'model_name', 'openai/gpt-oss-20b-provider-fixture',
       'usage', null
     ),
     'validation_outcome', pg_catalog.jsonb_build_object(
@@ -297,12 +297,19 @@ begin
   ) then
     raise exception 'authenticated can execute server-only analysis intake';
   end if;
-  if not has_function_privilege(
+  if has_function_privilege(
     'service_role',
     'public.begin_project_analysis(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text)',
     'EXECUTE'
   ) then
-    raise exception 'service_role lacks begin_project_analysis execution';
+    raise exception 'service_role retains legacy begin_project_analysis execution';
+  end if;
+  if not has_function_privilege(
+    'service_role',
+    'public.begin_project_analysis_with_policy(uuid,uuid,text,text,text,text,text,text,timestamptz,text,text,boolean,boolean,text,text)',
+    'EXECUTE'
+  ) then
+    raise exception 'service_role lacks policy analysis intake execution';
   end if;
   if has_function_privilege(
        'anon',
@@ -312,7 +319,7 @@ begin
        'authenticated',
        'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
        'EXECUTE'
-     ) or not has_function_privilege(
+     ) or has_function_privilege(
        'service_role',
        'private.reconcile_expired_analysis_claim(uuid,uuid,text,text)',
        'EXECUTE'
@@ -353,7 +360,7 @@ do $$
 declare
   begin_result jsonb;
 begin
-  begin_result := public.begin_project_analysis(
+  begin_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -364,7 +371,7 @@ begin
     pg_catalog.current_setting('inordo.prompt7_success_hash'),
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
   if begin_result ->> 'status' <> 'claimed'
      or begin_result ->> 'state' <> 'processing' then
@@ -431,9 +438,9 @@ begin
         completion_result ->> 'analysis_request_id'
       )::uuid
       and request.result_metadata #>> '{extraction_metadata,model_name}'
-        = 'gpt-5.6-luna-provider-fixture'
+        = 'openai/gpt-oss-20b-provider-fixture'
       and request.result_metadata #>> '{proposal_metadata,model_name}'
-        = 'gpt-5.6-luna-provider-fixture'
+        = 'openai/gpt-oss-20b-provider-fixture'
   ) then
     raise exception 'provider-returned model names were not persisted';
   end if;
@@ -627,7 +634,7 @@ begin
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
   );
-  duplicate_result := public.begin_project_analysis(
+  duplicate_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -638,7 +645,7 @@ begin
     pg_catalog.current_setting('inordo.prompt7_success_hash'),
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
   if duplicate_result ->> 'status' <> 'duplicate'
      or duplicate_result ->> 'state' <> 'succeeded' then
@@ -655,7 +662,7 @@ begin
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
   );
-  begin_result := public.begin_project_analysis(
+  begin_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -666,7 +673,7 @@ begin
     pg_catalog.current_setting('inordo.prompt7_failure_hash'),
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
   if begin_result ->> 'status' <> 'claimed' then
     raise exception 'failure-path claim failed: %', begin_result;
@@ -699,7 +706,7 @@ begin
     perform pg_catalog.set_config(
       'request.jwt.claims', '{"role":"service_role"}', true
     );
-    begin_result := public.begin_project_analysis(
+    begin_result := public.begin_project_analysis_with_policy(
       '00000000-0000-4000-8000-000000000102'::uuid,
       '20000000-0000-4000-8000-000000000001'::uuid,
       pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -712,7 +719,7 @@ begin
       ),
       null,
       null,
-      'gpt-5.6-luna'
+      'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
     );
     if begin_result ->> 'status' <> 'claimed' then
       raise exception 'rate setup claim failed: %', begin_result;
@@ -721,7 +728,7 @@ begin
       perform pg_catalog.set_config(
         'request.jwt.claims', '{"role":"service_role"}', true
       );
-      duplicate_result := public.begin_project_analysis(
+      duplicate_result := public.begin_project_analysis_with_policy(
         '00000000-0000-4000-8000-000000000102'::uuid,
         '20000000-0000-4000-8000-000000000001'::uuid,
         pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -734,7 +741,7 @@ begin
         ),
         null,
         null,
-        'gpt-5.6-luna'
+        'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
       );
       if duplicate_result ->> 'status' <> 'duplicate'
          or duplicate_result ->> 'state' <> 'processing'
@@ -749,7 +756,7 @@ begin
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
   );
-  begin_result := public.begin_project_analysis(
+  begin_result := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -760,7 +767,7 @@ begin
     pg_catalog.current_setting('inordo.prompt7_rate_hash_3'),
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
   if begin_result ->> 'status' <> 'rate_limited'
      or (begin_result ->> 'retry_after_seconds')::integer not between 1 and 600 then
@@ -822,7 +829,7 @@ begin
     expired_source_id,
     pg_catalog.current_setting('inordo.prompt7_revision'),
     expired_hash,
-    'gpt-5.6-luna',
+    'openai/gpt-oss-20b',
     '00000000-0000-4000-8000-000000000102'::uuid,
     expired_created_at
   ) returning id into expired_request_id;
@@ -884,7 +891,7 @@ begin
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
   );
-  first_replay := public.begin_project_analysis(
+  first_replay := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -895,13 +902,13 @@ begin
     expired_hash,
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
 
   perform pg_catalog.set_config(
     'request.jwt.claims', '{"role":"service_role"}', true
   );
-  second_replay := public.begin_project_analysis(
+  second_replay := public.begin_project_analysis_with_policy(
     '00000000-0000-4000-8000-000000000102'::uuid,
     '20000000-0000-4000-8000-000000000001'::uuid,
     pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -912,7 +919,7 @@ begin
     expired_hash,
     null,
     null,
-    'gpt-5.6-luna'
+    'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
   );
 
   if first_replay ->> 'status' <> 'duplicate'
@@ -981,7 +988,7 @@ select pg_catalog.set_config(
 do $$
 begin
   begin
-    perform public.begin_project_analysis(
+    perform public.begin_project_analysis_with_policy(
       '00000000-0000-4000-8000-000000000108'::uuid,
       '20000000-0000-4000-8000-000000000001'::uuid,
       pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -992,7 +999,7 @@ begin
       pg_catalog.current_setting('inordo.prompt7_viewer_hash'),
       null,
       null,
-      'gpt-5.6-luna'
+      'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
     );
     raise exception 'viewer analysis unexpectedly succeeded';
   exception
@@ -1018,7 +1025,7 @@ select pg_catalog.set_config(
 do $$
 begin
   begin
-    perform public.begin_project_analysis(
+    perform public.begin_project_analysis_with_policy(
       '00000000-0000-4000-8000-000000000102'::uuid,
       '20000000-0000-4000-8000-000000000001'::uuid,
       pg_catalog.current_setting('inordo.prompt7_revision'),
@@ -1029,7 +1036,7 @@ begin
       pg_catalog.current_setting('inordo.prompt7_anonymous_hash'),
       null,
       null,
-      'gpt-5.6-luna'
+      'auto', false, true, 'gpt-5.6-luna', 'openai/gpt-oss-20b'
     );
     raise exception 'anonymous analysis unexpectedly succeeded';
   exception

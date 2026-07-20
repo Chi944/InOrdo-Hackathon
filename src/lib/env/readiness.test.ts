@@ -16,6 +16,9 @@ const validEnvironment = {
   OPENAI_MODEL: "gpt-5.6-luna",
   DEMO_PROJECT_SLUG: "test-only-demo",
   DEMO_RESET_SECRET: "test-only-reset-secret",
+  ANALYSIS_MODE: "recording",
+  AI_GATEWAY_API_KEY: "",
+  AI_GATEWAY_MODEL: "openai/gpt-oss-20b",
 };
 
 describe("deployment readiness", () => {
@@ -38,35 +41,41 @@ describe("deployment readiness", () => {
     });
   });
 
-  it("uses the runtime model default when OPENAI_MODEL is omitted", () => {
-    const environmentWithoutModel: Partial<typeof validEnvironment> = {
-      ...validEnvironment,
+  it("keeps application readiness independent from analysis capability", () => {
+    const environmentWithoutAnalysis: Partial<typeof validEnvironment> = {
+      NEXT_PUBLIC_SUPABASE_URL: validEnvironment.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:
+        validEnvironment.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: validEnvironment.SUPABASE_SERVICE_ROLE_KEY,
+      DEMO_PROJECT_SLUG: validEnvironment.DEMO_PROJECT_SLUG,
+      DEMO_RESET_SECRET: validEnvironment.DEMO_RESET_SECRET,
     };
-    delete environmentWithoutModel.OPENAI_MODEL;
 
-    expect(evaluateDeploymentReadiness(environmentWithoutModel)).toEqual({
+    expect(evaluateDeploymentReadiness(environmentWithoutAnalysis)).toEqual({
       status: "ready",
       invalidVariables: [],
     });
   });
 
-  it("rejects a whitespace-only model exactly as the runtime does", () => {
+  it("does not make malformed analysis settings an application outage", () => {
     expect(
       evaluateDeploymentReadiness({
         ...validEnvironment,
+        ANALYSIS_MODE: "unsupported",
+        OPENAI_API_KEY: "   ",
         OPENAI_MODEL: "   ",
+        AI_GATEWAY_API_KEY: " padded-key",
+        AI_GATEWAY_MODEL: "unsupported-model",
       }),
     ).toEqual({
-      status: "not_ready",
-      invalidVariables: ["OPENAI_MODEL"],
+      status: "ready",
+      invalidVariables: [],
     });
   });
 
   it.each([
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "OPENAI_API_KEY",
-    "OPENAI_MODEL",
     "DEMO_PROJECT_SLUG",
     "DEMO_RESET_SECRET",
   ] as const)("rejects a whitespace-only %s", (name) => {
@@ -84,7 +93,6 @@ describe("deployment readiness", () => {
   it.each([
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "OPENAI_API_KEY",
     "DEMO_PROJECT_SLUG",
     "DEMO_RESET_SECRET",
   ] as const)("rejects surrounding whitespace in %s", (name) => {
@@ -124,12 +132,12 @@ describe("deployment readiness", () => {
       ...validEnvironment,
       NEXT_PUBLIC_SUPABASE_URL: "not-a-valid-url",
       SUPABASE_SERVICE_ROLE_KEY: sensitiveValue,
-      OPENAI_API_KEY: "",
+      DEMO_RESET_SECRET: "",
     });
 
     expect(result).toEqual({
       status: "not_ready",
-      invalidVariables: ["NEXT_PUBLIC_SUPABASE_URL", "OPENAI_API_KEY"],
+      invalidVariables: ["NEXT_PUBLIC_SUPABASE_URL", "DEMO_RESET_SECRET"],
     });
     expect(JSON.stringify(result)).not.toContain(sensitiveValue);
     expect(JSON.stringify(result)).not.toContain("not-a-valid-url");

@@ -10,6 +10,10 @@ import {
   AnalysisError,
   type AnalysisErrorCode,
 } from "@/features/analysis/errors";
+import type {
+  AnalysisProviderPolicy,
+  AnalysisProviderRoute,
+} from "@/features/analysis/provider-policy";
 import {
   buildBoundedModelItemContext,
   type ModelContextItem,
@@ -17,7 +21,7 @@ import {
 } from "@/features/analysis/model-context";
 import type {
   AnalysisModelMetadata,
-  OpenAIAnalysisAdapter,
+  AnalysisModelAdapter,
 } from "@/features/analysis/openai-adapter";
 import { AnalysisModelError } from "@/features/analysis/openai-adapter";
 import {
@@ -57,6 +61,8 @@ export type BeginAnalysisResult =
       kind: "claimed";
       requestId: string;
       sourceDocumentId: string;
+      providerRoute: AnalysisProviderRoute;
+      modelName: string;
     }
   | (DuplicateAnalysisResultBase & {
       state: "processing";
@@ -66,6 +72,11 @@ export type BeginAnalysisResult =
       state: "succeeded" | "failed";
       retryAfterSeconds: null;
     });
+
+export type AnalysisModelClaim = Pick<
+  Extract<BeginAnalysisResult, { kind: "claimed" }>,
+  "providerRoute" | "modelName"
+>;
 
 export type CompleteAnalysisInput = {
   actorId: string;
@@ -99,7 +110,7 @@ export interface AnalysisPersistence {
     projectId: string;
     projectRevision: string;
     source: AnalysisSource;
-    modelName: string;
+    providerPolicy: AnalysisProviderPolicy;
   }): Promise<BeginAnalysisResult>;
   complete(input: CompleteAnalysisInput): Promise<CompleteAnalysisResult>;
   fail(input: FailAnalysisInput): Promise<void>;
@@ -124,9 +135,8 @@ export type ProjectAnalysisServiceResult =
 type CreateProjectAnalysisServiceOptions = {
   client: ServerSupabaseClient;
   persistence: AnalysisPersistence;
-  model: OpenAIAnalysisAdapter;
-  modelName?: string;
-  resolveModelName?: () => string | Promise<string>;
+  resolveModel: (claim: AnalysisModelClaim) => AnalysisModelAdapter;
+  resolveProviderPolicy: () => AnalysisProviderPolicy;
   authorize?: AnalysisAuthorizer;
   loadContext?: (
     client: ServerSupabaseClient,
@@ -161,7 +171,10 @@ function contextForExtraction(
   };
 }
 
-function modelErrorToAnalysisError(error: AnalysisModelError): AnalysisError {
+function modelErrorToAnalysisError(
+  error: AnalysisModelError,
+  providerRoute?: AnalysisProviderRoute,
+): AnalysisError {
   switch (error.code) {
     case "timeout":
       return new AnalysisError("model_timeout", undefined, error);
@@ -174,6 +187,14 @@ function modelErrorToAnalysisError(error: AnalysisModelError): AnalysisError {
     case "transient_provider":
     case "provider_failure":
       return new AnalysisError("model_unavailable", undefined, error);
+    case "quota_exhausted":
+      return new AnalysisError(
+        providerRoute === "gateway_fallback"
+          ? "fallback_quota_exhausted"
+          : "model_unavailable",
+        undefined,
+        error,
+      );
   }
 }
 
@@ -187,9 +208,14 @@ function failureProviderRequestId(error: unknown): string | null {
   return null;
 }
 
-function safeAnalysisError(error: unknown): AnalysisError {
+function safeAnalysisError(
+  error: unknown,
+  providerRoute?: AnalysisProviderRoute,
+): AnalysisError {
   if (error instanceof AnalysisError) return error;
-  if (error instanceof AnalysisModelError) return modelErrorToAnalysisError(error);
+  if (error instanceof AnalysisModelError) {
+    return modelErrorToAnalysisError(error, providerRoute);
+  }
   return new AnalysisError("persistence", undefined, error);
 }
 
@@ -219,9 +245,8 @@ function proposalAffectedItems(
 export function createProjectAnalysisService({
   client,
   persistence,
-  model,
-  modelName = "gpt-5.6-luna",
-  resolveModelName = () => modelName,
+  resolveModel,
+  resolveProviderPolicy,
   authorize = defaultAuthorizer,
   loadContext = loadProjectAnalysisContext,
 }: CreateProjectAnalysisServiceOptions) {
@@ -249,18 +274,13 @@ export function createProjectAnalysisService({
         }
         throw error;
       }
-      let activeModelName: string;
-      try {
-        activeModelName = await resolveModelName();
-      } catch (error) {
-        throw new AnalysisError("model_unavailable", undefined, error);
-      }
+      const providerPolicy = resolveProviderPolicy();
       const beginning = await persistence.begin({
         actorId: user.id,
         projectId,
         projectRevision: context.revision,
         source: parsed.data.source,
-        modelName: activeModelName,
+        providerPolicy,
       });
       if (beginning.kind === "duplicate") return beginning;
 
@@ -268,6 +288,16 @@ export function createProjectAnalysisService({
       let failureStage: FailAnalysisInput["failureStage"] = "extraction";
 
       try {
+        let model: AnalysisModelAdapter;
+        try {
+          model = resolveModel({
+            providerRoute: beginning.providerRoute,
+            modelName: beginning.modelName,
+          });
+        } catch (error) {
+          if (error instanceof AnalysisError) throw error;
+          throw new AnalysisError("model_unavailable", undefined, error);
+        }
         const extraction = await model.extractChange({
           ...buildExtractionPrompt({
             source: {
@@ -339,7 +369,7 @@ export function createProjectAnalysisService({
           requestId: beginning.requestId,
           projectRevision: context.revision,
           maxDepth: parsed.data.maxDepth,
-          modelName: activeModelName,
+          modelName: beginning.modelName,
           change,
           proposal,
           extractionMetadata: extraction.metadata,
@@ -350,13 +380,13 @@ export function createProjectAnalysisService({
           kind: "completed",
           requestId: beginning.requestId,
           sourceDocumentId: beginning.sourceDocumentId,
-          model: proposalDraft.metadata.model,
+          model: beginning.modelName,
           extraction: extraction.metadata,
           proposal: proposalDraft.metadata,
           ...completed,
         };
       } catch (error) {
-        const safeError = safeAnalysisError(error);
+        const safeError = safeAnalysisError(error, beginning.providerRoute);
         const providerRequestId =
           failureProviderRequestId(error) ?? latestProviderRequestId;
         try {

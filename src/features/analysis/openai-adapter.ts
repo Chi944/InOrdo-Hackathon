@@ -92,7 +92,7 @@ export type OpenAIAnalysisAdapterOptions = {
   proposalMaxOutputTokens?: number;
 };
 
-export interface OpenAIAnalysisAdapter {
+export interface AnalysisModelAdapter {
   extractChange(
     call: AnalysisModelCall,
   ): Promise<AnalysisModelResult<ChangeExtraction>>;
@@ -106,6 +106,7 @@ export type AnalysisModelErrorCode =
   | "timeout"
   | "transient_provider"
   | "provider_failure"
+  | "quota_exhausted"
   | "refusal"
   | "incomplete"
   | "malformed_output";
@@ -239,6 +240,14 @@ function normalizeThrownError(error: unknown): AnalysisModelError {
     );
   }
 
+  if (error instanceof APIError && error.status === 402) {
+    return new AnalysisModelError(
+      "quota_exhausted",
+      "The analysis provider quota is exhausted.",
+      { requestId: apiRequestId(error) },
+    );
+  }
+
   if (
     error instanceof APIConnectionError ||
     error instanceof ConflictError ||
@@ -267,7 +276,7 @@ function normalizeThrownError(error: unknown): AnalysisModelError {
 export function createOpenAIAnalysisAdapter(
   responses: ResponsesParseClient,
   options: OpenAIAnalysisAdapterOptions = {},
-): OpenAIAnalysisAdapter {
+): AnalysisModelAdapter {
   const model = options.model?.trim() || DEFAULT_MODEL;
   const timeoutMs = requirePositiveInteger(
     options.timeoutMs ?? DEFAULT_TIMEOUT_MS,

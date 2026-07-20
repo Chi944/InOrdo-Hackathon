@@ -126,7 +126,7 @@ describe("DependencyView", () => {
     expect(screen.getByRole("button", { name: /select art-03/i })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("keeps dependency mutations unavailable to viewers", () => {
+  it("keeps dependency mutations unavailable to viewers while preserving navigation", () => {
     render(
       <DependencyView
         canEdit={false}
@@ -141,6 +141,13 @@ describe("DependencyView", () => {
     expect(screen.queryByRole("button", { name: "Add relationship" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /remove relationship/i })).not.toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Dependency graph" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Search project items"), {
+      target: { value: "run sheet" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /select art-03/i }));
+    expect(screen.getByRole("heading", { name: "Publish run sheet" })).toBeInTheDocument();
+    expect(createDependencyAction).not.toHaveBeenCalled();
+    expect(removeDependencyAction).not.toHaveBeenCalled();
   });
 
   it("opens labeled add and remove confirmation forms", async () => {
