@@ -255,6 +255,7 @@ function CreateItemDialog({
   }
 
   function closeDialog() {
+    if (isPending) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
 
@@ -283,13 +284,13 @@ function CreateItemDialog({
         className="m-auto max-h-[calc(100%-2rem)] w-[min(44rem,calc(100%-2rem))] overflow-y-auto border border-rule bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/55"
         onCancel={(event) => {
           event.preventDefault();
-          closeDialog();
+          if (!isPending) closeDialog();
         }}
         onClose={() => openButtonRef.current?.focus()}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
-            closeDialog();
+            if (!isPending) closeDialog();
           }
         }}
         ref={dialogRef}
@@ -316,6 +317,7 @@ function CreateItemDialog({
           <button
             aria-label="Close create item dialog"
             className="inline-flex size-11 shrink-0 items-center justify-center border border-rule bg-white text-xl text-ink hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+            disabled={isPending}
             onClick={closeDialog}
             type="button"
           >
@@ -349,6 +351,7 @@ function CreateItemDialog({
             <input
               autoComplete="off"
               className={fieldClass}
+              disabled={isPending}
               id={`${prefix}-key`}
               maxLength={64}
               name="itemKey"
@@ -369,6 +372,7 @@ function CreateItemDialog({
             Title
             <input
               className={fieldClass}
+              disabled={isPending}
               id={`${prefix}-title-field`}
               maxLength={240}
               name="title"
@@ -384,6 +388,7 @@ function CreateItemDialog({
             <select
               className={fieldClass}
               defaultValue="task"
+              disabled={isPending}
               id={`${prefix}-type`}
               name="itemType"
             >
@@ -403,6 +408,7 @@ function CreateItemDialog({
             <select
               className={fieldClass}
               defaultValue="not_started"
+              disabled={isPending}
               id={`${prefix}-status`}
               name="status"
             >
@@ -422,6 +428,7 @@ function CreateItemDialog({
             <select
               className={fieldClass}
               defaultValue="medium"
+              disabled={isPending}
               id={`${prefix}-priority`}
               name="priority"
             >
@@ -441,6 +448,7 @@ function CreateItemDialog({
             <select
               className={fieldClass}
               defaultValue=""
+              disabled={isPending}
               id={`${prefix}-assignee`}
               name="ownerId"
             >
@@ -460,6 +468,7 @@ function CreateItemDialog({
             Description <span className="font-normal text-muted">(optional)</span>
             <textarea
               className={`${fieldClass} min-h-28 py-3`}
+              disabled={isPending}
               id={`${prefix}-description-field`}
               maxLength={10000}
               name="description"
@@ -474,6 +483,7 @@ function CreateItemDialog({
             Start date <span className="font-normal text-muted">(optional)</span>
             <input
               className={fieldClass}
+              disabled={isPending}
               id={`${prefix}-start-date`}
               name="startDate"
               type="date"
@@ -487,6 +497,7 @@ function CreateItemDialog({
             Due date <span className="font-normal text-muted">(optional)</span>
             <input
               className={fieldClass}
+              disabled={isPending}
               id={`${prefix}-due-date`}
               name="dueDate"
               type="date"
@@ -500,6 +511,7 @@ function CreateItemDialog({
             Event date <span className="font-normal text-muted">(events only)</span>
             <input
               className={fieldClass}
+              disabled={isPending}
               id={`${prefix}-event-date`}
               name="eventDate"
               type="date"

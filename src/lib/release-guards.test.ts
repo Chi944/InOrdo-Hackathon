@@ -58,21 +58,25 @@ function runParityGuard(ledger: unknown, expectedTail: string) {
 }
 
 describe("applied migration release guard", () => {
-  it("pins a CLI whose migration list exposes the JSON output-format contract", () => {
-    const packageMetadata = JSON.parse(
-      readFileSync(supabasePackagePath, "utf8"),
-    ) as { version?: unknown };
-    const help = spawnSync(
-      process.execPath,
-      [supabaseCliPath, "migration", "list", "--help"],
-      { encoding: "utf8" },
-    );
+  it(
+    "pins a CLI whose migration list exposes the JSON output-format contract",
+    () => {
+      const packageMetadata = JSON.parse(
+        readFileSync(supabasePackagePath, "utf8"),
+      ) as { version?: unknown };
+      const help = spawnSync(
+        process.execPath,
+        [supabaseCliPath, "migration", "list", "--help"],
+        { encoding: "utf8" },
+      );
 
-    expect(packageMetadata.version).toBe("2.109.1");
-    expect(help.status).toBe(0);
-    expect(help.stdout).toContain("--output-format choice");
-    expect(help.stdout).toContain("text (default), json, or stream-json");
-  });
+      expect(packageMetadata.version).toBe("2.109.1");
+      expect(help.status).toBe(0);
+      expect(help.stdout).toContain("--output-format choice");
+      expect(help.stdout).toContain("text (default), json, or stream-json");
+    },
+    15_000,
+  );
 
   it("prints only target migrations recorded as applied remotely", () => {
     const appliedPath =

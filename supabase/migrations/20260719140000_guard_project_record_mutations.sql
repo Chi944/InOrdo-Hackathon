@@ -153,35 +153,15 @@ from public, anon, authenticated, service_role;
 comment on table private.project_mutation_ledger is
   'Append-only successful native-mutation receipts. Exact actor/request replay is stable across workflow-generation advances; rejected requests consume no key.';
 
--- Project items and dependencies remain member-readable, but authenticated
--- writes must pass through generation-fenced RPCs. Service-role table access is
--- retained for analysis/apply/reset orchestration.
-drop policy if exists project_items_insert_contributor
-on public.project_items;
-drop policy if exists project_items_update_contributor
-on public.project_items;
-drop policy if exists project_items_delete_contributor
-on public.project_items;
-drop policy if exists item_dependencies_insert_contributor
-on public.item_dependencies;
-drop policy if exists item_dependencies_update_contributor
-on public.item_dependencies;
-drop policy if exists item_dependencies_delete_contributor
-on public.item_dependencies;
-
-revoke insert, update, delete on table public.project_items
-from authenticated;
-revoke insert (
-  id, workspace_id, project_id, item_key, item_type, title, description,
-  status, priority, owner_id, start_date, due_date, event_date, metadata,
-  created_by
-) on table public.project_items from authenticated;
-revoke update (
-  item_key, item_type, title, description, status, priority, owner_id,
-  start_date, due_date, event_date, metadata
-) on table public.project_items from authenticated;
-revoke insert, update, delete on table public.item_dependencies
-from authenticated;
+-- Project items and dependencies remain member-readable. Generation-fenced
+-- RPCs become the application write path in this expand migration, while
+-- service-role table access remains available for analysis/apply/reset.
+-- Expand phase: keep the legacy contributor policies and authenticated DML
+-- grants until an RPC-capable production artifact is deployed and verified.
+-- Removing them in this migration would make the still-live pre-RPC artifact
+-- incompatible during the database-first release window. A separately
+-- reviewed contract migration must remove that compatibility path only after
+-- the deployed application has exercised all four RPCs successfully.
 grant select on table public.project_items to authenticated;
 grant select on table public.item_dependencies to authenticated;
 
@@ -297,38 +277,6 @@ begin
     raise exception 'invalid project mutation request' using errcode = '23514';
   end if;
 
-  owner_id_value := case
-    when p_payload -> 'owner_id' = 'null'::jsonb then null
-    else (p_payload ->> 'owner_id')::uuid
-  end;
-  if owner_id_value is not null and not exists (
-    select 1
-    from public.workspace_members as membership
-    where membership.workspace_id = target_workspace_id
-      and membership.user_id = owner_id_value
-  ) then
-    raise exception 'project item owner is unavailable' using errcode = '23503';
-  end if;
-
-  start_date_value := case
-    when p_payload -> 'start_date' = 'null'::jsonb then null
-    else (p_payload ->> 'start_date')::date
-  end;
-  due_date_value := case
-    when p_payload -> 'due_date' = 'null'::jsonb then null
-    else (p_payload ->> 'due_date')::date
-  end;
-  event_date_value := case
-    when p_payload -> 'event_date' = 'null'::jsonb then null
-    else (p_payload ->> 'event_date')::date
-  end;
-  if start_date_value is not null
-     and due_date_value is not null
-     and start_date_value > due_date_value then
-    raise exception 'project item start date is after its due date'
-      using errcode = '23514';
-  end if;
-
   request_hash := private.operation_request_hash(
     pg_catalog.jsonb_build_object(
       'mutation_type', 'create_project_item',
@@ -360,6 +308,38 @@ begin
     end if;
     return existing_ledger.result_payload
       || pg_catalog.jsonb_build_object('status', 'duplicate');
+  end if;
+
+  owner_id_value := case
+    when p_payload -> 'owner_id' = 'null'::jsonb then null
+    else (p_payload ->> 'owner_id')::uuid
+  end;
+  if owner_id_value is not null and not exists (
+    select 1
+    from public.workspace_members as membership
+    where membership.workspace_id = target_workspace_id
+      and membership.user_id = owner_id_value
+  ) then
+    raise exception 'project item owner is unavailable' using errcode = '23503';
+  end if;
+
+  start_date_value := case
+    when p_payload -> 'start_date' = 'null'::jsonb then null
+    else (p_payload ->> 'start_date')::date
+  end;
+  due_date_value := case
+    when p_payload -> 'due_date' = 'null'::jsonb then null
+    else (p_payload ->> 'due_date')::date
+  end;
+  event_date_value := case
+    when p_payload -> 'event_date' = 'null'::jsonb then null
+    else (p_payload ->> 'event_date')::date
+  end;
+  if start_date_value is not null
+     and due_date_value is not null
+     and start_date_value > due_date_value then
+    raise exception 'project item start date is after its due date'
+      using errcode = '23514';
   end if;
 
   if p_expected_workflow_generation <> current_generation then

@@ -67,25 +67,55 @@ begin
     raise exception 'project mutation ledger is directly readable';
   end if;
 
-  if pg_catalog.has_table_privilege(
-       'authenticated', 'public.project_items', 'INSERT'
+  if exists (
+       select 1
+       from pg_catalog.unnest(array[
+         'id', 'workspace_id', 'project_id', 'item_key', 'item_type',
+         'title', 'description', 'status', 'priority', 'owner_id',
+         'start_date', 'due_date', 'event_date', 'metadata', 'created_by'
+       ]) as field(column_name)
+       where not pg_catalog.has_column_privilege(
+         'authenticated', 'public.project_items', field.column_name, 'INSERT'
+       )
      )
-     or pg_catalog.has_table_privilege(
-       'authenticated', 'public.project_items', 'UPDATE'
+     or exists (
+       select 1
+       from pg_catalog.unnest(array[
+         'item_key', 'item_type', 'title', 'description', 'status', 'priority',
+         'owner_id', 'start_date', 'due_date', 'event_date', 'metadata'
+       ]) as field(column_name)
+       where not pg_catalog.has_column_privilege(
+         'authenticated', 'public.project_items', field.column_name, 'UPDATE'
+       )
      )
-     or pg_catalog.has_table_privilege(
+     or not pg_catalog.has_table_privilege(
        'authenticated', 'public.project_items', 'DELETE'
      )
-     or pg_catalog.has_table_privilege(
+     or not pg_catalog.has_table_privilege(
        'authenticated', 'public.item_dependencies', 'INSERT'
      )
-     or pg_catalog.has_table_privilege(
+     or not pg_catalog.has_table_privilege(
        'authenticated', 'public.item_dependencies', 'UPDATE'
      )
-     or pg_catalog.has_table_privilege(
+     or not pg_catalog.has_table_privilege(
        'authenticated', 'public.item_dependencies', 'DELETE'
      ) then
-    raise exception 'authenticated direct project-record DML remains granted';
+    raise exception 'expand-phase compatibility DML is missing';
+  end if;
+  if (
+    select pg_catalog.count(*)
+    from pg_catalog.pg_policies as policy
+    where policy.schemaname = 'public'
+      and policy.policyname in (
+        'project_items_insert_contributor',
+        'project_items_update_contributor',
+        'project_items_delete_contributor',
+        'item_dependencies_insert_contributor',
+        'item_dependencies_update_contributor',
+        'item_dependencies_delete_contributor'
+      )
+  ) <> 6 then
+    raise exception 'expand-phase compatibility policies are missing';
   end if;
 end;
 $$;
@@ -112,6 +142,19 @@ insert into public.project_items (
   'XPR-01', 'task', 'Cross-project mutation fixture',
   '00000000-0000-4000-8000-000000000101'
 );
+insert into public.profiles (id, display_name)
+values (
+  '0f140000-0000-4000-8000-000000000001',
+  'Rollback-only replay owner'
+);
+insert into public.workspace_members (
+  workspace_id, user_id, role, invited_by
+) values (
+  '10000000-0000-4000-8000-000000000001',
+  '0f140000-0000-4000-8000-000000000001',
+  'member',
+  '00000000-0000-4000-8000-000000000101'
+);
 reset role;
 
 -- A member may create a strictly validated item, and exact replay returns the
@@ -123,13 +166,69 @@ select pg_catalog.set_config(
   true
 );
 
+-- The expand migration must remain compatible with the still-live direct-DML
+-- application until the separately deployed RPC artifact passes smoke. The
+-- later contract verifier replaces this positive assertion with denial checks.
+do $$
+declare
+  changed_count integer;
+begin
+  insert into public.project_items (
+    id, workspace_id, project_id, item_key, item_type, title, description,
+    status, priority, owner_id, start_date, due_date, event_date, metadata,
+    created_by
+  ) values (
+    '3e140000-0000-4000-8000-000000000089',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    'TST-89', 'task', 'Expand compatibility fixture', null,
+    'not_started', 'medium', null, null, null, null, '{}'::jsonb,
+    '00000000-0000-4000-8000-000000000103'
+  );
+  update public.project_items
+  set title = 'Expand compatibility updated'
+  where id = '3e140000-0000-4000-8000-000000000089'::uuid;
+  get diagnostics changed_count = row_count;
+  if changed_count <> 1 then
+    raise exception 'expand compatibility item update changed % rows',
+      changed_count;
+  end if;
+
+  insert into public.item_dependencies (
+    id, workspace_id, project_id, from_item_id, to_item_id, relationship,
+    rationale, created_by
+  ) values (
+    '4e140000-0000-4000-8000-000000000089',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    '3e140000-0000-4000-8000-000000000089',
+    '30000000-0000-4000-8000-000000000001',
+    'requires', 'Rollback-only expand compatibility check.',
+    '00000000-0000-4000-8000-000000000103'
+  );
+  delete from public.item_dependencies
+  where id = '4e140000-0000-4000-8000-000000000089'::uuid;
+  get diagnostics changed_count = row_count;
+  if changed_count <> 1 then
+    raise exception 'expand compatibility dependency delete changed % rows',
+      changed_count;
+  end if;
+  delete from public.project_items
+  where id = '3e140000-0000-4000-8000-000000000089'::uuid;
+  get diagnostics changed_count = row_count;
+  if changed_count <> 1 then
+    raise exception 'expand compatibility item delete changed % rows',
+      changed_count;
+  end if;
+end;
+$$;
+
 do $$
 declare
   first_result jsonb;
   replay_result jsonb;
   conflict_rejected boolean := false;
   duplicate_item_rejected boolean := false;
-  direct_dml_rejected boolean := false;
   unsafe_generation_rejected boolean := false;
   scalar_payload_rejected boolean := false;
 begin
@@ -235,17 +334,6 @@ begin
   end if;
 
   begin
-    update public.project_items
-    set title = 'Direct DML must fail'
-    where id = (first_result -> 'item' ->> 'id')::uuid;
-  exception when insufficient_privilege then
-    direct_dml_rejected := true;
-  end;
-  if not direct_dml_rejected then
-    raise exception 'authenticated direct item DML was accepted';
-  end if;
-
-  begin
     perform public.mutate_project_item_create(
       '20000000-0000-4000-8000-000000000001'::uuid,
       9007199254740992,
@@ -276,6 +364,104 @@ begin
   end;
   if not scalar_payload_rejected then
     raise exception 'scalar create payload did not fail as safe validation';
+  end if;
+end;
+$$;
+
+-- A successful create receipt remains replayable after its original owner is
+-- replaced and that owner's workspace membership is removed. Replay must not
+-- revalidate mutable owner state or write a second item.
+do $$
+declare
+  first_result jsonb;
+begin
+  first_result := public.mutate_project_item_create(
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    1,
+    'verify-native-owner-replay-001',
+    pg_catalog.jsonb_build_object(
+      'item_key', 'TST-97',
+      'item_type', 'task',
+      'title', 'Owner-independent create replay',
+      'description', 'Rollback-only replay regression fixture.',
+      'status', 'not_started',
+      'priority', 'medium',
+      'owner_id', '0f140000-0000-4000-8000-000000000001',
+      'start_date', null,
+      'due_date', null,
+      'event_date', null
+    )
+  );
+  if first_result ->> 'status' <> 'succeeded' then
+    raise exception 'owner replay fixture create failed: %', first_result;
+  end if;
+  perform pg_catalog.set_config(
+    'inordo.owner_replay_item_id',
+    first_result -> 'item' ->> 'id',
+    true
+  );
+end;
+$$;
+
+reset role;
+set local role service_role;
+update public.project_items
+set owner_id = '00000000-0000-4000-8000-000000000103'::uuid
+where id = pg_catalog.current_setting('inordo.owner_replay_item_id')::uuid;
+delete from public.workspace_members
+where workspace_id = '10000000-0000-4000-8000-000000000001'::uuid
+  and user_id = '0f140000-0000-4000-8000-000000000001'::uuid;
+reset role;
+
+set local role authenticated;
+select pg_catalog.set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000103","role":"authenticated","is_anonymous":false}',
+  true
+);
+
+do $$
+declare
+  replay_result jsonb;
+  replay_item_id uuid := pg_catalog.current_setting(
+    'inordo.owner_replay_item_id'
+  )::uuid;
+begin
+  replay_result := public.mutate_project_item_create(
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    1,
+    'verify-native-owner-replay-001',
+    pg_catalog.jsonb_build_object(
+      'item_key', 'TST-97',
+      'item_type', 'task',
+      'title', 'Owner-independent create replay',
+      'description', 'Rollback-only replay regression fixture.',
+      'status', 'not_started',
+      'priority', 'medium',
+      'owner_id', '0f140000-0000-4000-8000-000000000001',
+      'start_date', null,
+      'due_date', null,
+      'event_date', null
+    )
+  );
+
+  if replay_result ->> 'status' <> 'duplicate'
+     or replay_result -> 'item' ->> 'id' <> replay_item_id::text
+     or replay_result -> 'item' ->> 'owner_id'
+       <> '0f140000-0000-4000-8000-000000000001'
+     or (select pg_catalog.count(*)
+         from public.project_items as item
+         where item.project_id = '20000000-0000-4000-8000-000000000001'::uuid
+           and item.item_key = 'TST-97') <> 1
+     or not exists (
+       select 1
+       from public.project_items as item
+       where item.id = replay_item_id
+         and item.owner_id = '00000000-0000-4000-8000-000000000103'::uuid
+         and item.version = 2
+     ) then
+    raise exception 'create replay depended on mutable owner state: %',
+      replay_result;
   end if;
 end;
 $$;
@@ -428,7 +614,6 @@ declare
   self_rejected boolean := false;
   cross_project_rejected boolean := false;
   duplicate_rejected boolean := false;
-  direct_dml_rejected boolean := false;
   empty_rationale_rejected boolean := false;
   long_rationale_rejected boolean := false;
   scalar_payload_rejected boolean := false;
@@ -579,14 +764,6 @@ begin
     raise exception 'duplicate dependency was accepted';
   end if;
 
-  begin
-    delete from public.item_dependencies where id = dependency_id;
-  exception when insufficient_privilege then
-    direct_dml_rejected := true;
-  end;
-  if not direct_dml_rejected then
-    raise exception 'authenticated direct dependency DML was accepted';
-  end if;
 end;
 $$;
 

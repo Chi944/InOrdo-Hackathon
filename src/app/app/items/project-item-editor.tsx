@@ -141,6 +141,7 @@ export function ProjectItemEditor({
   }
 
   function closeDialog() {
+    if (pending) return;
     dialogRef.current?.close();
   }
 
@@ -165,7 +166,17 @@ export function ProjectItemEditor({
       <dialog
         aria-labelledby={`${prefix}-title`}
         className="m-auto max-h-[calc(100dvh-2rem)] w-[min(48rem,calc(100%-2rem))] overflow-y-auto rounded-sm border border-rule bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/55"
+        onCancel={(event) => {
+          event.preventDefault();
+          if (!pending) closeDialog();
+        }}
         onClose={() => triggerRef.current?.focus()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            if (!pending) closeDialog();
+          }
+        }}
         ref={dialogRef}
       >
         <form
@@ -199,6 +210,7 @@ export function ProjectItemEditor({
             <button
               aria-label="Close edit item dialog"
               className="grid size-11 shrink-0 place-items-center rounded-sm border border-rule text-xl hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+              disabled={pending}
               onClick={closeDialog}
               type="button"
             >
@@ -209,11 +221,11 @@ export function ProjectItemEditor({
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold" htmlFor={`${prefix}-key`}>
               Item key
-              <input className={fieldClass} defaultValue={item.itemKey} id={`${prefix}-key`} name="itemKey" pattern="[A-Z][A-Z0-9]*-[0-9]{2,}" required />
+              <input className={fieldClass} defaultValue={item.itemKey} disabled={pending} id={`${prefix}-key`} name="itemKey" pattern="[A-Z][A-Z0-9]*-[0-9]{2,}" required />
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-type`}>
               Type
-              <select className={fieldClass} id={`${prefix}-type`} name="itemType" onChange={(event) => setItemType(event.target.value as EditableItem["itemType"])} value={itemType}>
+              <select className={fieldClass} disabled={pending} id={`${prefix}-type`} name="itemType" onChange={(event) => setItemType(event.target.value as EditableItem["itemType"])} value={itemType}>
                 {[
                   "task",
                   "milestone",
@@ -228,15 +240,15 @@ export function ProjectItemEditor({
             </label>
             <label className="text-sm font-semibold sm:col-span-2" htmlFor={`${prefix}-name`}>
               Title
-              <input autoFocus className={fieldClass} defaultValue={item.title} id={`${prefix}-name`} maxLength={240} name="title" required />
+              <input autoFocus className={fieldClass} defaultValue={item.title} disabled={pending} id={`${prefix}-name`} maxLength={240} name="title" required />
             </label>
             <label className="text-sm font-semibold sm:col-span-2" htmlFor={`${prefix}-description`}>
               Description or rationale
-              <textarea className={`${fieldClass} min-h-28 py-3`} defaultValue={item.description ?? ""} id={`${prefix}-description`} maxLength={10000} name="description" />
+              <textarea className={`${fieldClass} min-h-28 py-3`} defaultValue={item.description ?? ""} disabled={pending} id={`${prefix}-description`} maxLength={10000} name="description" />
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-status`}>
               Status
-              <select className={fieldClass} defaultValue={item.status} id={`${prefix}-status`} name="status">
+              <select className={fieldClass} defaultValue={item.status} disabled={pending} id={`${prefix}-status`} name="status">
                 {[
                   "not_started",
                   "in_progress",
@@ -251,7 +263,7 @@ export function ProjectItemEditor({
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-priority`}>
               Priority
-              <select className={fieldClass} defaultValue={item.priority} id={`${prefix}-priority`} name="priority">
+              <select className={fieldClass} defaultValue={item.priority} disabled={pending} id={`${prefix}-priority`} name="priority">
                 {["low", "medium", "high", "critical"].map((value) => (
                   <option key={value} value={value}>{value}</option>
                 ))}
@@ -259,7 +271,7 @@ export function ProjectItemEditor({
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-owner`}>
               Assignee
-              <select className={fieldClass} defaultValue={item.ownerId ?? ""} id={`${prefix}-owner`} name="ownerId">
+              <select className={fieldClass} defaultValue={item.ownerId ?? ""} disabled={pending} id={`${prefix}-owner`} name="ownerId">
                 <option value="">Unassigned</option>
                 {memberOptions.map((member) => (
                   <option key={member.id} value={member.id}>{member.name}</option>
@@ -268,16 +280,16 @@ export function ProjectItemEditor({
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-start`}>
               Start date
-              <input className={fieldClass} defaultValue={item.startDate ?? ""} id={`${prefix}-start`} name="startDate" type="date" />
+              <input className={fieldClass} defaultValue={item.startDate ?? ""} disabled={pending} id={`${prefix}-start`} name="startDate" type="date" />
             </label>
             <label className="text-sm font-semibold" htmlFor={`${prefix}-due`}>
               Due date
-              <input className={fieldClass} defaultValue={item.dueDate ?? ""} id={`${prefix}-due`} name="dueDate" type="date" />
+              <input className={fieldClass} defaultValue={item.dueDate ?? ""} disabled={pending} id={`${prefix}-due`} name="dueDate" type="date" />
             </label>
             {itemType === "event" ? (
               <label className="text-sm font-semibold" htmlFor={`${prefix}-event`}>
                 Event date
-                <input className={fieldClass} defaultValue={item.eventDate ?? ""} id={`${prefix}-event`} name="eventDate" type="date" />
+                <input className={fieldClass} defaultValue={item.eventDate ?? ""} disabled={pending} id={`${prefix}-event`} name="eventDate" type="date" />
               </label>
             ) : (
               <input name="eventDate" type="hidden" value="" />
@@ -286,7 +298,7 @@ export function ProjectItemEditor({
 
           <Feedback state={state} />
           <div className="mt-6 flex flex-col-reverse gap-3 border-t border-rule pt-5 sm:flex-row sm:justify-end">
-            <button className="min-h-11 rounded-sm border border-rule px-5 text-sm font-semibold hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal" onClick={closeDialog} type="button">
+            <button className="min-h-11 rounded-sm border border-rule px-5 text-sm font-semibold hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal" disabled={pending} onClick={closeDialog} type="button">
               Cancel
             </button>
             <button className="min-h-11 rounded-sm bg-ink px-5 text-sm font-semibold text-white hover:bg-signal disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal" disabled={pending} type="submit">

@@ -1,10 +1,22 @@
 # QA checklist
 
+## 2026-07-20 rename and generation-integrity review (`deston/13-generation-integrity`)
+
+- [x] Existing manual Vercel project renamed to `chi944s-projects/inordo`; project ID and Git remote unchanged; canonical alias assigned as `https://inordo.vercel.app`; former public aliases removed.
+- [x] Local and Vercel Production configuration inventories contain the six non-OpenAI names; no value was read or printed. `OPENAI_API_KEY` remains absent, and optimized local health returned generic `503 not_ready` while the safe server log named only that variable.
+- [x] Independent Claude Opus cross-model review and local correctness/security/migration/reliability/documentation reviews completed; validated rollout, replay, pending-state, retry, rollback-containment, grant-revocation, and evidence findings were addressed.
+- [x] README local targets, image files, anchors, and code fences verified; stale alias claims and the Vercel Hobby-eligibility gate were corrected without dropping setup, P0, security, testing, submission, `/feedback`, or license-attribution content.
+- [x] Node `22.23.1`/npm `10.9.8`: lint, typecheck, 399 Vitest tests across 57 files, production build, one guarded Chromium journey, zero production dependency vulnerabilities, and whitespace checks.
+- [x] Clean local Supabase replay: all nine rollback-wrapped SQL verifiers and `supabase db lint --local --level error` passed.
+- [ ] Save the renamed hosted Supabase Auth Site URL and exact production redirect, then run the new-alias signed-out and authenticated smoke.
+- [ ] Supply `OPENAI_API_KEY` through hidden local/Vercel secret input, redeploy, require `200 ready`, then run exactly one approved funded synthetic analysis.
+- [ ] After exact typed approval, apply only expand migration `20260719140000`, prove hosted parity, deploy the exact merged RPC artifact, verify all four mutations plus replay, then review and apply a separate contract migration.
+
 ## Prompt 14 final release evidence (`andres/06-final-evidence`)
 
 - [x] The Prompt 14 branch started from clean deployed application SHA `d581b0a9d736bd12046a4314e15b359ec8fd8205` as documentation-only work. It later incorporated the normally merged release-boundary hardening from current `main` without rewriting either work package.
 - [x] Vercel reports deployment `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` as `READY`, target `production`, Node `22.x`, and `githubCommitSha` equal to the application SHA.
-- [x] The production alias resolves to that deployment; `/` and `/login` return `200`, and signed-out `/app` returns `307` to `/login?next=%2Fapp` without tenant data.
+- [x] At the 2026-07-19 pre-rename smoke, the then-current production alias resolved to that deployment; `/` and `/login` returned `200`, and signed-out `/app` returned `307` to `/login?next=%2Fapp` without tenant data. This is historical evidence, not a smoke result for `https://inordo.vercel.app`.
 - [x] With `OPENAI_API_KEY` intentionally absent, production `/api/health` returns the expected generic `503 not_ready` with `Cache-Control: no-store`.
 - [x] Three independent final read-only reviews found no P0/P1 security, migration, concurrency, test, or deployment blocker after the expired-claim repair merged.
 - [x] Prompt 14 `npm run lint` on the settled documentation branch.
@@ -106,17 +118,17 @@ This section records each command or live step individually. Checked items have 
 ### Vercel/Supabase release evidence
 
 - [ ] Deston confirms current Vercel Hobby terms permit this small non-commercial hackathon demo and records the review date without presenting this checklist as legal advice.
-- [x] Deston logged in, verified the `chi944s-projects` scope, linked the manual `inordo-hackathon` project, and confirmed through project metadata that no Git repository/automatic deployment is connected.
+- [x] Deston logged in, verified the `chi944s-projects` scope, linked the manual `inordo` project, and confirmed through project metadata that no Git repository/automatic deployment is connected.
 - [x] Production has the six non-OpenAI names in the correct Production scopes: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_MODEL`, `DEMO_PROJECT_SLUG`, and `DEMO_RESET_SECRET`. Names/scopes only were recorded; no value was copied.
 - [x] Until `OPENAI_API_KEY` is supplied, the deployed health route returns `503 not_ready`, analysis is unavailable, and public copy does not claim otherwise.
-- [x] Hosted Supabase Auth Site URL is the exact production origin and its redirects contain both local HTTP wildcards, the exact production `/**` path, and the account-scoped Vercel Preview wildcard.
+- [ ] Replace the retired production hostname in hosted Supabase Auth with Site URL `https://inordo.vercel.app` and redirect `https://inordo.vercel.app/**`; retain both local HTTP wildcards and the account-scoped Vercel Preview wildcard, save, then verify login/logout from a fresh profile.
 - [x] Preview deploy proved `HEAD == origin/main == 72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` and divergence `0 0`; deployment `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD` is `READY`, target Preview, Node `22.x`, and reports the same `githubCommitSha`/`main` ref. Authenticated Vercel curl reached `/` and `/login` with `200` and expected missing-config health `503`; anonymous requests remain intentionally SSO-protected and therefore are not called a public Preview pass.
 - [x] Production deploy proved `HEAD == origin/main == d581b0a9d736bd12046a4314e15b359ec8fd8205` and divergence `0 0`, ran with `npx vercel --prod`, and produced deployment metadata with the same `githubCommitSha`, Node `22.x`, `READY`, target `production`, and no build-time provider call or server/client boundary failure.
 - [ ] In a fresh incognito profile, `/`, `/login`, signed-out `/app`, login/session refresh/logout, and tenant denial behave as documented.
 - [ ] After Deston supplies `OPENAI_API_KEY` and redeploys, `/api/health` returns `200 ready`; exactly one funded synthetic venue analysis records only safe actual-model/ID/status metadata and no prompt, source body, output, key, header, or cookie.
 - [ ] Owner/admin completes the canonical evidence -> deterministic impact -> selective apply -> ordered history -> compensating undo -> protected reset flow; viewer/nonmember/cross-project attempts fail closed.
 - [ ] The exact deployed UI passes keyboard, visible-focus, status-announcement, and no-horizontal-overflow checks at approximately 375, 768, and 1440 pixels.
-- [x] The previous schema-compatible deployment `dpl_8znxpQsmZsBH7hoqWmLqui4HXtqc` is identified; the Vercel rollback path and migration-preserving Git forward-repair path are reviewed.
+- [x] The previous schema-compatible deployment `dpl_8znxpQsmZsBH7hoqWmLqui4HXtqc` is identified; the Vercel rollback path, mandatory reset/native-mutation containment for any pre-RPC artifact, and migration-preserving Git forward-repair path are reviewed.
 
 ## Prompt 11 submission integration gate (`codex/andres-05-integration`)
 
@@ -261,13 +273,13 @@ Linked evidence on 2026-07-18: the migration ledger is aligned through `20260718
 
 - [x] Clean local migration replay and database lint pass through `20260719140000_guard_project_record_mutations`.
 - [x] `verify_superseded_action_reconciliation.sql` proves pending/approved staleness, attribution preservation, terminal-history preservation, and apply-safe deferred reconciliation.
-- [x] `verify_generation_guarded_mutations.sql` proves RPC authorization, direct-DML denial, strict record validation, exact replay, key conflicts, generation/version fences, and dependency integrity.
+- [x] `verify_generation_guarded_mutations.sql` proves RPC authorization, expand-phase legacy-policy compatibility, strict record validation, exact replay (including after mutable owner removal), key conflicts, generation/version fences, and dependency integrity. Direct-DML denial moves to the later contract verifier.
 - [x] A real two-session local race proved a generation-1 mutation waited behind the project lock, rejected with `40001` after generation advanced to 2, and created zero stale items and zero ledger receipts.
 - [x] Node 22.23.1/npm 10.9.8 clean install, lint, typecheck, 394 unit tests across 57 files, guarded Chromium journey, production build, zero-vulnerability production audit, generated-type comparison, local migration-parity guard, and diff check passed on the settled branch.
-- [x] Prompt 10 review found and corrected two release-documentation defects: optional local Auth/UI now configures the required non-secret project slug without sharing credentials, and the production sequence now blocks Vercel deployment until a reviewed linked migration push is exactly aligned through `20260719140000`.
+- [x] Release review found and corrected the incompatible migration/deploy ordering: `20260719140000` is expand-only, the RPC artifact must deploy and pass all four native mutation smokes, and a separate contract migration removes legacy DML only afterward.
 - [x] Configuration-contract review corrected the protected-workspace role of `DEMO_PROJECT_SLUG`, retained the non-secret model default for least-privilege local QA, and explicitly rejects an empty `OPENAI_MODEL=` entry.
 - [x] Two P2 scale limits are disclosed with mitigations and backlog owners: analysis finalization's cross-project table-lock scope and the dependency-management UI's silent 500-row cap.
-- [ ] Hosted migration and authenticated browser verification remain pending until the reviewed branch is merged and the operator explicitly opens the release gate.
+- [ ] Hosted expand migration, exact-SHA RPC deployment, authenticated four-mutation smoke, and the separate contract migration remain pending until the reviewed branch is merged and the operator passes each exact typed gate.
 
 ### Pending authenticated HTTP/browser procedure
 
@@ -455,7 +467,7 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 - [ ] Confirm `https://github.com/Chi944/InOrdo-Hackathon` opens signed out and exposes the final submitted `main` commit, README, screenshots, and MIT license.
 - [ ] Confirm the production URL opens in a private/incognito browser and identifies the exact deployed commit.
 - [ ] Confirm every required deployment variable is configured and passes the exact deployed artifact's strict readiness schema, with server-only values absent from the browser bundle, logs, screenshots, and repository.
-- [ ] Before `npx vercel --prod`, review the linked migration list and `db push --dry-run`, explicitly approve and apply only the expected migrations, then require `scripts/verify-migration-parity.mjs` to prove exact local/remote parity through `20260719140000`.
+- [ ] Before the pinned Vercel production deploy, review the linked migration list and `db push --dry-run`, type the exact approval for expand tail `20260719140000`, and require `scripts/verify-migration-parity.mjs` to prove exact local/remote parity. After the RPC smoke, repeat that entire gate for the separate contract tail; never push both stages together.
 - [x] [Vercel documents a 4.5 MB Function request-body limit](https://vercel.com/docs/functions/limitations); application handlers enforce the tighter 24,000/32,000-byte caps while streaming and cancel over-limit bodies without trusting `Content-Length`.
 - [ ] Run exactly one funded synthetic GPT-5.6 analysis and record safe metadata only; do not record a key, prompt, raw provider output, or source body.
 - [ ] Complete the authenticated production smoke path above as owner/admin and repeat read-only/denial checks as viewer and nonmember where feasible.

@@ -39,21 +39,21 @@ With `OPENAI_API_KEY` absent, production can build and public/authenticated non-
 Run these commands one at a time and enter each value only at Vercel's hidden prompt:
 
 ```bash
-npx vercel env add NEXT_PUBLIC_SUPABASE_URL production
-npx vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
-npx vercel env add SUPABASE_SERVICE_ROLE_KEY production --sensitive
-npx vercel env add OPENAI_MODEL production
-npx vercel env add DEMO_PROJECT_SLUG production
-npx vercel env add DEMO_RESET_SECRET production --sensitive
+npx --yes vercel@56.3.2 env add NEXT_PUBLIC_SUPABASE_URL production
+npx --yes vercel@56.3.2 env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
+npx --yes vercel@56.3.2 env add SUPABASE_SERVICE_ROLE_KEY production --sensitive
+npx --yes vercel@56.3.2 env add OPENAI_MODEL production
+npx --yes vercel@56.3.2 env add DEMO_PROJECT_SLUG production
+npx --yes vercel@56.3.2 env add DEMO_RESET_SECRET production --sensitive
 ```
 
 When Deston is ready to enable live analysis:
 
 ```bash
-npx vercel env add OPENAI_API_KEY production --sensitive
+npx --yes vercel@56.3.2 env add OPENAI_API_KEY production --sensitive --scope chi944s-projects
 ```
 
-Use `npx vercel env ls production` to verify names and scopes only. Do not print, pull, or copy values as release evidence. A changed environment variable affects only a new deployment, so redeploy after every required configuration change.
+Use `npx --yes vercel@56.3.2 env ls production --scope chi944s-projects` to verify names and scopes only. Do not print, pull, or copy values as release evidence. A changed environment variable affects only a new deployment, so redeploy after every required configuration change. The CLI version is pinned here so a release does not silently resolve a different command contract.
 
 ## Supabase Auth URL configuration
 
@@ -62,28 +62,28 @@ Local CLI configuration is versioned in `supabase/config.toml` with:
 - Site URL: `http://localhost:3000`
 - Redirects: `http://localhost:3000/**` and `http://127.0.0.1:3000/**`
 
-After Vercel assigns real hosts, Deston must open the linked hosted Supabase project's **Authentication -> URL Configuration** and set:
+Deston must open the linked hosted Supabase project's **Authentication -> URL Configuration** and set:
 
-1. **Site URL** to the exact production origin, for example the actual `https://<production-host>` returned for this project. Do not use a guessed URL.
+1. **Site URL** to the assigned canonical production origin, `https://inordo.vercel.app`.
 2. **Redirect URLs** to both local HTTP wildcards above.
-3. **Redirect URL** for the exact production origin with `/**` appended.
-4. **Redirect URL** for Vercel previews using `https://*-<vercel-team-or-account-slug>.vercel.app/**`, after replacing the placeholder with the actual Vercel slug shown by the project.
+3. **Redirect URL** `https://inordo.vercel.app/**`.
+4. **Redirect URL** `https://*-chi944s-projects.vercel.app/**` for account-scoped Vercel previews.
 
-Prefer the exact production redirect over a broad production wildcard. Do not add `http://` redirects for hosted deployments, do not use `https://127.0.0.1`, and do not add an unrelated domain. Save the hosted Auth settings, then test login and logout from a fresh browser profile.
+Replace the retired production hostname rather than retaining it as an alternate callback. Prefer the exact production redirect over a broad production wildcard. Do not add `http://` redirects for hosted deployments, do not use `https://127.0.0.1`, and do not add an unrelated domain. Save the hosted Auth settings, verify the saved values in the authoritative dashboard state, then test login and logout from a fresh browser profile.
 
 ## One-time Deston CLI link
 
 Run from the repository root. These commands intentionally create a manual CLI project under the known Deston scope; they do not configure Git-based deployments.
 
 ```bash
-npx vercel login
-npx vercel whoami
-npx vercel project ls --scope chi944s-projects
-npx vercel project add inordo-hackathon --scope chi944s-projects
-npx vercel link --yes --project inordo-hackathon --scope chi944s-projects
+npx --yes vercel@56.3.2 login
+npx --yes vercel@56.3.2 whoami
+npx --yes vercel@56.3.2 project ls --scope chi944s-projects
+npx --yes vercel@56.3.2 project add inordo --scope chi944s-projects
+npx --yes vercel@56.3.2 link --yes --project inordo --scope chi944s-projects
 ```
 
-Run `project add` only when `project ls` confirms that `inordo-hackathon` does not already exist. If it exists, link the existing project instead. Confirm in Vercel Project Settings that no Git repository is connected, automatic Git deployments are disabled, and the project Node.js Version is `22.x`, matching `package.json`. `.vercel/` is local ignored state and must not be committed.
+Run `project add` only when `project ls` confirms that `inordo` does not already exist. If it exists, link the existing project instead. The canonical production alias is `https://inordo.vercel.app`; an older immutable deployment hostname may still contain the former project name, but it is not the public alias. Confirm in Vercel Project Settings that no Git repository is connected, automatic Git deployments are disabled, and the project Node.js Version is `22.x`, matching `package.json`. `.vercel/` is local ignored state and must not be committed.
 
 Vercel Hobby may reject a deployment associated with a commit authored by someone who is not allowed on the project. Deston still must not rewrite that author, manufacture a co-author, or amend/cherry-pick solely to change identity. Keep the original authored commits intact. Deploy through Deston's authenticated manual CLI from the accepted integration commit. If Vercel still rejects that exact commit, stop and resolve account/plan access under the current Vercel terms, or create a truthful Deston-authored release commit containing an actual reviewed release change and rerun every gate. Never create an empty attribution workaround.
 
@@ -119,16 +119,16 @@ git fetch --prune origin main
 test "$(git rev-parse --verify HEAD)" = "$RELEASE_SHA"
 test "$(git rev-parse --verify origin/main)" = "$RELEASE_SHA"
 test "$(git rev-list --left-right --count origin/main...HEAD | tr '\t' ' ')" = "0 0"
-npx vercel
-npx vercel inspect <PREVIEW_DEPLOYMENT_URL>
-npx vercel curl /api/health --deployment <PREVIEW_DEPLOYMENT_URL>
+npx --yes vercel@56.3.2
+npx --yes vercel@56.3.2 inspect <PREVIEW_DEPLOYMENT_URL>
+npx --yes vercel@56.3.2 curl /api/health --deployment <PREVIEW_DEPLOYMENT_URL>
 ```
 
 Stop if either status command prints a path, a gate fails, either pair of full SHAs differs, either divergence count is not exactly `0 0`, the inspected deployment is not ready, or the deployed Git SHA differs from the recorded SHA. The second fetch catches `origin/main` moving during the gate; restart from the new reviewed commit instead of deploying the stale one. With Preview variables intentionally absent, health should report only non-secret missing configuration names and return `503`; that is expected and is not production-readiness evidence. Inspect `/` and `/login` through the preview URL. Use `vercel curl` when deployment protection is enabled; do not disable protection.
 
 ## Production sequence
 
-Production deployment starts over from a clean, current `main`. Do not reuse an old preview working tree or deploy a feature branch. The database release is part of this sequence: the application must not deploy until the linked ledger matches the repository's exact migration tail.
+Production deployment starts over from a clean, current `main`. Do not reuse an old preview working tree or deploy a feature branch. Generation-fenced native mutations use an explicit expand/deploy/contract rollout: `20260719140000` adds the receipt ledger and RPCs while temporarily retaining the legacy contributor DML path, the RPC-capable application is deployed and exercised, and only a later separately reviewed contract migration removes the legacy policies/grants. Never put the expand and contract migrations in the same pending `db push`.
 
 ```bash
 set -euo pipefail
@@ -158,20 +158,20 @@ git fetch --prune origin main
 test "$(git rev-parse --verify HEAD)" = "$RELEASE_SHA"
 test "$(git rev-parse --verify origin/main)" = "$RELEASE_SHA"
 test "$(git rev-list --left-right --count origin/main...HEAD | tr '\t' ' ')" = "0 0"
-EXPECTED_MIGRATION_TAIL="20260719140000"
+EXPAND_MIGRATION_TAIL="20260719140000"
 npx --no-install supabase migration list --linked
 npx --no-install supabase db push --dry-run
 printf '%s\n' \
   "STOP: review the linked ledger and dry-run above." \
-  "Type apply-$EXPECTED_MIGRATION_TAIL only if every pending migration is reviewed."
+  "Type apply-$EXPAND_MIGRATION_TAIL only if every pending migration is reviewed."
 read -r MIGRATION_APPROVAL
-test "$MIGRATION_APPROVAL" = "apply-$EXPECTED_MIGRATION_TAIL"
+test "$MIGRATION_APPROVAL" = "apply-$EXPAND_MIGRATION_TAIL"
 npx --no-install supabase db push
 LEDGER_JSON="$(
   npx --no-install supabase --output-format json migration list --linked
 )"
 LEDGER_JSON="$LEDGER_JSON" \
-EXPECTED_MIGRATION_TAIL="$EXPECTED_MIGRATION_TAIL" \
+EXPECTED_MIGRATION_TAIL="$EXPAND_MIGRATION_TAIL" \
   node scripts/verify-migration-parity.mjs
 git status --short
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
@@ -179,12 +179,12 @@ git fetch --prune origin main
 test "$(git rev-parse --verify HEAD)" = "$RELEASE_SHA"
 test "$(git rev-parse --verify origin/main)" = "$RELEASE_SHA"
 test "$(git rev-list --left-right --count origin/main...HEAD | tr '\t' ' ')" = "0 0"
-npx vercel --prod
-npx vercel inspect <PRODUCTION_DEPLOYMENT_URL>
-npx vercel logs <PRODUCTION_DEPLOYMENT_URL>
+npx --yes vercel@56.3.2 --prod
+npx --yes vercel@56.3.2 inspect <PRODUCTION_DEPLOYMENT_URL>
+npx --yes vercel@56.3.2 logs <PRODUCTION_DEPLOYMENT_URL>
 ```
 
-Every status check must be empty, every full-SHA comparison must be identical, and every divergence count must be exactly `0 0`. The remote checks before and after the database gate catch `origin/main` moving during either phase; if it moved, stop and restart from the new reviewed commit instead of deploying the stale application. `migration list` and `db push --dry-run` are review evidence, not authorization to mutate the hosted schema. Stop on an unexpected remote-only migration, a gap, an unreviewed pending migration, or any dry-run error. The typed confirmation authorizes only the reviewed push through `20260719140000`; after the push, `scripts/verify-migration-parity.mjs` consumes the captured `LEDGER_JSON` and `EXPECTED_MIGRATION_TAIL` and must prove exact local/remote parity before Vercel is contacted. If the push or parity check fails, contain the release and use a new forward migration for correction; never edit or delete an applied migration. Record the identical full Git SHA as the release SHA before `npx vercel --prod` and compare it with deployment metadata after the build. Review logs only for status and safe error codes/configuration names. Never paste a log containing a credential, request body, source evidence, human response, provider payload, authorization header, or cookie.
+Every status check must be empty, every full-SHA comparison must be identical, and every divergence count must be exactly `0 0`. The remote checks before and after the database gate catch `origin/main` moving during either phase; if it moved, stop and restart from the new reviewed commit instead of deploying the stale application. `migration list` and `db push --dry-run` are review evidence, not authorization to mutate the hosted schema. Stop on an unexpected remote-only migration, a gap, an unreviewed pending migration, or any dry-run error. The typed confirmation authorizes only the reviewed expand push through `20260719140000`; after the push, `scripts/verify-migration-parity.mjs` consumes the captured `LEDGER_JSON` and must prove exact local/remote parity before Vercel is contacted. If the push or parity check fails, the still-live direct-DML application remains compatible; contain the release and use a new forward migration for correction. Never edit or delete an applied migration. Record the identical full Git SHA as the release SHA before the pinned Vercel production command and compare it with deployment metadata after the build. Review logs only for status and safe error codes/configuration names. Never paste a log containing a credential, request body, source evidence, human response, provider payload, authorization header, or cookie.
 
 The project explicitly enables Fluid Compute in `vercel.json`. The analysis route sets a conservative 90-second function duration, below the currently supported 300-second Hobby Fluid maximum; 90 seconds is the application's release budget, not the plan maximum. Its two sequential OpenAI calls each have a 30-second internal limit with SDK/request retries disabled, leaving about 30 seconds for authorization, graph work, persistence, and safe failure handling. The database assigns a fixed three-minute claim lease, providing a second full route-runtime margin. Active duplicate responses expose the remaining bounded delay; resubmitting the exact update after expiry terminalizes the existing claim without another provider call. A late success is rejected transactionally. Other mutation/history routes use a 30-second duration. A deployment-time function limit is not permission to wait indefinitely or add background work. OpenAI must never be contacted during `npm run build` or the Vercel build phase.
 
@@ -192,28 +192,35 @@ The project explicitly enables Fluid Compute in `vercel.json`. The analysis rout
 
 Use a fresh private/incognito browser and the operator-provisioned synthetic account. Do not record its password, session, cookies, authorization headers, or private response bodies.
 
-1. Request `https://<production-host>/api/health`. Expect `503 not_ready` while `OPENAI_API_KEY` is absent. After Deston adds the key and redeploys, require `200 ready`; the body may identify configuration names/status only and must never expose values or test the provider by spending tokens.
-2. Check `npx vercel logs <PRODUCTION_DEPLOYMENT_URL>` for configuration-name-only failures, route timeouts, server/client boundary violations, or build-time provider activity. Any credential/value leak is an incident and blocks release.
+1. Request `https://inordo.vercel.app/api/health`. Expect `503 not_ready` while `OPENAI_API_KEY` is absent. After Deston adds the key and redeploys, require `200 ready`; the body may identify configuration names/status only and must never expose values or test the provider by spending tokens.
+2. Check `npx --yes vercel@56.3.2 logs <PRODUCTION_DEPLOYMENT_URL>` for configuration-name-only failures, route timeouts, server/client boundary violations, or build-time provider activity. Any credential/value leak is an incident and blocks release.
 3. Open `/`, `/login`, and the protected `/app` path signed out. Confirm the protected path redirects safely to login and no tenant data appears.
 4. Sign in with the out-of-band synthetic owner/admin account. Confirm session refresh and logout, then verify the seeded dashboard, 24 active records, 26 edges, decision/risk/item/dependency pages, and documented dependency direction.
-5. After health is ready, submit the canonical synthetic venue update exactly once. Confirm preserved evidence, the actual model name in safe response/persisted metadata, deterministic direct/indirect paths, inert recovery actions, and no item mutation before approval.
-6. Select only a reversible field update, leave a sensitive/human-input action pending, apply once, inspect actor-attributed ordered history, and undo through the compensating operation. Exercise a stale conflict and confirm it applies nothing.
-7. Open the reset review as owner/admin, explicitly confirm the named synthetic project, reset once, and verify 24 records, 26 edges, baseline event date, one workflow-generation advance, and retained archived history. Confirm viewer/nonmember/cross-project attempts fail closed and duplicate/rate-limit behavior is safe.
-8. Repeat the real interface at approximately 375, 768, and 1440 pixels with keyboard-only navigation, visible focus, status announcements, and no horizontal overflow.
-9. Record only date/time, full release SHA, deployment URL, browser/viewport, HTTP status, safe IDs/counts, actual model name, and pass/fail. Update public claims only for steps that passed.
+5. Before contracting legacy DML, use the deployed UI to create and edit one synthetic item, add and remove one dependency, and repeat each unchanged ambiguous retry with its original key when applicable. Confirm the four RPCs succeed, exact replay does not double-write, and the deployed SHA matches the inspected artifact.
+6. After health is ready, submit the canonical synthetic venue update exactly once. Confirm preserved evidence, the actual model name in safe response/persisted metadata, deterministic direct/indirect paths, inert recovery actions, and no item mutation before approval.
+7. Select only a reversible field update, leave a sensitive/human-input action pending, apply once, inspect actor-attributed ordered history, and undo through the compensating operation. Exercise a stale conflict and confirm it applies nothing.
+8. Open the reset review as owner/admin, explicitly confirm the named synthetic project, reset once, and verify 24 records, 26 edges, baseline event date, one workflow-generation advance, and retained archived history. Confirm viewer/nonmember/cross-project attempts fail closed and duplicate/rate-limit behavior is safe.
+9. Repeat the real interface at approximately 375, 768, and 1440 pixels with keyboard-only navigation, visible focus, status announcements, and no horizontal overflow.
+10. Record only date/time, full release SHA, deployment URL, browser/viewport, HTTP status, safe IDs/counts, actual model name, and pass/fail. Update public claims only for steps that passed.
+
+## Native-mutation contract phase
+
+Do not begin this phase until production step 5 has passed on the exact deployed RPC-capable SHA. From that deployed `main`, create a new branch and a single later migration that drops the six legacy contributor write policies and revokes authenticated `INSERT`, `UPDATE`, and `DELETE` on `project_items` and `item_dependencies`. Because `project_items` also has column-level grants, the migration must explicitly revoke `INSERT` on `(id, workspace_id, project_id, item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata, created_by)` and `UPDATE` on `(item_key, item_type, title, description, status, priority, owner_id, start_date, due_date, event_date, metadata)`. Move the direct-DML-denial assertions into a focused contract verifier that proves table privileges and every listed column privilege are absent, then behaviorally proves direct DML is denied while all four RPCs still work. Review and merge that migration in its own PR; it must not be amended into `20260719140000` or bundled with an application rollback.
+
+On the merged contract commit, repeat the clean Node 22/local Supabase gate, linked inventory, dry-run, and exact parity procedure. Set `CONTRACT_MIGRATION_TAIL` to that reviewed 14-digit tail, require the operator to type exactly `apply-$CONTRACT_MIGRATION_TAIL`, push only that migration, and prove parity again. Then verify all four deployed RPC mutations still work and that authenticated direct table DML is denied. Record the first exact RPC-capable Vercel deployment as the minimum rollback artifact after contract.
 
 ## Rollback
 
 Contain a bad release before investigating it. For a pure application/runtime/config regression, return the production alias to the last known-good Vercel deployment:
 
 ```bash
-npx vercel ls
-npx vercel inspect <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>
-npx vercel rollback <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>
-npx vercel inspect <PRODUCTION_DEPLOYMENT_URL>
+npx --yes vercel@56.3.2 ls
+npx --yes vercel@56.3.2 inspect <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>
+npx --yes vercel@56.3.2 rollback <LAST_KNOWN_GOOD_DEPLOYMENT_URL_OR_ID>
+npx --yes vercel@56.3.2 inspect <PRODUCTION_DEPLOYMENT_URL>
 ```
 
-Recheck `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected read/write route after rollback. A Vercel rollback changes the served artifact; it does not reverse an applied database migration or user operation. Keep the database ledger forward-only and use the domain compensation/containment procedures in `docs/rollback-plan.md`.
+Before the contract migration, the retained contributor path makes the prior direct-DML artifact schema-compatible, but that artifact is not generation-safe because its native writes do not check `workflow_generation`. Before serving it, block the reset route at the deployment layer for the whole rollback window; if that containment cannot be proved, block all native mutation surfaces instead. After contract, never roll back to a pre-RPC artifact: it will render reads but cannot write. Roll back only to an inspected RPC-capable deployment, or contain native mutation routes and ship a reviewed forward compatibility migration before serving an older artifact. Recheck `/api/health`, `/`, `/login`, signed-out `/app`, Auth, and the affected read/write route after rollback. A Vercel rollback changes the served artifact; it does not reverse an applied database migration or user operation. Keep the database ledger forward-only and use the domain compensation/containment procedures in `docs/rollback-plan.md`.
 
 If the last known-good deployment is unavailable or the defect requires a source correction, use the following fail-closed preparation in one Bash, Git Bash, or macOS shell. It resolves the exact commit, requires clean synchronized `main`, rejects roots and octopus merges, requires an explicit reviewed mainline for a two-parent merge, reads the linked migration ledger, and automatically chooses the safe path. It never places a credential in an argument or file:
 
@@ -331,7 +338,7 @@ test -z "$(git status --porcelain=v1 --untracked-files=all)"
 git push -u origin HEAD
 ```
 
-Open and review a PR, merge it without force, then return to `main`, pull with `--ff-only`, prove `HEAD == origin/main` with the SHA/divergence guard, rerun the complete gate, and run `npx vercel --prod`. Do not bypass review for a non-containment repair, do not force-push, and do not delete or edit an applied migration. The provider-model metadata validator intentionally accepts both the prior artifact's exact legacy envelope and the current exact envelope during the rollback window; new writes still persist the provider-returned model name. Rotate a key only in the provider and Vercel secret stores if exposure is suspected; never put the replacement in Git or a command argument.
+Open and review a PR, merge it without force, then return to `main`, pull with `--ff-only`, prove `HEAD == origin/main` with the SHA/divergence guard, rerun the complete gate, and run `npx --yes vercel@56.3.2 --prod`. Do not bypass review for a non-containment repair, do not force-push, and do not delete or edit an applied migration. The provider-model metadata validator intentionally accepts both the prior artifact's exact legacy envelope and the current exact envelope during the rollback window; new writes still persist the provider-returned model name. Rotate a key only in the provider and Vercel secret stores if exposure is suspected; never put the replacement in Git or a command argument.
 
 ## Evidence that remains human-owned
 

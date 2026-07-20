@@ -1,5 +1,7 @@
 import {
+  act,
   cleanup,
+  fireEvent,
   render,
   screen,
   waitFor,
@@ -247,6 +249,83 @@ describe("ProjectItemsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps every create control and dialog exit locked while creation is pending", async () => {
+    let resolveCreate:
+      | ((value: {
+          status: "error";
+          message: string;
+          idempotencyKeyDisposition: "retain";
+        }) => void)
+      | undefined;
+    actionMocks.createProjectItemAction.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    renderView();
+
+    await user.click(screen.getByRole("button", { name: "Create item" }));
+    const dialog = screen.getByRole("dialog", { name: "Create project item" });
+    const form = dialog.querySelector("form");
+    await user.type(within(dialog).getByLabelText(/Item key/i), "EVENT-99");
+    await user.type(within(dialog).getByLabelText("Title"), "Confirm accessibility");
+    await user.type(within(dialog).getByLabelText(/Event date/), "2026-09-26");
+    await user.click(within(dialog).getByRole("button", { name: "Create item" }));
+
+    await waitFor(() => expect(form).toHaveAttribute("aria-busy", "true"));
+    for (const label of [
+      /Item key/i,
+      "Title",
+      "Type",
+      "Status",
+      "Priority",
+      "Assignee",
+      /Description/,
+      /Start date/,
+      /Due date/,
+      /Event date/,
+    ]) {
+      expect(within(dialog).getByLabelText(label)).toBeDisabled();
+    }
+    expect(
+      within(dialog).getByRole("button", { name: "Close create item dialog" }),
+    ).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(
+      within(dialog).getByRole("button", { name: /Creating item/ }),
+    ).toBeDisabled();
+
+    const submittedForm = actionMocks.createProjectItemAction.mock.calls[0]?.[1];
+    expect(submittedForm).toBeInstanceOf(FormData);
+    expect((submittedForm as FormData).get("expectedWorkflowGeneration")).toBe(
+      String(workflowGeneration),
+    );
+    expect((submittedForm as FormData).get("idempotencyKey")).toMatch(
+      /^[A-Za-z0-9._:-]{8,200}$/,
+    );
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    fireEvent(dialog, new Event("cancel", { bubbles: true, cancelable: true }));
+    expect(dialog).toHaveAttribute("open");
+
+    await act(async () => {
+      resolveCreate?.({
+        status: "error",
+        message: "Outcome unknown. Retry unchanged.",
+        idempotencyKeyDisposition: "retain",
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(form).toHaveAttribute("aria-busy", "false"));
+    expect(within(dialog).getByLabelText(/Item key/i)).toHaveValue("EVENT-99");
+    expect(within(dialog).getByLabelText("Title")).toHaveValue(
+      "Confirm accessibility",
+    );
+    expect(within(dialog).getByLabelText(/Event date/)).toHaveValue("2026-09-26");
+  });
+
   it("retains one key for identical ambiguous retries and rotates it after success", async () => {
     const user = userEvent.setup();
     actionMocks.createProjectItemAction
@@ -295,6 +374,9 @@ describe("ProjectItemsView", () => {
     expect(secondAttempt).toBeInstanceOf(FormData);
     expect((firstAttempt as FormData).get("idempotencyKey")).toBe(submittedKey);
     expect((secondAttempt as FormData).get("idempotencyKey")).toBe(submittedKey);
+    expect(Array.from((secondAttempt as FormData).entries())).toEqual(
+      Array.from((firstAttempt as FormData).entries()),
+    );
     expect(keyInput?.value).toBe(submittedKey);
 
     await user.click(within(dialog).getByRole("button", { name: "Create item" }));

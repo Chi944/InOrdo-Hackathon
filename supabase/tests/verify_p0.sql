@@ -268,13 +268,13 @@ begin
 end;
 $$;
 
--- Native records are read-only through table APIs: a viewer mutation is
--- privilege-denied and leaves the record unchanged.
+-- Native records remain unavailable to viewers through table APIs. During the
+-- expand window the table grant exists for contributor compatibility, so RLS
+-- may deny with a zero-row update instead of a privilege exception.
 do $$
 declare
   changed_count integer;
   current_title text;
-  denied boolean := false;
 begin
   begin
     update public.project_items
@@ -282,11 +282,10 @@ begin
     where id = '30000000-0000-4000-8000-000000000001';
     get diagnostics changed_count = row_count;
   exception when insufficient_privilege then
-    denied := true;
     changed_count := 0;
   end;
-  if not denied or changed_count <> 0 then
-    raise exception 'viewer direct mutation was not privilege-denied';
+  if changed_count <> 0 then
+    raise exception 'viewer direct mutation was not denied';
   end if;
   select title into current_title
   from public.project_items
@@ -312,7 +311,6 @@ do $$
 declare
   visible_count integer;
   changed_count integer;
-  denied boolean := false;
 begin
   if private.is_workspace_member(
     '10000000-0000-4000-8000-000000000001'::uuid
@@ -333,11 +331,10 @@ begin
     where id = '30000000-0000-4000-8000-000000000001';
     get diagnostics changed_count = row_count;
   exception when insufficient_privilege then
-    denied := true;
     changed_count := 0;
   end;
-  if not denied or changed_count <> 0 then
-    raise exception 'anonymous identity direct mutation was not privilege-denied';
+  if changed_count <> 0 then
+    raise exception 'anonymous identity direct mutation was not denied';
   end if;
 end;
 $$;

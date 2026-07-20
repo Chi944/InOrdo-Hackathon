@@ -94,11 +94,14 @@ describe("production route runtime configuration", () => {
     );
     expect(runbook).not.toContain("migration list --linked --output json");
     expect(runbook).toContain(
-      'EXPECTED_MIGRATION_TAIL="20260719140000"',
+      'EXPAND_MIGRATION_TAIL="20260719140000"',
     );
     expect(runbook).toContain("npx --no-install supabase db push --dry-run");
     expect(runbook).toContain(
-      'test "$MIGRATION_APPROVAL" = "apply-$EXPECTED_MIGRATION_TAIL"',
+      'test "$MIGRATION_APPROVAL" = "apply-$EXPAND_MIGRATION_TAIL"',
+    );
+    expect(runbook).toContain(
+      'EXPECTED_MIGRATION_TAIL="$EXPAND_MIGRATION_TAIL"',
     );
     expect(runbook).toContain("node scripts/verify-migration-parity.mjs");
     expect(
@@ -106,7 +109,7 @@ describe("production route runtime configuration", () => {
     ).toBeLessThan(runbook.indexOf("npx --no-install supabase db push\n"));
     expect(
       runbook.indexOf("node scripts/verify-migration-parity.mjs"),
-    ).toBeLessThan(runbook.indexOf("npx vercel --prod"));
+    ).toBeLessThan(runbook.indexOf("npx --yes vercel@56.3.2 --prod"));
     expect(runbook).toContain("node scripts/applied-migration-paths.mjs");
     expect(runbook).toContain('REVERT_MAINLINE=""');
     expect(runbook).toContain(
