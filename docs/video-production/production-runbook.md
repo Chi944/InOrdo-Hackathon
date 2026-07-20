@@ -73,7 +73,7 @@ Never mix branches. The no-retry edit must not contain a successful-result crop,
 
 ## No-retry capture map
 
-Captures 01 and 02 remain genuine Production landing/workflow/source shots from 0:00–0:54. At 0:54, replace captures 03–05 completely with the following no-result plan. Captures 06 and 07 retain their 2:28–2:47 use. Every overlay below is an editorial label, not part of or a modification to the product interface.
+Captures 01, 02, 06, and 07 retain all verified-success timings: capture 01 at 0:00–0:33 and 2:43–2:47, capture 02 at 0:33–0:54, capture 07 at 2:28–2:38, and capture 06 at 2:38–2:43. At 0:54, replace captures 03–05 completely with the following no-result plan. Every overlay below is an editorial label, not part of or a modification to the product interface.
 
 | Timeline | Voice | Capture | Genuine Production picture | Exact editorial label |
 | --- | --- | --- | --- | --- |
