@@ -10,16 +10,16 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The repository contains an MIT `LICENSE` file.
 - [x] The repository contains architecture, demo, security, QA, and Codex implementation evidence.
 - [x] The implementation log contains summaries only and no private Codex transcript or fabricated Session ID.
-- [x] The canonical alias `https://inordo.vercel.app` is assigned to historical application release `d581b0a9d736bd12046a4314e15b359ec8fd8205`; this identity is not a post-rename HTTP/Auth smoke.
+- [x] The canonical alias `https://inordo.vercel.app` is assigned to production deployment `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` at reviewed `main` SHA `38067619a81c1118c46d9709f6403193fdc0f0c4`.
 
 ## Required public assets and access
 
-- [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public, defaults to `main`, and exposes application SHA `d581b0a9d736bd12046a4314e15b359ec8fd8205`.
+- [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public and defaults to `main`; the current deployed application SHA is recorded separately below.
 - [x] The public MIT license and README return `200`; the full-repository release review plus a current/all-history credential-format scan found no secret, unexpected tracked environment file, private data, or private transcript.
-- [ ] Re-run the signed-out HTTP/Auth checks on canonical `https://inordo.vercel.app` after saving the renamed Supabase Auth URLs. The current anonymous check returned `302`; the prior `200`/`307` smoke belongs to the former alias and must not be reused as new-alias evidence.
+- [ ] Decide whether to remove Vercel Authentication for judge access, then re-run signed-out HTTP/Auth checks on canonical `https://inordo.vercel.app`. The current anonymous `302` is deployment protection, not a Supabase Auth failure.
 - [ ] Confirm the README renders correctly on the public repository, including Mermaid, screenshots/GIFs, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
-- [ ] Capture a final protected-workspace screenshot or short GIF only after authenticated production QA; label synthetic data and do not present a fixture as live GPT-5.6 output.
+- [ ] Capture a final protected-workspace screenshot or short GIF after the funded analysis-to-undo QA; label synthetic data and do not present the failed provider attempt or a fixture as live GPT-5.6 output.
 - [ ] Confirm the synthetic sample path and operator-managed demo/test-account instructions at `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` work without committing a password.
 - [ ] Confirm `<PUBLIC_YOUTUBE_VIDEO_URL>` is publicly viewable, has voiceover, matches the submitted build, and runs no longer than 3:00.
 - [ ] Confirm `<DEVPOST_URL>` is public after submission and every linked asset opens without team credentials.
@@ -48,8 +48,8 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 - [x] All current-branch commands in `docs/qa-checklist.md` are checked with results from the final worktree.
 - [ ] A real owner/admin account completes the authenticated manual checks that are possible in the final build.
-- [ ] Responsive checks pass on the real authenticated route at approximately 375, 768, and 1440 pixels with no horizontal overflow.
-- [ ] Keyboard, focus, headings, landmarks, labels, status text, error announcements, and reduced-motion behavior are verified on the real route.
+- [x] Authenticated local responsive checks pass at 375, 768, and 1440 pixels with no horizontal overflow.
+- [ ] Keyboard, focus, headings, landmarks, labels, status text, error announcements, and reduced-motion behavior are verified on the exact deployed production route.
 - [ ] A private/incognito production pass covers landing, login, protected route, source intake, the last working analysis step, safe approval gating, history visibility, logout, and refresh behavior.
 - [ ] Exactly one funded synthetic live GPT-5.6 analysis is verified with safe metadata only, or all public copy states that a live model call was not verified.
 - [ ] Public repository, production, video, and Devpost links are tested from a browser with no team session.
@@ -78,7 +78,7 @@ Replace every remaining submission token below before publishing. Search with `r
 | Public repository | `https://github.com/Chi944/InOrdo-Hackathon` | Open signed out and confirm the final intended commit and README are visible. |
 | Production application | `https://inordo.vercel.app` | Open incognito and run the production checklist. |
 | Hosting platform/project | Manual Vercel Hobby project `chi944s-projects/inordo` | Confirm the project remains manually deployed with no Git-connected automatic deployment. |
-| Deployed application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` | Compare the public deployment metadata and final submission reference. |
+| Deployed application SHA | `38067619a81c1118c46d9709f6403193fdc0f0c4` | Compare the deployment metadata and final submission reference. |
 | `<DEVPOST_URL>` | Final public Devpost entry. | Open signed out after submission. |
 | `<PUBLIC_YOUTUBE_VIDEO_URL>` | Public voiceover video URL, duration at most 3:00. | Play signed out and compare against the final build. |
 | `<DEMO_ACCESS_INSTRUCTIONS_OR_TEST_PATH>` | Judge-safe test path or separately delivered account instructions; never a committed password. | Follow from a private browser with the approved access method. |

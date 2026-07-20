@@ -4,7 +4,7 @@
 
 - **Track:** Work and Productivity
 - **Deployed application:** `https://inordo.vercel.app`
-- **Reviewed/deployed application SHA:** `d581b0a9d736bd12046a4314e15b359ec8fd8205`
+- **Reviewed/deployed application SHA:** `38067619a81c1118c46d9709f6403193fdc0f0c4`
 - **Public repository:** `https://github.com/Chi944/InOrdo-Hackathon`
 - **Public demo video:** `<PUBLIC_YOUTUBE_VIDEO_URL>`
 - **Devpost submission:** `<DEVPOST_URL>`
@@ -28,7 +28,7 @@ The reviewer can compare source fact with model inference, inspect a readable pa
 
 The Build Week fixture is the fictional **Regional Climate Action Summit 2026**: eight fictional team members, 24 active project records, and 26 explicit dependencies. Its source update moves the event from 12 September to 26 September 2026 because the venue is unavailable. All fixture data is synthetic and no connector is required.
 
-The implemented repository includes the protected workflow interface, strict analysis and operation routes, deterministic traversal, RLS-scoped storage, audit history, undo, and a named-fixture reset contract. Successful analysis finalization now promotes only an eligible, fully linked proposal from `draft` to `ready`; its actions remain inert until explicit selection. Linked database checks and automated tests cover these boundaries. A live OpenAI request and the authenticated production browser journey have not yet been verified, and we will not present either as complete until those checks pass.
+The implemented repository includes the protected workflow interface, strict analysis and operation routes, deterministic traversal, RLS-scoped storage, audit history, undo, and a named-fixture reset contract. Successful analysis finalization promotes only an eligible, fully linked proposal from `draft` to `ready`; its actions remain inert until explicit selection. Linked database checks, authenticated native-mutation/reset smoke, and automated tests cover these boundaries. One OpenAI request reached the provider and failed closed because the organization is unfunded, so no successful model result or complete analysis-to-undo journey is claimed.
 
 ## Problem
 
@@ -113,10 +113,10 @@ No private transcript is committed. The primary shareable evidence will be the S
 
 ## Honest limitations
 
-- No live OpenAI request has been verified in this worktree, so test fixtures must never be presented as live GPT-5.6 output.
-- The authenticated HTTP/browser workflow and incognito production deployment have not yet been verified.
+- One production OpenAI request reached the provider and failed closed because the organization is unfunded; no successful GPT-5.6 result may be claimed and test fixtures must never be presented as live output.
+- Authenticated native project-record, dependency, rollback, and reset smoke is verified; fresh incognito login/logout and the successful analysis-to-undo workflow are not.
 - The guarded Chromium demo journey intercepts provider/database seams; it validates the real UI and public request contracts but is not live authentication, RLS, Supabase RPC, or OpenAI evidence.
-- Responsive checks used a temporary, clearly labeled synthetic preview at 375 × 812, 768 × 1024, and 1440 × 900; they are not production-authenticated evidence.
+- Authenticated local responsive checks passed at 375 × 812, 768 × 1024, and 1440 × 1000 without horizontal overflow; they are not deployed accessibility evidence.
 - Undo supports only eligible reversible field-update operations and stops on stale versions or after-state mismatch.
 - Demo reset is deliberately limited to the configured named synthetic project and preserves archived history.
 - The system has P0 request, graph, and rate bounds; it is not presented as production-ready or as a replacement for deployment-level abuse controls.

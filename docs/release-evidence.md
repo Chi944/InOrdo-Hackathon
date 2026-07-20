@@ -6,13 +6,13 @@ This document records the factual release state produced by the final merged app
 
 | Field | Recorded value |
 | --- | --- |
-| Current production application SHA | `d581b0a9d736bd12046a4314e15b359ec8fd8205` |
+| Current production application SHA | `38067619a81c1118c46d9709f6403193fdc0f0c4` |
 | Production release merge | PR [#9](https://github.com/Chi944/InOrdo-Hackathon/pull/9), merged normally into `main` |
-| Production alias | [inordo.vercel.app](https://inordo.vercel.app), assigned 2026-07-20; post-rename smoke pending |
-| Immutable deployment | `inordo-hackathon-e9t278oun-chi944s-projects.vercel.app` |
-| Vercel deployment ID | `dpl_3JrXGeW9ptujQ8u4yCRDwfo3TNEV` |
+| Production alias | [inordo.vercel.app](https://inordo.vercel.app), assigned to the current production deployment and protected by Vercel Authentication |
+| Immutable deployment | `inordo-bybqa9jnw-chi944s-projects.vercel.app` |
+| Vercel deployment ID | `dpl_C2CffFF14AyqYkNjgs8sYrtHQyQZ` |
 | Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
-| Current merged application `main` SHA | `b674fa41f315d647a7cd15293ac5a34c7309b151` |
+| Current merged application `main` SHA | `38067619a81c1118c46d9709f6403193fdc0f0c4` |
 | Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
 | Approval-copy safety merge | PR [#12](https://github.com/Chi944/InOrdo-Hackathon/pull/12), merged normally into `main` |
 | Evidence-integrity merge | PR [#13](https://github.com/Chi944/InOrdo-Hackathon/pull/13), merged normally into `main` |
@@ -21,9 +21,9 @@ This document records the factual release state produced by the final merged app
 | Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
 | Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
 | Vercel project | `chi944s-projects/inordo`; renamed from the bootstrap name without changing project ID or the immutable historical deployment |
-| Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; migrations aligned through `20260719113000` |
+| Linked Supabase project | Project reference `hctvqaxkxqmqodzeshjm`; hosted migrations aligned through expand tail `20260719140000`; contract tail `20260720190000` remains local-only in PR #17 |
 
-Prompt 14 started as a documentation-only branch at the production SHA, then merged the then-current `main` normally to reconcile release-boundary hardening and approval-copy repair. The production and Preview identities remain separate: production still serves `d581b0a9...`; Preview proves the `72a6fc5...` hardening; current `main` is now `b674fa4...` after the normally merged evidence- and approval-integrity PRs. None of the newer SHAs is production evidence until Deston completes the explicit Vercel terms gate and an exact-SHA production redeploy.
+The current manual Production deployment serves exact reviewed `main` SHA `38067619...`. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026, all seven Production environment names are configured, and the retired `inordo-hackathon.vercel.app` alias has been removed. Anonymous judge access is still blocked by Vercel Authentication and remains an explicit operator decision.
 
 ## Implemented feature evidence
 
@@ -59,7 +59,7 @@ The workflow is:
 7. postvalidate the complete output and atomically persist inert review records; and
 8. require a separate authorized human selection before any operation can mutate project data.
 
-The checked-in default model setting is `gpt-5.6-luna`. Calls are server-only, use strict structured output, have no tools or direct data-mutation path, disable provider storage, and are bounded by application timeouts and a fixed database claim lease. No funded live provider request has been completed, so this release does not claim a verified live GPT-5.6 response.
+The checked-in default model setting is `gpt-5.6-luna`. Calls are server-only, use strict structured output, have no tools or direct data-mutation path, disable provider storage, and are bounded by application timeouts and a fixed database claim lease. One bounded production request reached the provider boundary and failed closed during extraction with safe `model_unavailable` metadata and a provider request ID. The OpenAI organization has no credits, so this release does not claim a successful live GPT-5.6 response.
 
 ## Deterministic graph evidence
 
@@ -87,13 +87,13 @@ The current production application SHA passed the following under Node `22.23.1`
 - clean `npm ci`;
 - `npm run lint`;
 - `npm run typecheck`;
-- `npm run test:run`: 305 tests across 54 Vitest files;
+- `npm run test:run`: 399 tests across 57 Vitest files;
 - `npm run test:e2e`: one Chromium core-demo journey;
 - `npm run build`;
 - `npm audit --omit=dev`: zero production vulnerabilities; and
 - `git diff --check` with a clean synchronized `main`.
 
-Linked Supabase evidence includes aligned local/remote migrations through `20260719113000`, generated database types matching the hosted schema after line-ending normalization, clean public/private schema lint and security advisors, and passing rollback-wrapped `verify_p0.sql`, `verify_analysis_pipeline.sql`, and `verify_operations.sql`. The verification transactions retained no test rows.
+Linked Supabase evidence includes aligned local/remote migrations through `20260719140000`, generated database types matching the hosted schema, clean error-level schema lint, and passing rollback-wrapped SQL verification. The exact deployed RPC artifact passed item create/update, dependency add/remove, exact replay, generation/version rejection, viewer/anonymous/cross-project denial, and reset back to the 24-item/26-edge baseline. Verification transactions and the final reset retained no temporary test records.
 
 The current merged hardening SHA `72a6fc5...` separately passed a clean Node `22.23.1` gate: lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks. Its exact-SHA Preview inspection is recorded below; this does not turn it into production evidence.
 
@@ -111,7 +111,7 @@ Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck
 | Signed-out `/app` | `307` to `/login?next=%2Fapp`; no tenant data returned |
 | `/api/health` with intentionally absent `OPENAI_API_KEY` | Expected `503 not_ready`, `Cache-Control: no-store`, generic configuration-only body |
 
-The six non-OpenAI production variable names are configured; values are intentionally not recorded here. Hosted Supabase Auth still requires an operator-confirmed save replacing the retired production hostname with `https://inordo.vercel.app` and `https://inordo.vercel.app/**`, followed by fresh login/logout verification. The Vercel project runtime default was aligned from Node `24.x` to the required Node `22.x`; the existing Production and Preview artifacts already reported Node `22.x`, so this project-setting correction did not redeploy or alter either artifact. Analysis remains unavailable until the OpenAI key is supplied through the deployment secret store and a new deployment returns `200 ready`.
+All seven Production variable names are configured; values are intentionally not recorded here. Hosted Supabase Auth now uses Site URL `https://inordo.vercel.app` and redirect `https://inordo.vercel.app/**` while retaining the approved Preview and local callbacks. An operator-provisioned admin account completed authenticated project-record, dependency, rollback, and reset smoke. The current deployment reports `READY` and health `200 ready`. Analysis remains unavailable because the OpenAI API organization is unfunded, not because a configuration name is missing.
 
 ## Hardening Preview smoke recorded 2026-07-19
 
@@ -127,15 +127,16 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 
 ## Known limitations and human-owned gates
 
-- No operator-provisioned demo Auth account has completed a production login/session/logout run.
-- No funded live GPT-5.6 request has been verified.
-- Production still serves the Prompt 13 SHA; release-boundary hardening and the approval-copy repair require Deston's explicit confirmation that current Vercel Hobby terms permit the demo before current `main` is redeployed.
-- The exact hardening Preview is protected by Vercel SSO and intentionally lacks Supabase configuration; neither state should be weakened merely to manufacture a public Preview claim.
-- The complete authenticated production evidence -> impact -> selective apply -> history -> undo -> reset journey is pending.
-- Viewer/nonmember/cross-project denial has linked and automated coverage but still needs the final deployed-browser check.
-- Production responsive, keyboard, focus, announcement, and no-overflow checks at approximately 375, 768, and 1440 pixels are pending.
+- The demo Auth account is provisioned and mapped as an admin. Authenticated native-mutation/reset smoke is complete, but a fresh signed-out/login/session/logout matrix remains pending.
+- No successful funded live GPT-5.6 request has been verified; the one production attempt failed closed because the OpenAI organization has no credits.
+- Production serves exact reviewed `main` SHA `38067619...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026.
+- Production is protected by Vercel Authentication. Judges cannot access it anonymously until the operator deliberately changes that setting.
+- The complete authenticated evidence -> impact -> selective apply -> history -> undo journey is pending on OpenAI funding. Reset itself is verified.
+- PR #17 contains the separately reviewed native-write contract migration. It is not merged or hosted; applying it requires the exact new approval `apply-20260720190000` and a fresh parity/denial run.
+- Viewer/nonmember/cross-project denial has hosted rollback and automated coverage but still needs the final deployed-browser check where feasible.
+- Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels. The skip-link focus repair is tested on a follow-up branch and still needs merge/deploy; production announcements and full keyboard order remain pending.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
-- Vercel Hobby eligibility still requires the operator's current terms review; this repository is not legal advice.
+- Vercel Hobby eligibility was confirmed by Deston on July 20, 2026; this repository is not legal advice.
 - The final video, Devpost page, judge access path, team list, and primary Codex `/feedback` Session ID remain human-owned.
 - The hosted live-journey work is tracked in GitHub [issue #4](https://github.com/Chi944/InOrdo-Hackathon/issues/4); automated/guarded evidence does not close it.
 - The [official Devpost schedule](https://openai.devpost.com/details/dates) sets the submission deadline at July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
