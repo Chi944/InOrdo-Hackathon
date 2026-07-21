@@ -105,11 +105,12 @@ This is Deston's read-only release verification. Andres should run it only if he
 
 ```bash
 npx --no-install supabase login
-npx --no-install supabase link --project-ref hctvqaxkxqmqodzeshjm
+# Privately compare the existing local link with the intended Dashboard
+# project before continuing. Never place the project ref in Git or output.
 npx --no-install supabase migration list --linked
 ```
 
-The historical hosted rollout is complete through `20260720190000`. Migration `20260721100000` is a separate policy change that remains pending until its own target check, one-element pending-set proof, dry run, fresh action-time approval, push, parity check, and SQL verifier all pass. Before that gate, the linked ledger must show the hosted tail at `20260720190000` and only `20260721100000` as the expected local-only migration; after an authorized rollout it must show exact parity through `20260721100000`. Do not accept an older remote tail, a remote-only version, a gap, or any additional pending migration.
+The hosted rollout has exact parity through `20260721100000`. The exact `20260721100000_add_analysis_access_policy.sql` migration was applied after a sanitized linked-target match, a second dry run, and owner approval. Post-apply parity found no pending migration and linked database lint passed. Future migrations require their own target check, exact pending-set proof, dry run, fresh action-time approval, push, and parity/lint checks. Do not accept an older remote tail, a remote-only version, a gap, or an unexpected pending migration.
 
 Never run `supabase db reset` against the hosted project. `npx --no-install supabase db reset` is only for a disposable local Supabase stack started with the repository configuration and Docker; it reconstructs the checked-in synthetic fixture and is unrelated to the application's history-preserving demo-reset operation. The application reset requires an authorized owner/admin, the configured synthetic project, privileged server configuration, and the server-held reset guard. Andres's least-privilege setup intentionally cannot reset. Run `supabase db push` only through the reviewed, fail-closed production sequence in `docs/deployment-runbook.md` when the exact migration is intentionally being released.
 
@@ -130,6 +131,8 @@ Open `http://localhost:3000`. In Deston's fully configured environment, verify:
 - the server log never exposes a value. Andres's least-privilege local setup may instead return `503 not_ready` and identify only intentionally absent privileged names from the fixed allowlist; that is expected and does not authorize live analysis.
 
 Stop the development server with `Ctrl+C`.
+
+Current Production at [inordo.vercel.app](https://inordo.vercel.app) was deployed directly from a clean worktree at reviewed source SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`. It is in disabled analysis mode with no OpenAI key in any Vercel environment and no Production Gateway key. Public smoke returned health `200 ready`, landing/login `200`, and a signed-out protected-project redirect. A new live analysis is intentionally unavailable; the fresh authenticated disabled-message smoke remains pending.
 
 ## Automated verification
 

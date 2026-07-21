@@ -1,5 +1,18 @@
 # QA checklist
 
+## 2026-07-21 disabled-mode Production release gate
+
+- [x] Release source `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` passed under Node `22.23.1`/npm `10.9.8`: lint, typecheck, 514 Vitest tests across 64 files, two Playwright Chromium tests, the Next.js `16.2.10` production build, and `npm audit --omit=dev` with zero vulnerabilities.
+- [x] Sanitized linked-target comparison passed without recording a project reference. Exact migration `20260721100000_add_analysis_access_policy.sql` matched SHA-256 `0F4125F0897FE96A942889EF57C8A4CC186F730539597149EB98CABEA4939B1F`; a second dry run and owner approval preceded apply.
+- [x] Post-apply linked migration parity passed through `20260721100000`, no migration remains pending, and linked database lint passed. A nonfatal `pg-delta` catalog-cache warning was followed by the successful dry-run, parity, and lint proofs.
+- [x] The owner attested that all pre-existing InOrdo/shared OpenAI keys were revoked provider-side and the local `OPENAI_API_KEY` entry was removed. Names-only checks found no `OPENAI_API_KEY` in Production, Preview, or Development and no `AI_GATEWAY_API_KEY` in Production.
+- [x] Production `ANALYSIS_MODE` is `disabled`; no current provider key can be spent by the deployment.
+- [x] Direct Vercel CLI deployment from a clean exact-SHA worktree produced `dpl_EygrifPbthqu1sdbrUDNog4deNXf`, `READY`, created 21 July 2026 at 08:59:46 SGT, at [inordo.vercel.app](https://inordo.vercel.app) and the immutable deployment URL. Vercel did not expose a Git SHA for this direct deployment, and no fresh project runtime-setting claim is made.
+- [x] Canonical health returned `200 ready`; landing and login returned `200`; signed-out `/app/projects` returned `307` to login; and the rendered public page contained `WORK & PRODUCTIVITY`.
+- [x] Historical deployment URLs were reachable but cannot spend the owner-attested revoked provider key; the three oldest checked health endpoints returned `503`.
+- [ ] In a fresh authenticated owner/admin session, verify the exact disabled-analysis message and prove that submitting analysis performs no provider request.
+- [ ] Repeat the disabled/read-only path as the judge viewer, complete responsive/keyboard/status-announcement checks, and close the live QA issue only after its remaining acceptance criteria pass.
+
 ## 2026-07-21 read-only judge handoff gate
 
 - [x] The credential-safe procedure defines three distinct real Supabase Auth identities: a real `owner` as audited recording-grant issuer, an `admin` recording operator as target actor, and a `viewer` judge.
@@ -136,13 +149,13 @@ This section records each command or live step individually. Checked items have 
 
 - [x] Deston confirmed on July 20, 2026 that current Vercel Hobby terms permit this small non-commercial hackathon demo; this checklist does not present that confirmation as legal advice.
 - [x] Deston logged in, verified the `chi944s-projects` scope, linked the manual `inordo` project, and confirmed through project metadata that no Git repository/automatic deployment is connected.
-- [x] Production has all seven required names in the correct Production scope. Names/scopes only were recorded; no value was copied.
-- [x] `OPENAI_API_KEY` is configured and the deployed health route returns `200 ready`. One synthetic request failed closed with `model_unavailable` because the organization has no credits; no successful live result is claimed.
+- [x] At the 20 July checkpoint, Production had all seven then-required names in the correct Production scope. Names/scopes only were recorded; no value was copied. The current disabled-mode inventory is recorded at the top of this checklist.
+- [x] At that historical checkpoint, `OPENAI_API_KEY` was configured and one synthetic request failed closed with `model_unavailable`; no successful live result is claimed. The key is now owner-attested revoked and absent from every Vercel environment.
 - [x] Hosted Supabase Auth uses Site URL `https://inordo.vercel.app` and redirect `https://inordo.vercel.app/**`; approved local HTTP and account-scoped Vercel Preview redirects were retained.
 - [x] Preview deploy proved `HEAD == origin/main == 72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c` and divergence `0 0`; deployment `dpl_ChQL8nigyoc1M6LSEGjdS8seP4bD` is `READY`, target Preview, Node `22.x`, and reports the same `githubCommitSha`/`main` ref. Authenticated Vercel curl reached `/` and `/login` with `200` and expected missing-config health `503`; anonymous requests remain intentionally SSO-protected and therefore are not called a public Preview pass.
 - [x] Production deploy `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` proved exact reviewed `main` SHA `dad6b33e8fe99ae134f6949a4c46e8311352691d`, Node `22.x`, `READY`, target `production`, public canonical alias `https://inordo.vercel.app`, and health `200 ready`; Preview still returns Vercel SSO.
 - [ ] In a fresh incognito profile, `/`, `/login`, signed-out `/app`, login/session refresh/logout, and tenant denial behave as documented.
-- [ ] After Deston funds the OpenAI API organization, exactly one synthetic venue analysis retry records only safe actual-model/ID/status metadata and no prompt, source body, output, key, header, or cookie.
+- [ ] If the final video requires a new live result, issue exactly one purpose-specific key and one-use grant, run one synthetic venue analysis, record only safe model/ID/status metadata, then revoke/remove the key and redeploy disabled mode.
 - [ ] Owner/admin completes the canonical evidence -> deterministic impact -> selective apply -> ordered history -> compensating undo -> protected reset flow; viewer/nonmember/cross-project attempts fail closed.
 - [ ] The exact deployed UI passes full authenticated keyboard, visible-focus, and status-announcement checks. Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels; the public Production skip-link path is separately verified.
 - [x] The previous schema-compatible deployment `dpl_8znxpQsmZsBH7hoqWmLqui4HXtqc` is identified; the Vercel rollback path, mandatory reset/native-mutation containment for any pre-RPC artifact, and migration-preserving Git forward-repair path are reviewed.
@@ -482,9 +495,9 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 ## Build Week submission release checks
 
 - [ ] Confirm `https://github.com/Chi944/InOrdo-Hackathon` opens signed out and exposes the final submitted `main` commit, README, screenshots, and MIT license.
-- [ ] Confirm the production URL opens in a private/incognito browser and identifies the exact deployed commit.
-- [ ] Confirm every required deployment variable is configured and passes the exact deployed artifact's strict readiness schema, with server-only values absent from the browser bundle, logs, screenshots, and repository.
-- [ ] Before the pinned Vercel production deploy, review the linked migration list and `db push --dry-run`, type the exact approval for expand tail `20260719140000`, and require `scripts/verify-migration-parity.mjs` to prove exact local/remote parity. After the RPC smoke, repeat that entire gate for the separate contract tail; never push both stages together.
+- [x] The canonical production URL opens signed out, and the operator-side release record ties the direct CLI deployment to clean exact source SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`. Vercel did not expose a Git SHA for this direct deployment, so no page/metadata SHA claim is made.
+- [x] The disabled-mode deployment passes strict base readiness with server-only values absent from the browser, logs, screenshots, and repository. Provider-key names are intentionally absent as recorded above.
+- [x] Expand `20260719140000`, contract `20260720190000`, and policy `20260721100000` each passed their separate target, pending-set, dry-run, approval, push, and parity gates. The current linked pending set is empty.
 - [x] [Vercel documents a 4.5 MB Function request-body limit](https://vercel.com/docs/functions/limitations); application handlers enforce the tighter 24,000/32,000-byte caps while streaming and cancel over-limit bodies without trusting `Content-Length`.
 - [ ] Run exactly one funded synthetic GPT-5.6 analysis and record safe metadata only; do not record a key, prompt, raw provider output, or source body.
 - [ ] Complete the authenticated production smoke path above as owner/admin and repeat read-only/denial checks as viewer and nonmember where feasible.
@@ -498,10 +511,10 @@ This subsection preserves the Prompt 7 checkpoint. Prompt 12 supersedes its orig
 
 | Severity | Issue | Owner | Required resolution or honest fallback |
 | --- | --- | --- | --- |
-| High | The configured production analysis reached OpenAI but failed closed because the API organization has no credits. | Deston / Shared | Add credits or billing in the OpenAI Platform, then run one safe synthetic retry and record only non-secret metadata. Until then, keep public copy explicit that no successful live result exists. |
-| High | Authenticated native-mutation/reset production smoke is recorded, but fresh incognito login/logout and the funded analysis-to-undo journey are incomplete. | Shared | Complete the remaining live smoke matrix on the recorded production URL after provider funding. There is no documentation-only substitute. |
+| High | Production analysis is deliberately disabled and all recorded provider keys are absent or revoked; no successful live GPT-5.6 result is verified. | Deston / Shared | For the video only, authorize one purpose-specific key and exact one-use grant, capture one synthetic result, then revoke/remove the key and redeploy disabled mode. Keep public copy explicit until success is verified. |
+| High | Authenticated native-mutation/reset production smoke is historical, but fresh disabled-message, incognito login/logout, viewer denial, and any authorized analysis-to-undo journey are incomplete. | Shared | Complete the remaining live smoke matrix on the current production URL. There is no documentation-only substitute. |
 | High | Final demo-access, Devpost, and video URLs, team roles, and primary `/feedback` Session ID are not supplied. | Shared | Replace each remaining submission placeholder from its authoritative human/external source and verify every public link before submission. The official deadline is already recorded above. |
-| Resolved | Production is public with Preview-only protection, and contract PR #17/migration `20260720190000` passed hosted parity and denial/RPC verification. | Deston / Shared | Preserve Preview protection and rerun the contract verifier after future privilege changes. |
+| Resolved | Production is public with Preview-only protection; contract migration `20260720190000` and policy migration `20260721100000` passed their recorded hosted parity/lint gates. | Deston / Shared | Preserve Preview protection and rerun the applicable verifiers after future privilege changes. |
 | Medium | Authenticated Playwright does not cover live Supabase/Auth/OpenAI. | Andres / Shared | Use the guarded journey only as UI/contract evidence; complete the real production browser matrix before making live-service claims. |
 
 ## Submission claim rule

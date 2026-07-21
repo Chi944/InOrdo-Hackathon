@@ -35,7 +35,7 @@ Configure values interactively in Vercel's secret store. The commands below cont
 
 Do not point a Preview deployment at the production Supabase database or production reset secret. By default, leave all application variables out of Preview. A public Preview can still be inspected, while `/api/health` honestly returns `503 not_ready` and authenticated/live-analysis paths remain unavailable. Configure Preview variables only if the team provisions a separate disposable Supabase project, separate demo reset guard, and explicitly accepts any model spend.
 
-Base application readiness no longer requires either provider credential. `/api/health` may return `200 ready` while its generic analysis status is disabled or unavailable. A configured status proves environment shape only, not an exact recording grant, Gateway quota, provider funding, or a successful model call. This branch makes no claim about the current Vercel values.
+Base application readiness no longer requires either provider credential. `/api/health` may return `200 ready` while its generic analysis status is disabled or unavailable. A configured status proves environment shape only, not an exact recording grant, Gateway quota, provider funding, or a successful model call. The current names-only release inventory records `ANALYSIS_MODE=disabled`, no `OPENAI_API_KEY` in Production/Preview/Development, and no `AI_GATEWAY_API_KEY` in Production; no value was read or copied.
 
 ### Interactive production configuration
 
@@ -295,9 +295,18 @@ Use a fresh private/incognito browser and the operator-provisioned synthetic acc
 9. Repeat the real interface at approximately 375, 768, and 1440 pixels with keyboard-only navigation, visible focus, status announcements, and no horizontal overflow.
 10. Record only date/time, full release SHA, deployment URL, browser/viewport, HTTP status, safe IDs/counts, actual model name, and pass/fail. Update public claims only for steps that passed.
 
+### Current release checkpoint — 2026-07-21
+
+- Release source `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` passed the exact-main gate under Node `22.23.1` and npm `10.9.8`: lint, typecheck, 514 tests across 64 Vitest files, two Chromium tests, the Next.js `16.2.10` build, and a zero-vulnerability production audit.
+- The production deployment was issued directly from a clean exact-SHA worktree. Deployment `dpl_EygrifPbthqu1sdbrUDNog4deNXf` is `READY`, was created 21 July 2026 at 08:59:46 SGT, and is available at the canonical and immutable deployment URLs. Because this was a direct CLI deployment, Vercel did not expose a Git SHA; do not convert the operator-side worktree proof into a metadata claim. No fresh project runtime-setting line was captured.
+- Canonical health returned `200 ready`; `/` and `/login` returned `200`; signed-out `/app/projects` returned `307` to login; and the rendered public page contained the `WORK & PRODUCTIVITY` marker.
+- The owner attested that all pre-existing InOrdo/shared OpenAI keys were revoked and the local OpenAI key was removed. Names-only Vercel verification found no `OPENAI_API_KEY` in Production, Preview, or Development and no `AI_GATEWAY_API_KEY` in Production. Production analysis is disabled.
+- Historical deployment URLs were reachable but cannot spend the revoked provider key. The three oldest checked health endpoints returned `503`.
+- The fresh authenticated disabled-message smoke remains pending. Do not describe the current public checks as Auth, RLS, viewer-denial, or live-provider evidence.
+
 ## Analysis-policy rollout and containment
 
-Migration `20260721100000_add_analysis_access_policy.sql` and `supabase/tests/verify_analysis_access_policy.sql` are committed local artifacts only. No linked/hosted migration, policy verifier, provider request, or credential change is claimed by their implementation. Before enabling either provider route, the release operator must review the linked ledger and dry run, obtain the separate migration approval required by the release plan, apply only the reviewed migration, prove exact parity, and run the rollback-wrapped policy verifier. Then verify health and a real viewer-denial path before any recording grant is issued.
+Migration `20260721100000_add_analysis_access_policy.sql`, SHA-256 `0F4125F0897FE96A942889EF57C8A4CC186F730539597149EB98CABEA4939B1F`, is applied to the sanitized identity-matched linked project. The action followed the separate second dry run and owner approval. Post-apply parity passed through `20260721100000`, no migration remains pending, and linked database lint passed. A nonfatal `pg-delta` catalog-cache warning was followed by the successful dry-run, parity, and lint proofs; it is not a failed migration. Before enabling either provider route, complete the real authenticated disabled/viewer-denial check and every mode-specific credential, quota, and grant gate.
 
 For normal public availability, prefer `ANALYSIS_MODE=disabled`, or `auto` only after the dedicated Gateway key's nonrenewing hard quota and disabled auto-top-up are verified. Recording is an exceptional one-attempt window: issue one private grant for the exact actor/project/normalized-source tuple, set `ANALYSIS_MODE=recording`, deploy, submit that exact source once, verify the grant/request link through the owner-only metadata boundary, and immediately perform the credential teardown in the release plan. Recording never falls back, and auto never uses the OpenAI key.
 
@@ -316,7 +325,7 @@ Containment is not complete merely because the UI hides analysis. Keep the analy
 
 ## Archived native-mutation contract verification
 
-The native-DML contract rollout is complete through `20260720190000_contract_project_record_mutations.sql`. Do not create or apply another native-DML contract migration as part of this release. The only live database action pending in this runbook is the separately reviewed analysis-policy migration `20260721100000_add_analysis_access_policy.sql`.
+The native-DML contract rollout is complete through `20260720190000_contract_project_record_mutations.sql`, and the separate analysis-policy migration `20260721100000_add_analysis_access_policy.sql` is applied with exact post-apply parity. Do not create or apply another native-DML contract migration as part of this release. Any correction must be a new reviewed forward migration.
 
 Keep the completed contract as a verification boundary: prove authenticated direct `INSERT`, `UPDATE`, and `DELETE` remain denied on `project_items` and `item_dependencies`, including the contracted column privileges, while all four project-record RPC mutations still work and exact replays do not double-write. A contract regression requires a new reviewed forward repair migration; never edit or replay the completed contract migration.
 
@@ -455,4 +464,4 @@ Open and review a PR, merge it without force, then return to `main`, pull with `
 
 ## Evidence that remains human-owned
 
-The production alias/deployment identity, linked Supabase project, hosted Auth URLs, prior seven-name Production inventory, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The new `ANALYSIS_MODE`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` state, linked policy migration/verifier, one-use recording grant, capped-Gateway controls, successful analysis-to-undo smoke, final deployed accessibility and judge-access checks, public video/Devpost links, team/legal details, and primary `/feedback` Session ID remain later release-plan evidence. Placeholders are not release evidence and must never be filled with invented values.
+The production alias/deployment identity, linked Supabase migration result, hosted Auth URLs, provider-key containment, demo account provisioning, and Deston's July 20, 2026 Vercel Hobby eligibility confirmation are recorded in `docs/release-evidence.md`; no secret value or Auth UUID is recorded. The authenticated disabled-message/viewer-denial smoke, any future one-use recording grant, capped-Gateway controls if ever enabled, successful analysis-to-undo smoke, final deployed accessibility and judge-access checks, public video/Devpost links, team/legal details, and primary `/feedback` Session ID remain later release-plan evidence. Placeholders are not release evidence and must never be filled with invented values.

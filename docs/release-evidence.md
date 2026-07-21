@@ -7,7 +7,7 @@ This document records the factual release state produced by the final merged app
 - The repository contains an authoritative 2:47 storyboard, separate verbatim Andres A1–A5 and Deston D1–D4 voiceover masters, a seven-capture Production runbook, and an exact 1280×720 thumbnail brief.
 - The package requires genuine Production frames, synthetic data, a privacy check before every take, bounded server-only GPT-5.6 work, deterministic TypeScript dependency reach, inert model output, and human approval before internal mutations.
 - Raw captures, voice files, edit projects, browser profiles, exports, credentials, account identifiers, and private notes remain outside Git under the owner-managed media workspace.
-- No recording, provider attempt, key revocation, media inspection, export, upload, or publication is claimed by this documentation step. Those remain explicit release gates.
+- No recording, new provider attempt, media inspection, export, upload, or publication is claimed by this documentation step. The owner later attested that every pre-existing InOrdo/shared OpenAI key was revoked and the local OpenAI key was removed; this does not satisfy the separate purpose-specific recording-key lifecycle gate.
 - After the single authorized Production analysis is captured and the raw file is verified playable, the purpose-specific recording key must be revoked immediately, removed from Vercel Production, and followed by the approved safe-mode redeployment before public handoff.
 - Reviewer reconciliation added mutually exclusive verified-success/no-retry capture and thumbnail contracts. The no-retry branch covers 0:54–2:28 entirely with genuine Production fail-closed or preserved synthetic state, exact editorial labels, the approved replacement D1, and the exact `Bounded AI contract + deterministic dependency graph` badge; it cannot imply a new paid result.
 - Deston's unchanged 29-word D4 now has a blocking timed-intelligibility gate: it must fit its 10-second slot without rushing before Production recording begins, or the specification owner must resolve the wording/timeline.
@@ -23,13 +23,13 @@ This document records the factual release state produced by the final merged app
 
 | Field | Recorded value |
 | --- | --- |
-| Current production application SHA | `dad6b33e8fe99ae134f6949a4c46e8311352691d` |
-| Production release merge | PR [#20](https://github.com/Chi944/InOrdo-Hackathon/pull/20), merged normally into `main` after PRs #17, #18, and #19 |
+| Current release source SHA | `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` |
+| Release source proof | Direct Vercel CLI deployment from a clean worktree at the exact reviewed `main` SHA; Vercel did not expose a Git SHA for this direct deployment |
 | Production alias | Public [inordo.vercel.app](https://inordo.vercel.app), assigned to the current production deployment; Vercel Authentication protects Preview only |
-| Immutable deployment | `inordo-99qmyjlj1-chi944s-projects.vercel.app` |
-| Vercel deployment ID | `dpl_EwTWxyQ4j8F7P4Dk3wrh5whTP9RA` |
-| Production metadata | `READY`, `production`, Node `22.x`, `githubCommitSha` equal to the production SHA above |
-| Current merged application `main` SHA before this documentation-only reconciliation | `dad6b33e8fe99ae134f6949a4c46e8311352691d` |
+| Immutable deployment | [inordo-oq86578uo-chi944s-projects.vercel.app](https://inordo-oq86578uo-chi944s-projects.vercel.app) |
+| Vercel deployment ID | `dpl_EygrifPbthqu1sdbrUDNog4deNXf` |
+| Production metadata | `READY`, created 21 July 2026 at 08:59:46 SGT; no fresh project-runtime-setting claim is inferred from this deployment |
+| Current merged application `main` SHA before this release-evidence branch | `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` |
 | Hardening release merge | PR [#11](https://github.com/Chi944/InOrdo-Hackathon/pull/11), merged normally into `main` |
 | Approval-copy safety merge | PR [#12](https://github.com/Chi944/InOrdo-Hackathon/pull/12), merged normally into `main` |
 | Evidence-integrity merge | PR [#13](https://github.com/Chi944/InOrdo-Hackathon/pull/13), merged normally into `main` |
@@ -42,9 +42,9 @@ This document records the factual release state produced by the final merged app
 | Preview metadata | `READY`, Preview, Node `22.x`, `githubCommitSha` `72a6fc5a02a55ec5efe52e0b14f8ac831ec2685c`, ref `main` |
 | Vercel project runtime default | Node `22.x`, aligned with `package.json` and both recorded deployment artifacts |
 | Vercel project | `chi944s-projects/inordo`; renamed from the bootstrap name without changing project ID or the immutable historical deployment |
-| Linked Supabase project | Intended linked project identity owner-confirmed; hosted migrations aligned through contract tail `20260720190000`; policy migration `20260721100000` remains pending |
+| Linked Supabase project | Sanitized identity match completed; hosted migrations have exact parity through `20260721100000`; no project reference is recorded |
 
-The current manual Production deployment serves exact reviewed `main` SHA `dad6b33e...`. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026, all seven Production environment names are configured, and the retired `inordo-hackathon.vercel.app` project domain and alias have been removed. Anonymous Production access is verified; Preview remains intentionally protected.
+The current manual Production deployment was created from a clean exact-SHA worktree at reviewed `main` SHA `4f54cc1...`. This is operator-side source evidence: the direct CLI deployment did not expose a Vercel Git SHA, so this record does not claim that it did. Deston confirmed Vercel Hobby eligibility for this hackathon demo on July 20, 2026. Anonymous Production access is verified; Preview remains intentionally protected.
 
 ## Implemented feature evidence
 
@@ -103,24 +103,41 @@ The operation boundary is implemented in `src/features/operations/`, the apply/h
 
 ## Verification record
 
-The current production application SHA passed the following under Node `22.23.1` and npm `10.9.8`:
+The exact release source SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` passed the following under Node `22.23.1` and npm `10.9.8`:
 
 - clean `npm ci`;
 - `npm run lint`;
 - `npm run typecheck`;
-- `npm run test:run`: 400 tests across 58 Vitest files;
+- `npm run test:run`: 514 tests across 64 Vitest files;
 - `npm run test:e2e`: two Chromium journeys, including the deployed skip-link focus invariant;
 - `npm run build`;
 - `npm audit --omit=dev`: zero production vulnerabilities; and
-- `git diff --check` with a clean synchronized `main`.
+- `git diff --check` with a clean synchronized `main`; and
+- the Next.js `16.2.10` production build from the exact source.
 
-Linked Supabase evidence includes aligned local/remote migrations through `20260720190000`, generated database types matching the hosted schema, clean error-level schema lint, and passing rollback-wrapped SQL verification. The exact deployed RPC artifact passed item create/update, dependency add/remove, exact replay, generation/version rejection, viewer/anonymous/cross-project denial, and reset back to the 24-item/26-edge baseline. The post-contract verifier additionally proves legacy table/column writes are denied, all four guarded RPCs remain executable, member reads remain, and true nonmembers are rejected. Verification transactions and the final reset retained no temporary test records.
+Linked Supabase evidence includes the exact migration `20260721100000_add_analysis_access_policy.sql`, SHA-256 `0F4125F0897FE96A942889EF57C8A4CC186F730539597149EB98CABEA4939B1F`. It was applied only after the sanitized linked-target comparison, a second exact dry run, and owner approval. Post-apply migration parity passed through `20260721100000`, the pending set was empty, and linked database lint passed. A nonfatal `pg-delta` catalog-cache warning occurred during the release sequence; the subsequent successful dry-run, parity, and lint proofs are authoritative. Earlier linked evidence includes generated database types matching the hosted schema and passing rollback-wrapped SQL verification. The exact deployed RPC artifact passed item create/update, dependency add/remove, exact replay, generation/version rejection, viewer/anonymous/cross-project denial, and reset back to the 24-item/26-edge baseline. The post-contract verifier additionally proves legacy table/column writes are denied, all four guarded RPCs remain executable, member reads remain, and true nonmembers are rejected. Verification transactions and the final reset retained no temporary test records.
 
 The current merged hardening SHA `72a6fc5...` separately passed a clean Node `22.23.1` gate: lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, and whitespace checks. Its exact-SHA Preview inspection is recorded below; this does not turn it into production evidence.
 
 The approval-copy repair commit `90ac845...` passed a fresh Node `22.23.1` clean install, lint, typecheck, 359 Vitest tests across 55 files, one guarded Chromium journey, production build, zero production dependency vulnerabilities, focused independent re-review, and PR #12 CI before its normal merge as current `main` `debe2be4...`. This closes the product-copy security gate without claiming a credentialed browser run.
 
 Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck, 305 Vitest tests across 54 files, and the Next.js 16.2.10 production build. After merging current `main`, Node `22.23.1` and npm `10.9.8` completed a fresh `npm ci`, lint, typecheck, 358 Vitest tests across 55 files, one guarded Chromium journey, the Next.js 16.2.10 production build, and a zero-vulnerability production dependency audit. Final staged/unstaged whitespace checks are recorded in `docs/qa-checklist.md` immediately before the merge-resolution commit.
+
+## Current disabled-mode Production smoke recorded 2026-07-21
+
+| Check | Result |
+| --- | --- |
+| Deployment | `dpl_EygrifPbthqu1sdbrUDNog4deNXf` is `READY`; canonical [inordo.vercel.app](https://inordo.vercel.app) and the immutable deployment URL are reachable |
+| Release source | Direct CLI deployment from a clean worktree at exact SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`; Vercel did not expose a Git SHA for this direct deployment |
+| `/api/health` | `200 ready` on the canonical host |
+| `/` and `/login` | `200` |
+| Signed-out `/app/projects` | `307` to login; no protected project content returned |
+| Public marker | Rendered `WORK & PRODUCTIVITY` marker present |
+| Provider containment | Production `ANALYSIS_MODE` is `disabled`; `OPENAI_API_KEY` is absent from Production, Preview, and Development; `AI_GATEWAY_API_KEY` is absent from Production |
+| Historical deployments | Reachable artifacts cannot spend the owner-attested revoked OpenAI key; the three oldest checked health endpoints returned `503` |
+| Authenticated disabled state | Pending: verify the exact disabled message in a fresh authenticated session before judge handoff |
+
+The owner attested that every pre-existing InOrdo/shared OpenAI key was revoked provider-side and that the local `OPENAI_API_KEY` entry was removed. Environment verification was names-only; no value was read or recorded. This smoke proves public routing, base readiness, and provider-key containment, not a live model response, authenticated RLS journey, or fresh project runtime-setting value.
 
 ## Historical pre-rename production smoke recorded 2026-07-19
 
@@ -149,10 +166,10 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 ## Known limitations and human-owned gates
 
 - The demo Auth account is provisioned and mapped as an admin. Authenticated native-mutation/reset smoke is complete, but a fresh signed-out/login/session/logout matrix remains pending.
-- No successful funded live GPT-5.6 request has been verified; the one production attempt failed closed because the OpenAI organization has no credits.
-- Production publicly serves exact reviewed `main` SHA `dad6b33e...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026. Preview remains protected by Vercel Authentication.
-- The complete authenticated evidence -> impact -> selective apply -> history -> undo journey is pending on OpenAI funding. Reset itself is verified.
-- PR #17 and contract migration `20260720190000` are merged and hosted. Exact typed approval, linked parity/type checks, error-level lint, and the direct-DML/RPC/replay/member/nonmember verifier passed.
+- No successful funded live GPT-5.6 request has been verified. Production analysis is disabled and no usable OpenAI or Gateway provider key is present in the recorded Vercel scopes.
+- Production was deployed directly from a clean exact-SHA worktree at reviewed `main` SHA `4f54cc1...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026. Preview remains protected by Vercel Authentication.
+- The complete authenticated evidence -> impact -> selective apply -> history -> undo journey requires a separately authorized one-use recording key and grant. Reset itself is verified.
+- PR #17 and contract migration `20260720190000` are merged and hosted. Policy migration `20260721100000` is also applied with exact checksum, approval, post-apply parity, empty pending set, and linked lint evidence.
 - Viewer/nonmember/cross-project denial has hosted rollback and automated coverage but still needs the final deployed-browser check where feasible.
 - Authenticated local no-overflow checks passed at 375, 768, and 1440 pixels. The skip-link focus repair is merged, deployed, and verified on public Production; status announcements and the complete authenticated keyboard order remain pending.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.

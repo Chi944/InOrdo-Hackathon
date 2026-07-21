@@ -8,6 +8,14 @@
 - Reverse user-visible record changes through authorized compensating operations with current versions.
 - Stop on a conflict; never force an overwrite or decrement an item version.
 
+## Current disabled-mode containment baseline — 2026-07-21
+
+- The current release source is reviewed `main` SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`. Production deployment `dpl_EygrifPbthqu1sdbrUDNog4deNXf` is `READY` at the canonical host and was created by direct CLI deployment from a clean exact-SHA worktree. Vercel did not expose a Git SHA for that direct deployment; the source proof is the operator-side worktree gate.
+- Migration `20260721100000_add_analysis_access_policy.sql`, SHA-256 `0F4125F0897FE96A942889EF57C8A4CC186F730539597149EB98CABEA4939B1F`, is applied. Post-apply parity is exact through `20260721100000`, the pending set is empty, and linked database lint passed. Never delete or edit this migration; correct it only with a new reviewed forward migration.
+- The owner attested that every pre-existing InOrdo/shared OpenAI key was revoked and the local OpenAI key was removed. Names-only Vercel checks found no OpenAI key in Production, Preview, or Development and no Gateway key in Production. Production analysis mode is disabled.
+- Historical deployments were reachable during containment checking but cannot spend the revoked provider key. The three oldest checked health endpoints returned `503`. Do not restore a historical alias merely because its health endpoint responds.
+- Canonical base health and signed-out routing passed. The authenticated disabled-message/no-provider-request smoke is still pending, so this baseline is not evidence that the authenticated policy UX passed.
+
 ## Before release
 
 Record the deployed application commit, remote migration ledger, affected project/workspace IDs, and the current backup/PITR status. Do not record credentials or raw private evidence. The known-good application commit before Prompt 5 is `1aa95f2` (`feat: add Supabase authentication and data access`). The known-good application commit before Prompt 7 is `2c9c11b` (`feat: add project records and dependency engine`). The known-good application commit before Prompt 9 is `7e7405a` (`feat: analyze project changes with GPT-5.6`).
@@ -105,7 +113,7 @@ Before restoring analysis traffic, require all of the following:
 
 If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.
 
-The policy migration `20260721100000_add_analysis_access_policy.sql` is not yet applied to the linked/hosted project. Its linked migration parity, `supabase/tests/verify_analysis_access_policy.sql`, privilege inventory, health status, and real viewer-denial check remain release-plan gates. Local tests and mocked provider/database seams do not satisfy those gates.
+The policy migration `20260721100000_add_analysis_access_policy.sql` is applied to the identity-confirmed linked/hosted project. Its exact checksum, second dry run, owner approval, post-apply parity, empty pending set, and linked database lint are recorded. Canonical health is ready and provider credentials are contained, but the real authenticated disabled-message and viewer-denial checks remain release-plan gates. Local tests and mocked provider/database seams do not satisfy those browser gates.
 
 ## Prompt 13 evidence-integrity rollback
 
