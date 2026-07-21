@@ -349,6 +349,7 @@ The primary task returned this identifier through `/feedback`. Only the identifi
 ## 2026-07-22 — Public media, feedback evidence, and Devpost finalization handoff
 
 - Uploaded the verified-success demo at `https://youtu.be/eDPB6wtkFrM`. A no-session metadata check confirmed the title **InOrdo — Evidence-Backed Project Recovery | OpenAI Build Week Demo**, a 164-second runtime, and available audio formats. YouTube reported `Unlisted`, so changing visibility to `Public` remains a submission gate.
+- After the owner changed visibility, a July 22 no-session metadata recheck reported `public`; the reviewed title, 164-second runtime, and audio formats remained available.
 - Recorded primary Codex `/feedback` Session ID `019f70e9-a3ae-7e43-b97a-f62016c32629` as the shareable identifier only; no private task transcript is included.
 - Saved the 1280×720 cover and four sanitized gallery images in Devpost with captions covering the workspace, deterministic impact paths, human approval, and reversible history.
 - Completed Devpost's public fields and private judge handoff, updated the canonical repository link, and reached the finalization page at four of five steps with no form errors. The terms checkbox remains unchecked and **Submit project** was not clicked; explicit human agreement and submission authority remain required.

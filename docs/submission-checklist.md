@@ -21,7 +21,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [x] The final video includes genuine protected-workspace views from the funded analysis-to-undo QA, labels the synthetic workspace, and never presents a fixture or failed attempt as live GPT-5.6 output.
 - [x] The judge-only viewer credential and testing instructions are saved privately in Devpost; judge QA confirmed saved-state view access and denied or disabled provider and mutation controls without committing a password.
-- [ ] Change `https://youtu.be/eDPB6wtkFrM` from `Unlisted` to `Public`, then confirm it remains viewable without sign-in. The reviewed local export contains the Deston/Andres voiceover and matches the submitted build; YouTube reports a 2:44 duration and audio formats.
+- [x] Confirm `https://youtu.be/eDPB6wtkFrM` is `Public` and remains viewable without sign-in. The reviewed local export contains the Deston/Andres voiceover and matches the submitted build; YouTube reports a 2:44 duration and audio formats.
 - [x] Confirm the public Devpost project URL `https://devpost.com/software/chimera-i4oz8d` opens without a team session. Recheck its hackathon-submission state after finalization.
 
 ## Product and claim review
@@ -33,7 +33,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The Codex explanation names concrete work packages and decisions instead of making a generic “AI helped us code” claim.
 - [x] The video never presents a fixture, test double, prerecorded mock, or expected result as a live model response.
 - [x] The proposal-readiness mismatch is resolved by the invariant-checked server-owned transition and its linked reconciliation; non-ready states still fail closed.
-- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only YouTube public visibility, the final-commit/link pass, and submission gates.
+- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only the final-commit/link pass and submission gates.
 
 ## Production video package
 
@@ -96,7 +96,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 ## Submission reference inventory
 
-The submission references below are recorded, and a final scan for the former video and feedback tokens must return no matches before merge. YouTube visibility remains a separate gate.
+The submission references below are recorded, and a final scan for the former video and feedback tokens must return no matches before merge. Public YouTube visibility is verified.
 
 | Placeholder | Human-supplied value | Verification |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ The submission references below are recorded, and a final scan for the former vi
 | Hosting platform/project | Manual Vercel Hobby project `chi944s-projects/inordo` | Confirm the project remains manually deployed with no Git-connected automatic deployment. |
 | Deployed application SHA | `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` | Compare the clean-worktree release record and final submission reference; the direct Vercel deployment does not expose a Git SHA in metadata. |
 | Public Devpost project | `https://devpost.com/software/chimera-i4oz8d` | Verified signed out; recheck after final hackathon submission. |
-| YouTube video | `https://youtu.be/eDPB6wtkFrM` | The link resolves without sign-in and reports 2:44 with audio formats, but metadata currently reports `Unlisted`; change it to `Public` and recheck. |
+| YouTube video | `https://youtu.be/eDPB6wtkFrM` | Public; resolves without sign-in and reports 2:44 with audio formats. |
 | Judge demo access | Judge-only credentials and instructions are saved privately in Devpost; no password is committed. | Viewer QA confirmed read access and denied/disabled provider and mutation controls. |
 | Primary `/feedback` Session ID | `019f70e9-a3ae-7e43-b97a-f62016c32629` | Exact identifier only; no private transcript is attached. |
 | Public team copy | Deston — Engineering, Data & AI Safety; Andres — Product Design & Experience. | Andres is confirmed on the Devpost team; use the same role copy in final media. |
@@ -117,4 +117,4 @@ Two setup examples are deliberately not submission fields: `<SUPABASE_PROJECT_RE
 
 - [x] Andres-owned UX, responsive/accessibility, screenshots, and copy work is integrated and verified; Andres is confirmed on the Devpost team.
 - [x] Deston-owned database/server contracts, Production configuration, bounded model call, readiness invariants, operation safety, and teardown are verified.
-- [ ] Shared finalization — set YouTube visibility to `Public`, record the final merged commit in Devpost, accept the official rules and Devpost terms, submit, verify the public entry, and enforce the deadline lock. The `/feedback` reference, team media rights, **InOrdo Hackathon Team** MIT attribution, and D4 timing are complete.
+- [ ] Shared finalization — record the final merged commit in Devpost, accept the official rules and Devpost terms, submit, verify the public entry, and enforce the deadline lock. The public video, `/feedback` reference, team media rights, **InOrdo Hackathon Team** MIT attribution, and D4 timing are complete.

@@ -1,6 +1,6 @@
 # InOrdo final release evidence
 
-This document records the factual release state produced by the merged application review, verified Production recording, post-recording teardown, live browser QA, uploaded demo video, primary Codex feedback reference, and completed Devpost draft. It separates that evidence from YouTube public visibility, the final repository reference, and explicit final-submission checks that remain.
+This document records the factual release state produced by the merged application review, verified Production recording, post-recording teardown, live browser QA, public demo video, primary Codex feedback reference, and completed Devpost draft. It separates that evidence from the final repository reference and explicit final-submission checks that remain.
 
 ## Production recording and video package status — 2026-07-21
 
@@ -140,7 +140,7 @@ Before reconciliation, the Prompt 14 documentation branch passed lint, typecheck
 | Current health and mode | `/api/health` is `ready`; `ANALYSIS_MODE` is `disabled`; new paid analysis is disabled while the verified saved result remains viewable |
 | Devpost handoff | Andres is a confirmed Devpost team member; judge-only credentials and instructions are saved privately in Devpost |
 
-No private ID, email, password, project reference, provider-key metadata, grant ID, or request ID is recorded. The verified review export is uploaded at `https://youtu.be/eDPB6wtkFrM`, the thumbnail and four sanitized gallery images are saved in Devpost, and primary Codex feedback Session ID `019f70e9-a3ae-7e43-b97a-f62016c32629` is recorded without a transcript. The link resolves without sign-in but metadata reports `Unlisted`; public-video compliance and final Devpost submission are not claimed.
+No private ID, email, password, project reference, provider-key metadata, grant ID, or request ID is recorded. The verified review export is public at `https://youtu.be/eDPB6wtkFrM`, the thumbnail and four sanitized gallery images are saved in Devpost, and primary Codex feedback Session ID `019f70e9-a3ae-7e43-b97a-f62016c32629` is recorded without a transcript. A no-session metadata check confirmed the reviewed title, 164-second runtime, public visibility, and audio formats; final Devpost submission is not claimed.
 
 ## Historical pre-recording disabled-mode Production smoke — 2026-07-21
 
@@ -172,7 +172,7 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 
 ## Known limitations and human-owned gates
 
-- Exactly one owner, one admin recording operator, and one viewer judge were verified as three distinct real Auth identities. The operator journey and judge read/denial QA are complete. A fresh isolated Production session covered signed-out redirect, login/session refresh, five authenticated routes at 375/768/1440, keyboard focus, reduced-motion preference, no overflow, and viewer-only controls. The YouTube link resolves without sign-in with the reviewed title, 2:44 duration, and audio formats, but metadata reports `Unlisted`.
+- Exactly one owner, one admin recording operator, and one viewer judge were verified as three distinct real Auth identities. The operator journey and judge read/denial QA are complete. A fresh isolated Production session covered signed-out redirect, login/session refresh, five authenticated routes at 375/768/1440, keyboard focus, reduced-motion preference, no overflow, and viewer-only controls. The public YouTube link resolves without sign-in with the reviewed title, 2:44 duration, and audio formats.
 - One purpose-specific funded GPT-5.6 Production run succeeded and its saved result remains viewable. Production analysis is now disabled, zero active InOrdo provider keys remained after teardown, and no usable OpenAI or Gateway key is configured for the current deployment.
 - Production was redeployed directly from the clean exact-SHA release worktree at reviewed `main` SHA `4f54cc1...`; Deston confirmed current Vercel Hobby eligibility on July 20, 2026. Preview remains protected by Vercel Authentication.
 - The authenticated evidence -> direct/indirect impact -> recovery proposal -> selective apply -> linked history -> compensating undo journey is verified for one internal date action with explicit human response.
@@ -181,7 +181,7 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 - Fresh isolated Production checks passed at 375, 768, and 1440 pixels with no horizontal overflow, valid main/heading structure, keyboard focus, reduced-motion preference, and session refresh. The skip-link focus repair is merged and deployed. Status announcements, dialog focus return, and non-color meaning retain automated component/Playwright evidence and are a documented nonblocking evidence limitation rather than another provider-run gate.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
 - Vercel Hobby eligibility was confirmed by Deston on July 20, 2026; this repository is not legal advice.
-- The judge-only credentials and instructions are saved privately in Devpost, and Andres is a confirmed Devpost team member. The replacement viewer credential was rechecked against Production without exposing its value: authentication reached the synthetic workspace, analysis controls were disabled, the read-only notice was present, and sign-out returned to the login page. The public Devpost project and team-role copy are recorded. The uploaded 2:44.067 video, thumbnail, sanitized gallery, team media/likeness rights, temporary **InOrdo Hackathon Team** attribution, D4 timing, and primary Codex `/feedback` Session ID are complete. YouTube public visibility, the final merged repository/link pass, explicit rules acceptance, and final-submit approval remain human-owned.
+- The judge-only credentials and instructions are saved privately in Devpost, and Andres is a confirmed Devpost team member. The replacement viewer credential was rechecked against Production without exposing its value: authentication reached the synthetic workspace, analysis controls were disabled, the read-only notice was present, and sign-out returned to the login page. The public Devpost project and team-role copy are recorded. The public 2:44.067 video, thumbnail, sanitized gallery, team media/likeness rights, temporary **InOrdo Hackathon Team** attribution, D4 timing, and primary Codex `/feedback` Session ID are complete. The final merged repository/link pass, explicit rules acceptance, and final-submit approval remain human-owned.
 - GitHub issue [#4](https://github.com/Chi944/InOrdo-Hackathon/issues/4) is closed after the authenticated Production journey, viewer-denial checks, teardown, and release evidence were completed.
 - The [official Devpost schedule](https://openai.devpost.com/details/dates) sets the submission deadline at July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
 
@@ -189,7 +189,7 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 
 The confirmed repository, production host, platform/project, deployed application SHA, private judge handoff, Andres's Devpost membership, uploaded video, and primary Codex feedback reference are recorded:
 
-- YouTube video: `https://youtu.be/eDPB6wtkFrM` (2:44 with audio formats; `Unlisted` at final preflight, so public visibility remains required)
+- YouTube video: `https://youtu.be/eDPB6wtkFrM` (public, 2:44 with audio formats, and verified without sign-in)
 - Public Devpost project: `https://devpost.com/software/chimera-i4oz8d` (verified signed out; hackathon finalization remains pending)
 - Primary Codex feedback Session ID: `019f70e9-a3ae-7e43-b97a-f62016c32629` (identifier only; no transcript)
 - Public team copy: Deston — Engineering, Data & AI Safety; Andres — Product Design & Experience
