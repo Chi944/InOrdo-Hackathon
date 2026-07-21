@@ -76,7 +76,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] Exact Production passed fresh isolated responsive, landmark/heading, keyboard-focus, reduced-motion, session, and viewer-control checks; status/error announcements, dialog focus return, accessible labels, and non-color meaning retain automated component/Playwright evidence.
 - [x] A fresh isolated no-cookie Production pass covered signed-out redirect, judge login/session refresh, saved source/result/history visibility, safe viewer gating, and closure; the existing authenticated pass separately verified logout and safe invalid-password feedback.
 - [x] Exactly one funded synthetic live GPT-5.6 Production analysis is verified with safe, non-secret evidence only; public copy states that its saved result remains viewable while new paid analysis is disabled.
-- [ ] After the documentation closeout merges and YouTube is `Public`, test the final repository commit, Production, Devpost project, demo-access path, and video without a team session. Preflight HTTP checks already return `200`, and the current YouTube link resolves with audio, but that is not the final post-merge pass.
+- [ ] After the documentation closeout merges, test the final repository commit, Production, Devpost project, demo-access path, and public video without a team session. Preflight HTTP checks already return `200`, and the current YouTube link resolves with audio, but that is not the final post-merge pass.
 
 ## Codex submission evidence
 
