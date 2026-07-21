@@ -85,7 +85,9 @@ Result: implementation controls reviewed. Linked migrations, rollback-wrapped SQ
 - [x] Interrupted `processing` claims now have a reviewed, evidence-preserving path: exact POST replay after the immutable lease terminalizes the existing request as failed. Reconciliation is demand-driven; operators must not replace it with deletion, direct state edits, or a second model attempt.
 - [ ] Treat the actor/project rate limit as a P0 spend guard, not full abuse prevention. Deployment traffic controls, account controls, monitoring, and budget alerts remain operational responsibilities.
 
-These unchecked items are release gates, not claims of completed verification. The required environment variable names were absent from the process environment during this review, so no live OpenAI or browser request was made and no environment or secret file was read.
+At this Prompt 7 review checkpoint, the unchecked items were release gates rather than completed claims. The required environment variable names were absent from that review process, so it made no live OpenAI or browser request and read no environment or secret file.
+
+**Release reconciliation — 2026-07-22:** the later bounded Production sequence completed exactly one funded GPT-5.6 analysis, the authenticated operator workflow, judge-viewer denial, and the responsive browser matrix. The verified result, teardown, and current disabled mode are recorded in [`release-evidence.md`](release-evidence.md). This later evidence does not rewrite the historical Prompt 7 review scope; the deployment-level abuse-control limitation above remains.
 
 ## Prompt 9 operation security review
 
@@ -149,7 +151,9 @@ Result: the implementation has explicit approval, authorization, transaction, au
 - [ ] An unexpected database exception rolls back the entire operation atomically and returns a generic error, but may roll back before a failed operation header can persist. Treat a route error with no terminal operation as an incident/reconciliation state; verify project state is unchanged and never fabricate audit history.
 - [x] Product copy marks create-task, create-risk, and confirmation actions as nonreversible, removes the misleading per-action “Safe default” label, and warns that selecting any such action makes the entire operation ineligible for undo. Recovery requires a separate reviewed forward action, not an implied undo.
 
-The unchecked items remain release/demo gates. This review contains no secret value. It claims the exact Node, linked migration/type/lint/advisor, and rollback-wrapped SQL/RPC evidence recorded above; the authenticated HTTP/browser workflow remains unclaimed.
+At this Prompt 9 review checkpoint, the unchecked items were release/demo gates. This review contains no secret value and claims only the exact Node, linked migration/type/lint/advisor, and rollback-wrapped SQL/RPC evidence recorded above.
+
+**Release reconciliation — 2026-07-22:** the later Production operator flow completed apply, current history, compensating undo, session handling, focus checks, and viewer denial; the exact verified scope is recorded in [`release-evidence.md`](release-evidence.md). This does not turn the earlier SQL-only evidence into browser evidence, and the reset/service-role/exception operational cautions above remain.
 
 ## Prompt 10 integrated security review
 
@@ -182,6 +186,8 @@ Scope: the complete P0 diff from current `main` through `deston/07-integration-d
 
 Final command, dependency-audit, linked-database, and formal-review evidence for the integrated artifact is recorded in the Prompt 10 section of `docs/qa-checklist.md`. This section contains no secret value.
 
+**Release reconciliation — 2026-07-22:** the later authorized release completed one funded GPT-5.6 Production result, the analysis-to-apply-and-undo operator flow, fresh login/session/logout coverage, judge-viewer denial, and the responsive Production matrix recorded in [`release-evidence.md`](release-evidence.md). The historical guarded-fixture limitation above remains true, and deployment monitoring plus the residual operational risks remain operator responsibilities.
+
 ## Analysis access and fallback security review
 
 Review date: 2026-07-21
@@ -202,14 +208,14 @@ Result: the code and committed rollback-wrapped SQL verifier implement the revie
 - [x] **Post-claim failures remain truthful.** Provider refusal, timeout, malformed output, upstream failure, or fallback quota exhaustion can leave immutable source evidence and a failed analysis claim. Safe copy states that no project item or proposal changed; persisted failures use the existing closed allowlist and never store raw provider output or source text.
 - [x] **Model output remains inert.** Both provider routes reuse the bounded Responses contract (`store: false`, no tools, no automatic retries, fixed timeouts and output bounds). Deterministic traversal, validation, approval, and database mutation remain outside the model.
 
-### Pending linked release evidence
+### Linked release evidence reconciliation — 2026-07-21
 
-- [ ] Apply `20260721100000_add_analysis_access_policy.sql` only through the separately reviewed release sequence.
-- [ ] Prove exact local/remote migration parity and run `supabase/tests/verify_analysis_access_policy.sql` against the linked project inside its rollback transaction.
-- [ ] Confirm linked privilege inventory: the policy wrapper is service-role-only, both legacy begin paths and the new private implementation are inaccessible, and grant table/functions have no application-role access.
-- [ ] Check production health in each intended mode and prove a real viewer denial creates zero evidence, request, grant transition, privileged provider construction, or network call.
+- [x] Applied `20260721100000_add_analysis_access_policy.sql` through the separately reviewed release sequence and exact approval.
+- [x] Proved exact local/remote migration parity and ran `supabase/tests/verify_analysis_access_policy.sql` against the linked project inside its rollback transaction.
+- [x] Confirmed linked privilege inventory: the policy wrapper is service-role-only, both legacy begin paths and the new private implementation are inaccessible, and grant table/functions have no application-role access.
+- [x] Checked Production health through the intended recording and disabled modes and verified the real viewer denial/provider boundary recorded in [`release-evidence.md`](release-evidence.md).
 
-These pending items are explicit gates, not failures and not completed claims. No hosted database action, provider call, credential access, environment-value inspection, or Auth identifier was part of this documentation task.
+These gates were completed later by the separately authorized release sequence. Their linked and Production evidence is recorded in [`release-evidence.md`](release-evidence.md); no secret value or Auth identifier is reproduced here.
 
 ## Release-boundary hardening review
 
@@ -221,3 +227,5 @@ Scope: application request-body handling, deployment-readiness parsing, and the 
 - [x] **Focused adversarial review completed.** Regression tests use cumulative sub-limit chunks, unsafe/credential URL cases, and disposable ordinary/merge/root/octopus/disconnected Git histories. Independent re-review found no remaining P0/P1 issue in these boundaries.
 - [x] **Merge and Preview evidence remain separate from production.** PR #11 merged normally and its exact SHA is `READY` in Preview with fail-closed missing configuration; this does not claim the production alias serves the hardening.
 - [ ] **Production and authenticated evidence remain gated.** Production redeploy, readiness `200`, funded model smoke, Auth/RLS browser behavior, and the complete approval/undo/reset journey remain release gates in `docs/qa-checklist.md`.
+
+**Release reconciliation — 2026-07-22:** the later post-recording Production deployment, readiness, funded analysis, authenticated operator journey through compensating undo, viewer denial, and browser matrix are complete and recorded in [`release-evidence.md`](release-evidence.md). This does not change the historical scope of the release-boundary review or eliminate the operational containment requirements above.

@@ -113,7 +113,7 @@ Before restoring analysis traffic, require all of the following:
 
 If live credentials are unavailable, keep the live and browser criteria explicitly pending; do not substitute mocked tests for a live-provider claim.
 
-The policy migration `20260721100000_add_analysis_access_policy.sql` is applied to the identity-confirmed linked/hosted project. Its exact checksum, second dry run, owner approval, post-apply parity, empty pending set, and linked database lint are recorded. Canonical health is ready and provider credentials are contained, but the real authenticated disabled-message and viewer-denial checks remain release-plan gates. Local tests and mocked provider/database seams do not satisfy those browser gates.
+The policy migration `20260721100000_add_analysis_access_policy.sql` is applied to the identity-confirmed linked/hosted project. Its exact checksum, second dry run, owner approval, post-apply parity, empty pending set, and linked database lint are recorded. Canonical health is ready and provider credentials are contained. The later real authenticated disabled-message, judge-viewer denial, bounded analysis-to-undo, and Production browser checks are recorded in [`release-evidence.md`](release-evidence.md); local tests and mocked provider/database seams remain distinct evidence and must never be substituted for those checks.
 
 ## Prompt 13 evidence-integrity rollback
 
