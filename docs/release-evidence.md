@@ -1,6 +1,6 @@
 # InOrdo final release evidence
 
-This document records the factual release state produced by the merged application review, verified Production recording, post-recording teardown, live browser QA, and completed review export. It separates that evidence from the public YouTube, `/feedback`, team-rights, and final-submission checks that remain.
+This document records the factual release state produced by the merged application review, verified Production recording, post-recording teardown, live browser QA, and completed review export. It separates that evidence from the public YouTube, `/feedback`, final repository reference, and final-submission checks that remain.
 
 ## Production recording and video package status — 2026-07-21
 
@@ -181,8 +181,8 @@ This is deployment-identity and fail-closed configuration evidence, not a public
 - Fresh isolated Production checks passed at 375, 768, and 1440 pixels with no horizontal overflow, valid main/heading structure, keyboard focus, reduced-motion preference, and session refresh. The skip-link focus repair is merged and deployed. Status announcements, dialog focus return, and non-color meaning retain automated component/Playwright evidence and are a documented nonblocking evidence limitation rather than another provider-run gate.
 - Undo intentionally supports only operations made entirely of reversible field updates whose after-state is still current.
 - Vercel Hobby eligibility was confirmed by Deston on July 20, 2026; this repository is not legal advice.
-- The judge-only credentials and instructions are saved privately in Devpost, and Andres is a confirmed Devpost team member. The public Devpost project and team-role copy are recorded. The 2:44.067 review export and thumbnail are complete outside Git; only the public YouTube URL, primary Codex `/feedback` Session ID, photo/likeness rights confirmation, and explicit final-submit approval remain human-owned.
-- The hosted live-journey work is tracked in GitHub [issue #4](https://github.com/Chi944/InOrdo-Hackathon/issues/4); automated/guarded evidence does not close it.
+- The judge-only credentials and instructions are saved privately in Devpost, and Andres is a confirmed Devpost team member. The replacement viewer credential was rechecked against Production without exposing its value: authentication reached the synthetic workspace, analysis controls were disabled, the read-only notice was present, and sign-out returned to the login page. The public Devpost project and team-role copy are recorded. The 2:44.067 review export and thumbnail are complete outside Git; team media/likeness rights, the temporary **InOrdo Hackathon Team** attribution, and D4 timing are approved. Only the public YouTube URL, primary Codex `/feedback` Session ID, and explicit final-submit approval remain human-owned.
+- GitHub issue [#4](https://github.com/Chi944/InOrdo-Hackathon/issues/4) is closed after the authenticated Production journey, viewer-denial checks, teardown, and release evidence were completed.
 - The [official Devpost schedule](https://openai.devpost.com/details/dates) sets the submission deadline at July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT).
 
 ## Devpost placeholder audit

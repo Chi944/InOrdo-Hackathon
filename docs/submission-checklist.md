@@ -17,7 +17,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public and defaults to `main`; the current deployed application SHA is recorded separately below.
 - [x] The public MIT license and README return `200`; the full-repository release review plus a current/all-history credential-format scan found no secret, unexpected tracked environment file, private data, or private transcript.
 - [x] Production is public while Preview remains protected. The current canonical and immutable hosts are reachable, and `/api/health` reports ready with analysis disabled. Older deployment evidence is historical.
-- [ ] Confirm the README renders correctly on the public repository, including Mermaid, screenshots/GIFs, setup instructions, known limitations, and links.
+- [x] The public README rendering was verified, including Mermaid, screenshots, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [x] The final video includes genuine protected-workspace views from the funded analysis-to-undo QA, labels the synthetic workspace, and never presents a fixture or failed attempt as live GPT-5.6 output.
 - [x] The judge-only viewer credential and testing instructions are saved privately in Devpost; judge QA confirmed saved-state view access and denied or disabled provider and mutation controls without committing a password.
@@ -33,7 +33,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The Codex explanation names concrete work packages and decisions instead of making a generic “AI helped us code” claim.
 - [x] The video never presents a fixture, test double, prerecorded mock, or expected result as a live model response.
 - [x] The proposal-readiness mismatch is resolved by the invariant-checked server-owned transition and its linked reconciliation; non-ready states still fail closed.
-- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only the public-video, feedback, rights, final-commit, and submission gates.
+- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only the public-video, feedback, final-commit, and submission gates.
 
 ## Production video package
 
@@ -45,15 +45,16 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The no-retry branch uses the exact approved replacement D1, genuine Production fail-closed/preserved synthetic states from 0:54–2:28, and labels each preserved state as not a new paid result.
 - [x] The no-retry thumbnail replaces the success badge exactly with `Bounded AI contract + deterministic dependency graph` and cannot use the verified-success crop.
 - [x] The final edit includes a brief visual team introduction using the supplied photos. Raw photos and all production media remain outside Git.
-- [ ] Before public upload, Deston and Andres confirm they own or are authorized to use their supplied photos and each consents to the photo's use in the submission video and thumbnail.
+- [x] Deston and Andres confirmed they own or are authorized to use their supplied photos and each consented to the photo's use in the submission video and thumbnail.
 - [x] Deston's supplied D4 runs naturally for 12.229 seconds. The final edit widens its picture slot, tightens only non-spoken holds, captions audible wording, and uses no time-stretch or synthesis; the full runtime remains 2:44.067.
+- [x] Deston approved the final D4 natural-timing adjustment at 12.229 seconds for the public submission edit.
 - [x] Genuine Production screenshots and the verified playable GPT-5.6 raw clip are retained under `C:\Users\User\Videos\InOrdo-Build-Week\01-screen-captures`; no raw capture, voice file, browser profile, edit project, credential, or private note is committed.
 - [x] The single authorized GPT-5.6 raw capture was verified playable; the fresh recording key was revoked, the older duplicate key was also revoked, zero active InOrdo keys remained, the Vercel key was removed, local `.env.recording.local` was deleted, and Production was redeployed disabled.
 - [x] Exactly one 14-minute grant authorized exactly one successful GPT-5.6 Production run; post-capture verification found one claimed, consistent, expiry-valid grant, and no retry was made.
 - [x] The verified-success editorial branch is selected from genuine Production evidence; the no-retry branch remains an unused contingency.
 - [x] The final render's D1, Production result/impact/apply/undo views, labels, thumbnail badge, judge sentence, and public copy agree with the verified-success branch.
 - [x] Both supplied human recordings were normalized to mono PCM WAV at 48 kHz/24-bit; section order, clipping headroom, and natural timing were verified. The edit contains no synthetic or time-stretched voice.
-- [x] The 2:44.067 render uses accurate captions, restrained motion, and readable holds on evidence, path, approval, and history. Representative and cut-adjacent frames passed privacy review.
+- [x] The 2:44.067 render uses accurate captions, fixed legible interface stills, restrained 350 ms transitions, and readable holds on evidence, path, approval, and history. The earlier zoom/drift was removed; paired-frame, repeated-boundary, representative-frame, privacy, decode, black-frame, silence, loudness, and audio-equivalence checks passed.
 - [x] The 1920×1080, 30 fps H.264/AAC review export contains no test route, generated interface, private transcript, environment output, account identifier, credential, or customer data. It measures -15.1 LUFS integrated with -1.1 dBFS true peak and has no black segment or silence longer than two seconds.
 - [x] `C:\Users\User\Videos\InOrdo-Build-Week\05-exports\final\inordo-thumbnail-1280x720.png` is exactly 1280×720, visually reviewed, and uploaded successfully to the Devpost project.
 - [x] Confirmed the recording key is revoked, zero active InOrdo keys remain, and safe post-recording disabled deployment `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` is live before uploading or sharing any video.
@@ -116,4 +117,4 @@ Two setup examples are deliberately not submission fields: `<SUPABASE_PROJECT_RE
 
 - [x] Andres-owned UX, responsive/accessibility, screenshots, and copy work is integrated and verified; Andres is confirmed on the Devpost team.
 - [x] Deston-owned database/server contracts, Production configuration, bounded model call, readiness invariants, operation safety, and teardown are verified.
-- [ ] Shared finalization — confirm team media/license rights, upload/verify YouTube, add `/feedback` Session ID, record final commit, approve Devpost submission, and enforce the deadline lock.
+- [ ] Shared finalization — upload/verify YouTube, add `/feedback` Session ID, record final commit, approve Devpost submission, and enforce the deadline lock. Team media rights, the **InOrdo Hackathon Team** MIT attribution, and D4 timing are approved.

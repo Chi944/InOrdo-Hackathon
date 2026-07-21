@@ -30,11 +30,12 @@ These captures show the implemented product interface from an optimized build. T
 | --- | --- |
 | ![InOrdo landing page showing the Control project change without the chain reaction headline and an illustrative venue-date trace.](docs/assets/inordo-landing.jpg) | ![InOrdo workflow showing evidence, deterministic impact, recovery drafting, and human approval as distinct steps.](docs/assets/inordo-workflow.jpg) |
 
-The protected workspace capture remains a final production-QA deliverable. Synthetic or intercepted test data must never be presented as live GPT-5.6 output.
+The completed external demo video uses genuine Production footage. These two checked-in images remain illustrative optimized-build captures and are not themselves proof of a live GPT-5.6 response; synthetic or intercepted test data must never be presented as one.
 
 ## Contents
 
 - [Why InOrdo](#why-inordo)
+- [Where InOrdo fits](#where-inordo-fits)
 - [How it works](#how-it-works)
 - [What is implemented](#what-is-implemented)
 - [Quick start](#quick-start)
@@ -64,6 +65,21 @@ InOrdo keeps those responsibilities visible and separate:
 - Keep drafted actions inert until selective human approval.
 - Apply allowed internal changes atomically and record who did what.
 - Undo only when the entire operation is supported and still safe to reverse.
+
+## Where InOrdo fits
+
+InOrdo is not intended to replace a general-purpose work-management suite. The comparison below reflects each vendor's own published product emphasis; it does not claim that another product lacks adjacent capabilities.
+
+| Product | Current first-party emphasis |
+| --- | --- |
+| [Asana](https://asana.com/features) | Organization-wide project and work management, goals, reporting, resources, workflows, automation, and human-agent collaboration. |
+| [Jira](https://www.atlassian.com/software/jira/features) | Planning, tracking, dependency management, collaboration, reporting, customizable workflows, integrations, automation, and AI assistance. |
+| [Linear](https://linear.app/) | Product-development planning and execution for teams and agents, including intake, projects, issues, and updates; its documentation also describes explicit [project dependency views](https://linear.app/docs/project-dependencies). |
+| [monday work management](https://support.monday.com/hc/en-us/articles/115005305649-Get-started-with-monday-work-management) | Board-based project and operational work management with views, dashboards, automations, integrations, and embedded AI workflows. |
+
+InOrdo's Build Week P0 explores a narrower control loop: preserve an unstructured update as inspectable evidence, validate a structured candidate change, compute downstream reach with deterministic code, let the model draft inert recovery options, and require an authorized human to select allowlisted operations. Applied field updates retain actor-attributed history and support compensating undo only when the recorded contract remains safe.
+
+The distinction is therefore an explicit **evidence → deterministic impact → proposal → human approval → reversible history** trust boundary—not a larger feature list or a claim of exclusive capability. InOrdo currently lacks the connector ecosystem, ordinary-workspace provisioning, and platform breadth of the products above.
 
 ## How it works
 
@@ -406,10 +422,10 @@ Codex supported scoped implementation and review across the repository foundatio
 | Primary Codex feedback Session ID | `<PRIMARY_FEEDBACK_SESSION_ID>` — run `/feedback`; never fabricate an ID or publish a private transcript |
 | Deadline | July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 8:00 AM SGT, subject to final confirmation against the [official schedule](https://openai.devpost.com/details/dates) |
 
-Before submission, confirm photo/likeness and temporary-license attribution rights, upload and inspect the completed video on public YouTube, add its URL and the primary feedback Session ID, verify the final submission signed out, and lock the repository/deployment after the deadline as required. The full owner-by-owner checklist is [`docs/submission-checklist.md`](docs/submission-checklist.md).
+Before submission, upload and inspect the completed video on public YouTube, add its URL and the primary feedback Session ID, verify the final submission signed out, and lock the repository/deployment after the deadline as required. The full owner-by-owner checklist is [`docs/submission-checklist.md`](docs/submission-checklist.md).
 
 ## License
 
 InOrdo is available under the [MIT License](LICENSE), currently attributed to the **InOrdo Hackathon Team**.
 
-> **Team-rights gate before submission:** Deston and Andres must confirm the supplied photos/likenesses are authorized for the video and thumbnail and approve the temporary MIT attribution **InOrdo Hackathon Team**. If either requests exact legal-name attribution, update the license before final submission.
+Deston and Andres have confirmed authorization and consent for the supplied photos and likenesses used in the video and thumbnail, and approved the temporary MIT attribution **InOrdo Hackathon Team** for this submission.
