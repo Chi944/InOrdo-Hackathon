@@ -5,7 +5,7 @@ This document contains the non-secret judge testing body and the credential-safe
 ## Current handoff status
 
 - Andres is a confirmed Devpost team member.
-- Judge-only credentials and the verified-result testing instructions are saved privately in Devpost. The verified 2:44.067 review export and 1280×720 thumbnail are complete outside Git; the public video URL and primary Codex `/feedback` Session ID remain pending.
+- Judge-only credentials and the verified-result testing instructions are saved privately in Devpost. The public 2:44.067 verified-success video is uploaded at `https://youtu.be/eDPB6wtkFrM`, the 1280×720 thumbnail and four sanitized gallery images are uploaded, and primary Codex `/feedback` Session ID `019f70e9-a3ae-7e43-b97a-f62016c32629` is recorded without a transcript. A no-session metadata check confirmed public visibility, the reviewed title, duration, and audio formats.
 
 ## Provisioning prerequisites
 

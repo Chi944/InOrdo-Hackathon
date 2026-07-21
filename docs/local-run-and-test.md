@@ -44,8 +44,8 @@ npm --version
 Clone and install from a clean checkout:
 
 ```powershell
-git clone https://github.com/Chi944/InOrdo-Hackathon.git
-Set-Location InOrdo-Hackathon
+git clone https://github.com/Chi944/InOrdo.git
+Set-Location InOrdo
 git switch main
 git pull --ff-only origin main
 npm ci
@@ -80,8 +80,8 @@ npm --version
 Clone and install from a clean checkout:
 
 ```bash
-git clone https://github.com/Chi944/InOrdo-Hackathon.git
-cd InOrdo-Hackathon
+git clone https://github.com/Chi944/InOrdo.git
+cd InOrdo
 git switch main
 git pull --ff-only origin main
 npm ci

@@ -6,11 +6,11 @@
 - **Deployed application:** `https://inordo.vercel.app`
 - **Reviewed/deployed application SHA:** `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` (direct Vercel CLI deployment; the clean-worktree record, not Vercel metadata, establishes this source identity)
 - **Production deployment:** `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` (`READY`); immutable URL: `https://inordo-caheq8v2h-chi944s-projects.vercel.app`; health ready with analysis disabled
-- **Public repository:** `https://github.com/Chi944/InOrdo-Hackathon`
-- **Public demo video:** `<PUBLIC_YOUTUBE_VIDEO_URL>`
+- **Public repository:** `https://github.com/Chi944/InOrdo`
+- **Demo video:** `https://youtu.be/eDPB6wtkFrM` (public, 2:44, and verified without sign-in)
 - **Devpost project:** `https://devpost.com/software/chimera-i4oz8d` (public project page; hackathon finalization remains pending)
 - **Team:** Deston — Engineering, Data & AI Safety; Andres — Product Design & Experience
-- **Primary Codex `/feedback` Session ID:** `<PRIMARY_FEEDBACK_SESSION_ID>`
+- **Primary Codex `/feedback` Session ID:** `019f70e9-a3ae-7e43-b97a-f62016c32629`
 
 ## One-line pitch
 
@@ -29,8 +29,8 @@ InOrdo helps small teams respond safely when new evidence changes a project. Its
 - A ChatGPT subscription cannot authenticate or fund API calls made by this external application. Live paid OpenAI analysis is unavailable to the judge account and cannot consume the team's API budget.
 - Production is back in `ANALYSIS_MODE=disabled`; health is ready with analysis disabled. The older duplicate active InOrdo key and fresh recording key were revoked, zero active InOrdo keys remained, the Vercel `OPENAI_API_KEY` was removed, and local `.env.recording.local` was deleted. Migration parity is exact through applied migration `20260721100000` with no pending migration.
 - The verified-result sentence from `docs/devpost-handoff.md` is selected. Judge-only credentials and instructions are saved privately in Devpost; judge QA confirmed view access and denied or disabled provider and mutation controls.
-- Andres is a confirmed Devpost team member. The public video URL and primary Codex `/feedback` Session ID remain pending.
-- The verified-success 2:44.067 review export and 1280×720 thumbnail are complete outside Git. The edit includes a brief team introduction using the supplied photos, natural-speed human recordings, accurate burned-in captions, genuine Production/public GitHub views, and no generative media. D4 remains at its natural 12.229-second duration; non-spoken holds were tightened instead of altering a voice. The public YouTube URL remains pending.
+- Andres is a confirmed Devpost team member. The YouTube URL and primary Codex `/feedback` Session ID are saved in Devpost.
+- The verified-success 2:44.067 review export is public on YouTube, and the 1280×720 thumbnail plus four sanitized product images are uploaded to Devpost. A no-session metadata check confirmed the reviewed title, duration, visibility, and audio formats. The edit includes a brief team introduction using the supplied photos, natural-speed human recordings, accurate burned-in captions, genuine Production/public GitHub views, and no generative media. D4 remains at its natural 12.229-second duration; non-spoken holds were tightened instead of altering a voice.
 
 ## Detailed Devpost description
 
@@ -92,7 +92,7 @@ Codex was used as an implementation and review partner across concrete work pack
 - built the evidence-backed impact review interface and its accessibility-focused interaction tests; and
 - caught the `draft`-to-`ready` proposal-state mismatch during contract review, then verified the narrow server-owned readiness transition while the UI continues to fail closed for ineligible states.
 
-No private transcript is committed. The primary shareable evidence will be the Session ID entered above after the team runs `/feedback`.
+No private transcript is committed. The primary shareable evidence is the exact Session ID entered above; it identifies the task without publishing its transcript.
 
 ## Challenges
 
@@ -123,7 +123,7 @@ No private transcript is committed. The primary shareable evidence will be the S
 
 ## Future roadmap
 
-1. Upload the verified review export to public YouTube, add the returned URL and primary `/feedback` Session ID to Devpost, and complete the final signed-out video/submission check.
+1. Preserve the verified public YouTube upload and feedback references, complete the final signed-out link check, and submit the reviewed Devpost entry before the deadline.
 2. Deepen the existing project-item, decision, risk, and dependency views against canonical server data.
 3. Add proposal correction/rejection flows, stronger operational monitoring, and authenticated end-to-end browser coverage.
 4. Explore optional integrations only after the standalone workflow is reliable; connectors, semantic retrieval, enterprise administration, and native mobile remain outside P0.
@@ -136,7 +136,7 @@ No private transcript is committed. The primary shareable evidence will be the S
 - The judge account is read-only and cannot start analysis or mutate the workspace.
 - Available evidence input is typed/pasted updates, manual notes, meeting minutes, and meeting summaries. Files, CSV, URLs, voice, email, and connectors are unavailable.
 - Ordinary project provisioning is unavailable; the ordinary-project page is explicitly informational.
-- The authenticated bounded analysis-to-proposal, one-action apply, linked-history, compensating-undo, and judge-viewer denial journeys are verified. Full deployed responsive/accessibility and final signed-out public-asset checks remain.
+- The authenticated bounded analysis-to-proposal, one-action apply, linked-history, compensating-undo, judge-viewer denial, deployed responsive/accessibility journeys, and public YouTube visibility are verified. The final signed-out public-asset and submission checks remain.
 - The guarded Chromium demo journey intercepts provider/database seams; it validates the real UI and public request contracts but is not live authentication, RLS, Supabase RPC, or OpenAI evidence.
 - Authenticated local responsive checks passed at 375 × 812, 768 × 1024, and 1440 × 1000 without horizontal overflow; they are not deployed accessibility evidence.
 - Undo supports only eligible reversible field-update operations and stops on stale versions or after-state mismatch.

@@ -279,9 +279,9 @@ The implementation entries above correspond to these Git commits. Merge commits 
 
 ## Primary `/feedback` evidence
 
-Primary Session ID: `<PRIMARY_FEEDBACK_SESSION_ID>`
+Primary Session ID: `019f70e9-a3ae-7e43-b97a-f62016c32629`
 
-Replace this placeholder only after running `/feedback` in the primary Codex task. Commit the identifier only—never a private transcript, credential, or unrelated session record.
+The primary task returned this identifier through `/feedback`. Only the identifier is committed—never a private transcript, credential, or unrelated session record.
 
 ## 2026-07-21 — Analysis access policy and containment documentation
 
@@ -345,3 +345,12 @@ Replace this placeholder only after running `/feedback` in the primary Codex tas
 - Added a first-party-source comparison explaining that InOrdo is a narrower evidence → deterministic impact → proposal → human approval → reversible history control loop, not a feature-parity replacement for general work-management platforms.
 - Added the Production URL, factual description, and focused topics to the public GitHub About metadata. Prompt 14 remains complete from its earlier reviewed commit and merge; it was not rerun.
 - The public YouTube URL, primary Codex `/feedback` Session ID, final repository reference, and explicit Devpost submission remain the only submission closeout steps.
+
+## 2026-07-22 — Public media, feedback evidence, and Devpost finalization handoff
+
+- Uploaded the verified-success demo at `https://youtu.be/eDPB6wtkFrM`. A no-session metadata check confirmed the title **InOrdo — Evidence-Backed Project Recovery | OpenAI Build Week Demo**, a 164-second runtime, and available audio formats. YouTube reported `Unlisted`, so changing visibility to `Public` remains a submission gate.
+- After the owner changed visibility, a July 22 no-session metadata recheck reported `public`; the reviewed title, 164-second runtime, and audio formats remained available.
+- Recorded primary Codex `/feedback` Session ID `019f70e9-a3ae-7e43-b97a-f62016c32629` as the shareable identifier only; no private task transcript is included.
+- Saved the 1280×720 cover and four sanitized gallery images in Devpost with captions covering the workspace, deterministic impact paths, human approval, and reversible history.
+- Completed Devpost's public fields and private judge handoff, updated the canonical repository link, and reached the finalization page at four of five steps with no form errors. The terms checkbox remains unchecked and **Submit project** was not clicked; explicit human agreement and submission authority remain required.
+- This closeout changes documentation only. It does not change runtime code, database state, provider configuration, deployment environment, Auth data, or the verified Production artifact. The final merged repository SHA must be recorded externally before submission.

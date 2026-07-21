@@ -4,7 +4,7 @@
 
 **Turn an unstructured project update into evidence-backed impacts and recovery actions—without giving the model permission to change the plan.**
 
-[![CI](https://github.com/Chi944/InOrdo-Hackathon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Chi944/InOrdo-Hackathon/actions/workflows/ci.yml)
+[![CI](https://github.com/Chi944/InOrdo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Chi944/InOrdo/actions/workflows/ci.yml)
 ![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -18,7 +18,7 @@
 InOrdo gives a team one reviewable path from new evidence to a safe project response. It preserves the source, uses a bounded server-side model route for interpretation and drafting, computes dependency reach in deterministic TypeScript, and requires an authorized person to approve each internal action. Applied operations are attributable and reversible only when the recorded contract says they are.
 
 > [!IMPORTANT]
-> **The canonical deployment is [inordo.vercel.app](https://inordo.vercel.app).** It serves the release built by direct Vercel CLI deployment from a clean worktree at reviewed `main` commit [`4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`](https://github.com/Chi944/InOrdo-Hackathon/commit/4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03). Post-recording Production deployment `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` is `READY` at immutable [inordo-caheq8v2h-chi944s-projects.vercel.app](https://inordo-caheq8v2h-chi944s-projects.vercel.app). Vercel Authentication remains enabled for Preview deployments only.
+> **The canonical deployment is [inordo.vercel.app](https://inordo.vercel.app).** It serves the release built by direct Vercel CLI deployment from a clean worktree at reviewed `main` commit [`4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`](https://github.com/Chi944/InOrdo/commit/4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03). Post-recording Production deployment `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` is `READY` at immutable [inordo-caheq8v2h-chi944s-projects.vercel.app](https://inordo-caheq8v2h-chi944s-projects.vercel.app). Vercel Authentication remains enabled for Preview deployments only.
 >
 > Production is deliberately back in `ANALYSIS_MODE=disabled`; `/api/health` is `ready` with analysis disabled. Exactly one bounded GPT-5.6 Production run succeeded, and its genuine saved evidence, direct and indirect impact paths, recovery proposal, selected internal date action, explicit human response, successful apply, linked history, and compensating undo remain viewable. Before that run, an older duplicate active InOrdo provider key was discovered and revoked. After the playable capture, the fresh recording key was revoked, zero active InOrdo keys remained, the Vercel `OPENAI_API_KEY` was removed, and local `.env.recording.local` was deleted. New paid analysis is disabled.
 
@@ -143,8 +143,8 @@ This is a Build Week P0, not a production-readiness claim. Live-service and stag
 ### Install and run
 
 ```bash
-git clone https://github.com/Chi944/InOrdo-Hackathon.git
-cd InOrdo-Hackathon
+git clone https://github.com/Chi944/InOrdo.git
+cd InOrdo
 npm ci
 cp .env.example .env.local
 npm run dev
@@ -323,8 +323,8 @@ Local Supabase verification starts with `npx --no-install supabase start` and ma
 | Application | The exact release SHA passed under Node 22.23.1/npm 10.9.8: lint, typecheck, 514 tests across 64 Vitest files, two Chromium journeys, the Next.js 16.2.10 production build, a zero-vulnerability production audit, and whitespace checks. | Keep future changes behind their own review and gates. |
 | Database | Hosted migrations have exact parity through `20260721100000`; the policy migration checksum, second dry run, exact approval, post-apply parity, empty pending set, and linked database lint are recorded. | Preserve parity and use a new reviewed forward migration for any correction. |
 | Provider safety | The recording deployment was `READY` with analysis `recording_configured`. One exact 14-minute grant authorized one successful GPT-5.6 Production run. Canonical-source and fresh-duplicate gates passed; post-capture verification found one claimed, consistent, expiry-valid grant. The older duplicate provider key and fresh recording key were revoked, zero active InOrdo keys remained, the Vercel key was removed, and Production returned to disabled mode. | Keep new paid analysis disabled; any future attempt requires an entirely new approved key/grant lifecycle. |
-| Browser | Exactly one owner, one admin recording operator, and one viewer judge were verified as three distinct real Auth identities. The sanitized operator journey captured genuine saved evidence, deterministic direct/indirect impact, recovery proposal, explicit human approval, apply, linked history, and compensating undo. Fresh isolated viewer QA covered signed-out redirect, login/session refresh, five routes at 375/768/1440, keyboard focus, reduced motion, no overflow, and disabled/absent mutation controls. | Verify the public YouTube URL after upload; keep broader automated-only announcement coverage labeled as such. |
-| Deployment | Post-recording Production `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` is `READY` at public [inordo.vercel.app](https://inordo.vercel.app), with health ready and analysis disabled. | Upload the verified 2:44.067 video to YouTube, add the video and feedback references, and complete final Devpost submission. |
+| Browser and media | Exactly one owner, one admin recording operator, and one viewer judge were verified as three distinct real Auth identities. The sanitized operator journey captured genuine saved evidence, deterministic direct/indirect impact, recovery proposal, explicit human approval, apply, linked history, and compensating undo. Fresh isolated viewer QA covered signed-out redirect, login/session refresh, five routes at 375/768/1440, keyboard focus, reduced motion, no overflow, and disabled/absent mutation controls. The public 2:44 YouTube upload resolves without sign-in with the reviewed title and audio formats. | Keep broader automated-only announcement coverage labeled as such. |
+| Deployment and submission | Post-recording Production `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ` is `READY` at public [inordo.vercel.app](https://inordo.vercel.app), with health ready and analysis disabled. The public YouTube URL and primary Codex feedback reference are recorded in Devpost. | Record the final repository SHA in Devpost, obtain explicit rules acceptance, and submit before the deadline. |
 
 Vercel deployment is manual—there is no Git-connected automatic deploy. Production must use Node.js 22.x, a clean reviewed `main` equal to `origin/main`, correctly scoped environment names, and the canonical alias. Environment changes require redeployment. Supabase Auth allows the canonical production origin, documented local redirects, and the approved account-scoped Preview wildcard. Deston confirmed on July 20, 2026 that the current Vercel Hobby terms permit this hackathon demo; that project-owner confirmation is recorded as operational evidence, not legal advice.
 
@@ -413,16 +413,16 @@ Codex supported scoped implementation and review across the repository foundatio
 | Item | Public value or required action |
 | --- | --- |
 | Track | OpenAI Build Week — **Work & Productivity** |
-| Repository | [github.com/Chi944/InOrdo-Hackathon](https://github.com/Chi944/InOrdo-Hackathon) |
+| Repository | [github.com/Chi944/InOrdo](https://github.com/Chi944/InOrdo) |
 | Production application | [inordo.vercel.app](https://inordo.vercel.app) — public post-recording deployment `dpl_BW4kvr2zMUNkwv46XEeMMFRJeisJ`, released from clean reviewed SHA `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03`; saved verified GPT-5.6 evidence is viewable, new analysis is disabled, and Preview deployments remain protected |
 | Demo access | The judge-only viewer credential and instructions are saved privately in Devpost; the repository retains only the non-secret [judge handoff](docs/devpost-handoff.md). |
-| Public video | `<PUBLIC_YOUTUBE_VIDEO_URL>` |
+| Demo video | [InOrdo — Evidence-Backed Project Recovery](https://youtu.be/eDPB6wtkFrM) — public, 2:44, and verified without sign-in |
 | Devpost entry | [InOrdo on Devpost](https://devpost.com/software/chimera-i4oz8d) |
 | Team | Deston — Engineering, Data & AI Safety; Andres — Product Design & Experience. Andres is a confirmed Devpost team member. |
-| Primary Codex feedback Session ID | `<PRIMARY_FEEDBACK_SESSION_ID>` — run `/feedback`; never fabricate an ID or publish a private transcript |
+| Primary Codex feedback Session ID | `019f70e9-a3ae-7e43-b97a-f62016c32629` — identifier only; no private transcript is published |
 | Deadline | July 21, 2026 at 5:00 PM PDT / July 22, 2026 at 8:00 AM SGT, subject to final confirmation against the [official schedule](https://openai.devpost.com/details/dates) |
 
-Before submission, upload and inspect the completed video on public YouTube, add its URL and the primary feedback Session ID, verify the final submission signed out, and lock the repository/deployment after the deadline as required. The full owner-by-owner checklist is [`docs/submission-checklist.md`](docs/submission-checklist.md).
+Before submission, record the final merged repository SHA in Devpost, verify the public links signed out, accept the official rules and Devpost terms, and submit before the deadline. Then lock the repository, deployment, Devpost entry, and video as required. The full owner-by-owner checklist is [`docs/submission-checklist.md`](docs/submission-checklist.md).
 
 ## License
 

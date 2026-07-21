@@ -19,7 +19,7 @@ The separate speaker masters are [Andres's voiceover](video-production/andres-vo
 - Recovery drafts remain inert. The model output never directly mutates project records; a human chooses an action and the server rechecks authority and state before any supported internal mutation.
 - The workspace and every person, organization, project, and record shown are synthetic.
 
-**Release status:** The verified-success branch is selected. Exactly one GPT-5.6 Production run succeeded and the playable genuine captures include saved evidence, direct and indirect impact, the recovery proposal, the separate request-human-confirmation proposal left pending, one selected internal date action supplied with the required response, linked apply history, and compensating undo. Provider-key and deployment teardown is complete. The final review export and thumbnail are complete outside Git; the public video URL remains pending.
+**Release status:** The verified-success branch is selected. Exactly one GPT-5.6 Production run succeeded and the playable genuine captures include saved evidence, direct and indirect impact, the recovery proposal, the separate request-human-confirmation proposal left pending, one selected internal date action supplied with the required response, linked apply history, and compensating undo. Provider-key and deployment teardown is complete. The final review export is public at `https://youtu.be/eDPB6wtkFrM`, and the thumbnail is uploaded to Devpost. A no-session metadata check confirmed the reviewed title, duration, visibility, and audio formats.
 
 ## Verified-success final timeline
 

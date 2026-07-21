@@ -14,14 +14,14 @@ Use this as the final human handoff. Check an item only after testing the exact 
 
 ## Required public assets and access
 
-- [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo-Hackathon` is public and defaults to `main`; the current deployed application SHA is recorded separately below.
+- [x] An unauthenticated GitHub API/raw-file check confirmed `https://github.com/Chi944/InOrdo` is public and defaults to `main`; the current deployed application SHA is recorded separately below.
 - [x] The public MIT license and README return `200`; the full-repository release review plus a current/all-history credential-format scan found no secret, unexpected tracked environment file, private data, or private transcript.
 - [x] Production is public while Preview remains protected. The current canonical and immutable hosts are reachable, and `/api/health` reports ready with analysis disabled. Older deployment evidence is historical.
 - [x] The public README rendering was verified, including Mermaid, screenshots, setup instructions, known limitations, and links.
 - [x] Confirm the checked-in landing and workflow-principle screenshots come from the real public route, include descriptive alt text, and make no authenticated or live-model claim.
 - [x] The final video includes genuine protected-workspace views from the funded analysis-to-undo QA, labels the synthetic workspace, and never presents a fixture or failed attempt as live GPT-5.6 output.
 - [x] The judge-only viewer credential and testing instructions are saved privately in Devpost; judge QA confirmed saved-state view access and denied or disabled provider and mutation controls without committing a password.
-- [ ] Confirm `<PUBLIC_YOUTUBE_VIDEO_URL>` is publicly viewable, has voiceover, matches the submitted build, and runs no longer than 3:00.
+- [x] Confirm `https://youtu.be/eDPB6wtkFrM` is `Public` and remains viewable without sign-in. The reviewed local export contains the Deston/Andres voiceover and matches the submitted build; YouTube reports a 2:44 duration and audio formats.
 - [x] Confirm the public Devpost project URL `https://devpost.com/software/chimera-i4oz8d` opens without a team session. Recheck its hackathon-submission state after finalization.
 
 ## Product and claim review
@@ -33,7 +33,7 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] The Codex explanation names concrete work packages and decisions instead of making a generic “AI helped us code” claim.
 - [x] The video never presents a fixture, test double, prerecorded mock, or expected result as a live model response.
 - [x] The proposal-readiness mismatch is resolved by the invariant-checked server-owned transition and its linked reconciliation; non-ready states still fail closed.
-- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only the public-video, feedback, final-commit, and submission gates.
+- [x] Known limitations and final copy distinguish the verified saved GPT-5.6 result from disabled new paid analysis, separate live from automated accessibility evidence, and retain only the final-commit/link pass and submission gates.
 
 ## Production video package
 
@@ -76,12 +76,12 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [x] Exact Production passed fresh isolated responsive, landmark/heading, keyboard-focus, reduced-motion, session, and viewer-control checks; status/error announcements, dialog focus return, accessible labels, and non-color meaning retain automated component/Playwright evidence.
 - [x] A fresh isolated no-cookie Production pass covered signed-out redirect, judge login/session refresh, saved source/result/history visibility, safe viewer gating, and closure; the existing authenticated pass separately verified logout and safe invalid-password feedback.
 - [x] Exactly one funded synthetic live GPT-5.6 Production analysis is verified with safe, non-secret evidence only; public copy states that its saved result remains viewable while new paid analysis is disabled.
-- [x] Public repository, Production, and Devpost project links are tested without a team session. The public YouTube link remains separately pending until upload.
+- [ ] After the documentation closeout merges, test the final repository commit, Production, Devpost project, demo-access path, and public video without a team session. Preflight HTTP checks already return `200`, and the current YouTube link resolves with audio, but that is not the final post-merge pass.
 
 ## Codex submission evidence
 
-- [ ] Run `/feedback` from the primary Codex task used for the submission evidence.
-- [ ] Paste only the returned identifier into `<PRIMARY_FEEDBACK_SESSION_ID>` in README, submission copy, and `docs/codex-log.md`.
+- [x] Run `/feedback` from the primary Codex task used for the submission evidence.
+- [x] Paste only returned identifier `019f70e9-a3ae-7e43-b97a-f62016c32629` into README, submission copy, and `docs/codex-log.md`.
 - [x] Diff/history scans and review confirm no private transcript, prompt history, secret, or unrelated Session ID is committed.
 - [x] The submitted Codex explanation names repository/architecture foundation, secure data and operation boundaries, deterministic graph work, impact-review UX, tests/QA, and submission documentation.
 
@@ -94,20 +94,20 @@ Use this as the final human handoff. Check an item only after testing the exact 
 - [ ] Submit before the official deadline.
 **Post-deadline rule:** make no edits to the submitted repository branch/commit, production artifact, Devpost entry, or public video unless the event rules explicitly permit them.
 
-## Placeholder inventory
+## Submission reference inventory
 
-Replace every remaining submission token below before publishing. Search with `rg -n '<(PUBLIC_YOUTUBE_VIDEO_URL|PRIMARY_FEEDBACK_SESSION_ID)>' README.md docs` and resolve every result intentionally.
+The submission references below are recorded, and a final scan for the former video and feedback tokens must return no matches before merge. Public YouTube visibility is verified.
 
 | Placeholder | Human-supplied value | Verification |
 | --- | --- | --- |
-| Public repository | `https://github.com/Chi944/InOrdo-Hackathon` | Open signed out and confirm the final intended commit and README are visible. |
+| Public repository | `https://github.com/Chi944/InOrdo` | Open signed out and confirm the final intended commit and README are visible. |
 | Production application | `https://inordo.vercel.app` | Open incognito and run the production checklist. |
 | Hosting platform/project | Manual Vercel Hobby project `chi944s-projects/inordo` | Confirm the project remains manually deployed with no Git-connected automatic deployment. |
 | Deployed application SHA | `4f54cc1eec37d49aa6b1da6e0dafbc6f7d738d03` | Compare the clean-worktree release record and final submission reference; the direct Vercel deployment does not expose a Git SHA in metadata. |
 | Public Devpost project | `https://devpost.com/software/chimera-i4oz8d` | Verified signed out; recheck after final hackathon submission. |
-| `<PUBLIC_YOUTUBE_VIDEO_URL>` | Public voiceover video URL, duration at most 3:00. | Play signed out and compare against the final build. |
+| YouTube video | `https://youtu.be/eDPB6wtkFrM` | Public; resolves without sign-in and reports 2:44 with audio formats. |
 | Judge demo access | Judge-only credentials and instructions are saved privately in Devpost; no password is committed. | Viewer QA confirmed read access and denied/disabled provider and mutation controls. |
-| `<PRIMARY_FEEDBACK_SESSION_ID>` | Identifier returned by the primary `/feedback` command. | Confirm the exact ID; do not attach a private transcript. |
+| Primary `/feedback` Session ID | `019f70e9-a3ae-7e43-b97a-f62016c32629` | Exact identifier only; no private transcript is attached. |
 | Public team copy | Deston — Engineering, Data & AI Safety; Andres — Product Design & Experience. | Andres is confirmed on the Devpost team; use the same role copy in final media. |
 | Submission deadline | July 21, 2026 at 5:00 PM PDT (July 22, 2026 at 8:00 AM SGT). | Confirmed against the official Devpost schedule. |
 
@@ -117,4 +117,4 @@ Two setup examples are deliberately not submission fields: `<SUPABASE_PROJECT_RE
 
 - [x] Andres-owned UX, responsive/accessibility, screenshots, and copy work is integrated and verified; Andres is confirmed on the Devpost team.
 - [x] Deston-owned database/server contracts, Production configuration, bounded model call, readiness invariants, operation safety, and teardown are verified.
-- [ ] Shared finalization — upload/verify YouTube, add `/feedback` Session ID, record final commit, approve Devpost submission, and enforce the deadline lock. Team media rights, the **InOrdo Hackathon Team** MIT attribution, and D4 timing are approved.
+- [ ] Shared finalization — record the final merged commit in Devpost, accept the official rules and Devpost terms, submit, verify the public entry, and enforce the deadline lock. The public video, `/feedback` reference, team media rights, **InOrdo Hackathon Team** MIT attribution, and D4 timing are complete.
